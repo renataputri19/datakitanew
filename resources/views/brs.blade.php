@@ -343,7 +343,7 @@
                 <p class="hero-description">Sumber data statistik terpercaya untuk Kota Batam</p>
             </div>
             <div class="youtube-container">
-                <iframe src="https://www.youtube.com/embed/CHANNEL_ID" allowfullscreen>
+                <iframe src="https://www.youtube.com/embed/YPbQ2o7kBhw?si=DoQLFdLBYFdyAdp9" allowfullscreen>
                 </iframe>
             </div>
         </div>
