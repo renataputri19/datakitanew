@@ -354,13 +354,13 @@
         <div class="brs-container">
             <div class="brs-grid">
                 <!-- IHK/Inflasi -->
-                <a href="https://batamkota.bps.go.id/pressrelease/dummy-ihk" class="brs-card">
+                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/688/perkembangan--indeks-harga-konsumen-kota-batam--januari-2025.html" class="brs-card">
                     <div class="card-content">
                         <div class="card-icon">
                             <i class="fas fa-chart-line"></i>
                         </div>
-                        <h3 class="card-title">Perkembangan IHK/Inflasi</h3>
-                        <p class="card-text">Data terkini mengenai Indeks Harga Konsumen dan tingkat inflasi Kota Batam
+                        <h3 class="card-title">Perkembangan IHK</h3>
+                        <p class="card-text">Data terkini mengenai Perkembangan Indeks Harga Konsumen Kota Batam
                         </p>
                         <span class="card-link">
                             Baca Selengkapnya
@@ -370,13 +370,13 @@
                 </a>
 
                 <!-- Pariwisata -->
-                <a href="https://batamkota.bps.go.id/pressrelease/dummy-pariwisata" class="brs-card">
+                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/689/perkembangan-pariwisata-kota-batam--desember-2024.html" class="brs-card">
                     <div class="card-content">
                         <div class="card-icon">
                             <i class="fas fa-plane-departure"></i>
                         </div>
                         <h3 class="card-title">Perkembangan Pariwisata</h3>
-                        <p class="card-text">Statistik terkini sektor pariwisata dan kunjungan wisatawan di Kota Batam
+                        <p class="card-text">Data terkini mengenai Perkembangan Pariwisata Kota Batam
                         </p>
                         <span class="card-link">
                             Baca Selengkapnya
@@ -386,13 +386,13 @@
                 </a>
 
                 <!-- Ekspor Impor -->
-                <a href="https://batamkota.bps.go.id/pressrelease/dummy-ekspor-impor" class="brs-card">
+                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/690/perkembangan-ekspor-dan-impor-kota-batam--desember-2024.html" class="brs-card">
                     <div class="card-content">
                         <div class="card-icon">
                             <i class="fas fa-ship"></i>
                         </div>
                         <h3 class="card-title">Ekspor dan Impor</h3>
-                        <p class="card-text">Data perdagangan internasional dan aktivitas ekspor-impor Kota Batam</p>
+                        <p class="card-text">Data terkini mengenai Perkembangan Ekspor dan Impor Kota Batam</p>
                         <span class="card-link">
                             Baca Selengkapnya
                             <i class="fas fa-arrow-right"></i>
@@ -401,13 +401,13 @@
                 </a>
 
                 <!-- Transportasi -->
-                <a href="https://batamkota.bps.go.id/pressrelease/dummy-transportasi" class="brs-card">
+                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/687/perkembangan-transportasi-udara-dan-laut-kota-batam--desember-2024.html" class="brs-card">
                     <div class="card-content">
                         <div class="card-icon">
                             <i class="fas fa-bus"></i>
                         </div>
                         <h3 class="card-title">Perkembangan Transportasi</h3>
-                        <p class="card-text">Statistik transportasi dan mobilitas di Kota Batam</p>
+                        <p class="card-text">Data terkini mengenai Perkembangan Transportasi Udara dan Laut Kota Batam</p>
                         <span class="card-link">
                             Baca Selengkapnya
                             <i class="fas fa-arrow-right"></i>

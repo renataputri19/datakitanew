@@ -28,27 +28,29 @@
         }
 
         .navbar {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-}
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
 
-.navbar-fixed {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
+        .navbar-fixed {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
 
-/* Update the navigation links color */
-.nav-link {
-    color: #374151;  /* text-gray-700 */
-    font-weight: 500;
-    transition: color 0.3s ease;
-}
+        /* Update the navigation links color */
+        .nav-link {
+            color: #374151;
+            /* text-gray-700 */
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
 
 
-.nav-link:hover {
-    color: #2563eb;  /* text-blue-600 */
-}
+        .nav-link:hover {
+            color: #2563eb;
+            /* text-blue-600 */
+        }
 
         .nav-link::after {
             content: '';
@@ -134,6 +136,12 @@
                 gap: 2rem;
             }
         }
+
+
+        .bg-grid-pattern {
+            background-image: radial-gradient(#2563eb 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
     </style>
 
     @yield('additional_css')
@@ -146,6 +154,8 @@
             <div class="flex items-center justify-between">
                 <a href="{{ url('/') }}" class="flex items-center space-x-3 group">
                     <img src="{{ asset('img/Logo BPS 1.png') }}" alt="Logo BPS"
+                        class="h-10 w-auto transition-transform duration-300 group-hover:scale-105">
+                    <img src="{{ asset('img/Logo SE2026.png') }}" alt="Logo SE"
                         class="h-10 w-auto transition-transform duration-300 group-hover:scale-105">
                     {{-- <div class="font-bold text-xl text-gray-800 tracking-wide">DATA KITA</div> --}}
                 </a>
@@ -223,7 +233,7 @@
             <div>
                 <h3 class="text-lg font-semibold mb-4">Kontak</h3>
                 <ul class="space-y-3 text-gray-400">
-                    <li>Jl. Engku Putri No. 1</li>
+                    <li>Jl. Abulyatama</li>
                     <li>Batam Centre, Kota Batam</li>
                     <li>Kepulauan Riau</li>
                 </ul>
