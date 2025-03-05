@@ -338,12 +338,12 @@
                 <div class="hero-title-wrapper">
                     <span class="hero-eyebrow">Press Release</span>
                     <h1 class="hero-title">Berita Resmi Statistik</h1>
-                    <h2 class="hero-subtitle">Februari 2024</h2>
+                    <h2 class="hero-subtitle">Maret 2024</h2>
                 </div>
                 <p class="hero-description">Sumber data statistik terpercaya untuk Kota Batam</p>
             </div>
             <div class="youtube-container">
-                <iframe src="https://www.youtube.com/embed/YPbQ2o7kBhw?si=DoQLFdLBYFdyAdp9" allowfullscreen>
+                <iframe src="https://www.youtube.com/embed/YPGAplKbMYc?si=CuHmfJCUiHpxnJMJ" allowfullscreen>
                 </iframe>
             </div>
         </div>
@@ -354,7 +354,7 @@
         <div class="brs-container">
             <div class="brs-grid">
                 <!-- IHK/Inflasi -->
-                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/688/perkembangan--indeks-harga-konsumen-kota-batam--januari-2025.html" class="brs-card">
+                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/03/04/640/perkembangan--indeks-harga-konsumen-kota-batam--februari-2025.html" class="brs-card">
                     <div class="card-content">
                         <div class="card-icon">
                             <i class="fas fa-chart-line"></i>
@@ -370,7 +370,7 @@
                 </a>
 
                 <!-- Pariwisata -->
-                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/689/perkembangan-pariwisata-kota-batam--desember-2024.html" class="brs-card">
+                {{-- <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/689/perkembangan-pariwisata-kota-batam--desember-2024.html" class="brs-card">
                     <div class="card-content">
                         <div class="card-icon">
                             <i class="fas fa-plane-departure"></i>
@@ -383,10 +383,10 @@
                             <i class="fas fa-arrow-right"></i>
                         </span>
                     </div>
-                </a>
+                </a> --}}
 
                 <!-- Ekspor Impor -->
-                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/690/perkembangan-ekspor-dan-impor-kota-batam--desember-2024.html" class="brs-card">
+                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/03/04/664/perkembangan-ekspor--dan-impor-kota-batam---januari-2025.html" class="brs-card">
                     <div class="card-content">
                         <div class="card-icon">
                             <i class="fas fa-ship"></i>
@@ -401,7 +401,7 @@
                 </a>
 
                 <!-- Transportasi -->
-                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/687/perkembangan-transportasi-udara-dan-laut-kota-batam--desember-2024.html" class="brs-card">
+                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/03/04/676/perkembangan-transportasi--kota-batam--januari-2025.html" class="brs-card">
                     <div class="card-content">
                         <div class="card-icon">
                             <i class="fas fa-bus"></i>

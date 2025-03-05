@@ -147,11 +147,10 @@
                     data-aos-delay="100">
                     <div class="aspect-w-16 aspect-h-9 bg-gray-100"></div>
                     <div class="p-5">
-                        <div class="text-sm text-blue-600 mb-2">4 Februari 2025</div>
-                        <h3 class="text-lg font-semibold mb-2">Perkembangan Ekspor dan Impor Kota Batam, Desember 2024</h3>
-                        <p class="text-gray-600 text-sm mb-3">Ekspor Desember 2024 sebesar US$ 1.341,70 juta atau turun 3,80
-                            persen dibandingkan ekspor November 2024 ...</p>
-                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/690/perkembangan-ekspor-dan-impor-kota-batam--desember-2024.html"
+                        <div class="text-sm text-blue-600 mb-2">4 Maret 2025</div>
+                        <h3 class="text-lg font-semibold mb-2">Perkembangan Ekspor dan Impor Kota Batam, Januari 2025</h3>
+                        <p class="text-gray-600 text-sm mb-3">Ekspor Januari 2025 sebesar US$ 1.775,60 juta atau naik 32,34 persen dibandingkan ekspor Desember 2024 ...</p>
+                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/03/04/664/perkembangan-ekspor--dan-impor-kota-batam---januari-2025.html"
                             class="text-blue-600 font-medium hover:text-blue-700 text-sm">Baca Selengkapnya →</a>
                     </div>
                 </div>
@@ -161,12 +160,11 @@
                     data-aos-delay="200">
                     <div class="aspect-w-16 aspect-h-9 bg-gray-100"></div>
                     <div class="p-5">
-                        <div class="text-sm text-blue-600 mb-2">4 Februari 2025</div>
-                        <h3 class="text-lg font-semibold mb-2">Perkembangan Indeks Harga Konsumen Kota Batam, Januari 2025
+                        <div class="text-sm text-blue-600 mb-2">4 Maret 2025</div>
+                        <h3 class="text-lg font-semibold mb-2">Perkembangan Indeks Harga Konsumen Kota Batam, Februari 2025
                         </h3>
-                        <p class="text-gray-600 text-sm mb-3">Pada Januari 2025, Kota Batam mengalami inflasi year on year
-                            (y-on-y) sebesar 2,54 persen dengan Indeks Harga Konsumen (IHK) sebesar 108,65....</p>
-                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/688/perkembangan--indeks-harga-konsumen-kota-batam--januari-2025.html"
+                        <p class="text-gray-600 text-sm mb-3">IHK Kota Batam pada Februari 2025 tercatat 108,68 atau mengalami inflasi Year on Year (y-on-y) sebesar 2,88 persen ....</p>
+                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/03/04/640/perkembangan--indeks-harga-konsumen-kota-batam--februari-2025.html"
                             class="text-blue-600 font-medium hover:text-blue-700 text-sm">Baca Selengkapnya →</a>
                     </div>
                 </div>
@@ -176,12 +174,10 @@
                     data-aos-delay="300">
                     <div class="aspect-w-16 aspect-h-9 bg-gray-100"></div>
                     <div class="p-5">
-                        <div class="text-sm text-blue-600 mb-2">4 Februari 2025</div>
-                        <h3 class="text-lg font-semibold mb-2">Perkembangan Transportasi Udara dan Laut Kota Batam,
-                            Desember 2024</h3>
-                        <p class="text-gray-600 text-sm mb-3">Jumlah penumpang angkutan udara domestik pada Desember 2024
-                            sebanyak 348.082 orang....</p>
-                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/02/04/687/perkembangan-transportasi-udara-dan-laut-kota-batam--desember-2024.html"
+                        <div class="text-sm text-blue-600 mb-2">4 Maret 2025</div>
+                        <h3 class="text-lg font-semibold mb-2">Perkembangan Transportasi Kota Batam, Januari 2025</h3>
+                        <p class="text-gray-600 text-sm mb-3">Jumlah penumpang angkutan udara domestik pada Januari 2025 sebanyak 328.430 orang .....</p>
+                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/03/04/676/perkembangan-transportasi--kota-batam--januari-2025.html"
                             class="text-blue-600 font-medium hover:text-blue-700 text-sm">Baca Selengkapnya →</a>
                     </div>
                 </div>
