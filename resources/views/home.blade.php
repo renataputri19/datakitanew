@@ -160,11 +160,11 @@
                     data-aos-delay="200">
                     <div class="aspect-w-16 aspect-h-9 bg-gray-100"></div>
                     <div class="p-5">
-                        <div class="text-sm text-blue-600 mb-2">4 Maret 2025</div>
-                        <h3 class="text-lg font-semibold mb-2">Perkembangan Indeks Harga Konsumen Kota Batam, Februari 2025
+                        <div class="text-sm text-blue-600 mb-2">8 April 2025</div>
+                        <h3 class="text-lg font-semibold mb-2">Perkembangan Indeks Harga Konsumen Kota Batam, Maret 2025
                         </h3>
-                        <p class="text-gray-600 text-sm mb-3">IHK Kota Batam pada Februari 2025 tercatat 108,68 atau mengalami inflasi Year on Year (y-on-y) sebesar 2,88 persen ....</p>
-                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/03/04/640/perkembangan--indeks-harga-konsumen-kota-batam--februari-2025.html"
+                        <p class="text-gray-600 text-sm mb-3">Pada Maret 2025, Kota Batam mengalami inflasi year on year (y-on-y) sebesar 2,53 persen dengan Indeks Harga Konsumen (IHK) sebesar 108,80. ....</p>
+                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/04/08/700/perkembangan-indeks-harga-konsumen-kota-batam-maret-2025.html"
                             class="text-blue-600 font-medium hover:text-blue-700 text-sm">Baca Selengkapnya →</a>
                     </div>
                 </div>
