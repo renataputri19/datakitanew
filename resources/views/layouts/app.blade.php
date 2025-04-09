@@ -145,6 +145,7 @@
     </style>
 
     @yield('additional_css')
+    <link rel="stylesheet" href="{{ asset('css/home.css') }}">
 </head>
 
 <body class="min-h-screen flex flex-col">
@@ -278,6 +279,7 @@
     </script>
 
     @yield('additional_js')
+    <script src="{{ asset('js/home.js') }}"></script>
 </body>
 
 </html>
