@@ -12,28 +12,28 @@
             <div class="hero-header">
                 <span class="hero-eyebrow">Press Release</span>
                 <h1 class="hero-title">Berita Resmi Statistik</h1>
-                <h2 class="hero-subtitle">April 2025</h2>
+                <h2 class="hero-subtitle">Mei 2025</h2>
             </div>
 
             <div class="video-tabs">
                 <div class="tab-buttons">
-                    <button class="tab-button active" data-tab="video1">Statistik Umum</button>
-                    <button class="tab-button" data-tab="video2">Statistik Inflasi</button>
+                    <button class="tab-button active" data-tab="video2">Statistik Inflasi</button>
+                    {{-- <button class="tab-button" data-tab="video1">Statistik Umum</button> --}}
                 </div>
 
-                <div class="tab-content active" id="video1">
+                <div class="tab-content active" id="video2">
+                    <div class="video-container">
+                        <iframe src="https://www.youtube.com/embed/cTjssxScosc?si=jtozLr4XNEhYtxrC"
+                            allowfullscreen></iframe>
+                    </div>
+                </div>
+                
+                {{-- <div class="tab-content" id="video1">
                     <div class="video-container">
                         <iframe src="https://www.youtube.com/embed/-ksoIrqBT5I?si=gzSHaLumFvf3pPn9"
                             allowfullscreen></iframe>
                     </div>
-                </div>
-
-                <div class="tab-content" id="video2">
-                    <div class="video-container">
-                        <iframe src="https://www.youtube.com/embed/YYJLaZYBpPw?si=5TM5-xme8_BdogzJ"
-                            allowfullscreen></iframe>
-                    </div>
-                </div>
+                </div> --}}
             </div>
         </div>
     </section>
@@ -43,7 +43,7 @@
         <div class="brs-container">
             <div class="brs-grid">
                 <!-- IHK/Inflasi -->
-                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/04/08/700/perkembangan-indeks-harga-konsumen-kota-batam-maret-2025.html"
+                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/05/02/701/pada-april-2025--kota-batam-mengalami-inflasi-year-on-year--y-on-y--sebesar-2-81-persen-dengan-indeks-harga-konsumen--ihk--sebesar-109-21-.html"
                     class="brs-card">
                     <div class="card-content">
                         <div class="card-icon">

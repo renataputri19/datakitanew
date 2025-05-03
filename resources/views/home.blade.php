@@ -141,28 +141,28 @@
             <div class="hero-header">
                 {{-- <span class="hero-eyebrow">Press Release</span> --}}
                 <h1 class="hero-title">Berita Resmi Statistik</h1>
-                <h2 class="hero-subtitle">April 2025</h2>
+                <h2 class="hero-subtitle">Mei 2025</h2>
             </div>
 
             <div class="video-tabs">
                 <div class="tab-buttons">
-                    <button class="tab-button active" data-tab="video1">Statistik Umum</button>
-                    <button class="tab-button" data-tab="video2">Statistik Inflasi</button>
+                    <button class="tab-button active" data-tab="video2">Statistik Inflasi</button>
+                    {{-- <button class="tab-button" data-tab="video1">Statistik Umum</button> --}}
                 </div>
 
-                <div class="tab-content active" id="video1">
+                <div class="tab-content active" id="video2">
+                    <div class="video-container">
+                        <iframe src="https://www.youtube.com/embed/cTjssxScosc?si=jtozLr4XNEhYtxrC"
+                            allowfullscreen></iframe>
+                    </div>
+                </div>
+                
+                {{-- <div class="tab-content" id="video1">
                     <div class="video-container">
                         <iframe src="https://www.youtube.com/embed/-ksoIrqBT5I?si=gzSHaLumFvf3pPn9"
                             allowfullscreen></iframe>
                     </div>
-                </div>
-
-                <div class="tab-content" id="video2">
-                    <div class="video-container">
-                        <iframe src="https://www.youtube.com/embed/YYJLaZYBpPw?si=5TM5-xme8_BdogzJ"
-                            allowfullscreen></iframe>
-                    </div>
-                </div>
+                </div> --}}
             </div>
         </div>
     </section>
@@ -174,7 +174,7 @@
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- BRS Card 1 -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover" data-aos="fade-up"
+                {{-- <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover" data-aos="fade-up"
                     data-aos-delay="100">
                     <div class="aspect-w-16 aspect-h-9 bg-gray-100"></div>
                     <div class="p-5">
@@ -184,24 +184,24 @@
                         <a href="https://batamkota.bps.go.id/id/pressrelease/2025/04/09/712/ekspor-februari-2025-turun-18-32-persen-dibandingkan-ekspor-januari-2025--impor-februari-2025-turun-1-79-persen-dibandingkan-impor-januari-2025-.html"
                             class="text-blue-600 font-medium hover:text-blue-700 text-sm">Baca Selengkapnya →</a>
                     </div>
-                </div>
+                </div> --}}
 
                 <!-- BRS Card 2 -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover" data-aos="fade-up"
                     data-aos-delay="200">
                     <div class="aspect-w-16 aspect-h-9 bg-gray-100"></div>
                     <div class="p-5">
-                        <div class="text-sm text-blue-600 mb-2">8 April 2025</div>
-                        <h3 class="text-lg font-semibold mb-2">Perkembangan Indeks Harga Konsumen Kota Batam, Maret 2025
+                        <div class="text-sm text-blue-600 mb-2">2 Mei 2025</div>
+                        <h3 class="text-lg font-semibold mb-2">Perkembangan Indeks Harga Konsumen Kota Batam, April 2025
                         </h3>
-                        <p class="text-gray-600 text-sm mb-3">Pada Maret 2025, Kota Batam mengalami inflasi year on year (y-on-y) sebesar 2,53 persen dengan Indeks Harga Konsumen (IHK) sebesar 108,80. ....</p>
-                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/04/08/700/perkembangan-indeks-harga-konsumen-kota-batam-maret-2025.html"
+                        <p class="text-gray-600 text-sm mb-3">IHK Kota Batam pada April 2025 tercatat 109,21 atau mengalami inflasi Year on Year (y-o-y) sebesar 2,81 persen ....</p>
+                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/05/02/701/pada-april-2025--kota-batam-mengalami-inflasi-year-on-year--y-on-y--sebesar-2-81-persen-dengan-indeks-harga-konsumen--ihk--sebesar-109-21-.html"
                             class="text-blue-600 font-medium hover:text-blue-700 text-sm">Baca Selengkapnya →</a>
                     </div>
                 </div>
 
                 <!-- BRS Card 3 -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover" data-aos="fade-up"
+                {{-- <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover" data-aos="fade-up"
                     data-aos-delay="300">
                     <div class="aspect-w-16 aspect-h-9 bg-gray-100"></div>
                     <div class="p-5">
@@ -211,7 +211,7 @@
                         <a href="https://batamkota.bps.go.id/id/pressrelease/2025/04/09/677/jumlah-penumpang-angkutan-udara-domestik-kota-batam-pada-februari-2025-turun-sebesar-16-11-persen.html"
                             class="text-blue-600 font-medium hover:text-blue-700 text-sm">Baca Selengkapnya →</a>
                     </div>
-                </div>
+                </div> --}}
             </div>
 
             <div class="text-center mt-8" data-aos="fade-up">
