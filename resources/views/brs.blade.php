@@ -18,7 +18,7 @@
             <div class="video-tabs">
                 <div class="tab-buttons">
                     <button class="tab-button active" data-tab="video2">Statistik Inflasi</button>
-                    {{-- <button class="tab-button" data-tab="video1">Statistik Umum</button> --}}
+                    <button class="tab-button" data-tab="video1">Statistik Umum</button>
                 </div>
 
                 <div class="tab-content active" id="video2">
@@ -28,82 +28,85 @@
                     </div>
                 </div>
                 
-                {{-- <div class="tab-content" id="video1">
+                <div class="tab-content" id="video1">
                     <div class="video-container">
-                        <iframe src="https://www.youtube.com/embed/-ksoIrqBT5I?si=gzSHaLumFvf3pPn9"
+                        <iframe src="https://www.youtube.com/embed/MNP-nRpTX1U?si=uXpPlAW6zgZUWJb6"
                             allowfullscreen></iframe>
                     </div>
-                </div> --}}
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- BRS Section -->
-    <section class="brs-section">
-        <div class="brs-container">
-            <div class="brs-grid">
-                <!-- IHK/Inflasi -->
-                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/05/02/701/pada-april-2025--kota-batam-mengalami-inflasi-year-on-year--y-on-y--sebesar-2-81-persen-dengan-indeks-harga-konsumen--ihk--sebesar-109-21-.html"
-                    class="brs-card">
-                    <div class="card-content">
-                        <div class="card-icon">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <h3 class="card-title">Perkembangan IHK</h3>
-                        <p class="card-text">Data terkini mengenai Perkembangan Indeks Harga Konsumen Kota Batam</p>
-                        <span class="card-link">
-                            Baca Selengkapnya
-                            <i class="fas fa-arrow-right"></i>
-                        </span>
-                    </div>
-                </a>
+    <!-- Latest BRS Section -->
+    <section class="py-16">
+        <div class="container mx-auto px-4">
+            <h2 class="text-2xl md:text-3xl font-bold text-center mb-10" data-aos="fade-up">Berita Resmi Statistik Terbaru
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-                <!-- Ekspor Impor -->
-                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/04/09/712/ekspor-februari-2025-turun-18-32-persen-dibandingkan-ekspor-januari-2025--impor-februari-2025-turun-1-79-persen-dibandingkan-impor-januari-2025-.html"
-                    class="brs-card">
-                    <div class="card-content">
-                        <div class="card-icon">
-                            <i class="fas fa-ship"></i>
-                        </div>
-                        <h3 class="card-title">Ekspor dan Impor</h3>
-                        <p class="card-text">Data terkini mengenai Perkembangan Ekspor dan Impor Kota Batam</p>
-                        <span class="card-link">
-                            Baca Selengkapnya
-                            <i class="fas fa-arrow-right"></i>
-                        </span>
-                    </div>
-                </a>
 
-                <!-- Transportasi -->
-                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/04/09/677/jumlah-penumpang-angkutan-udara-domestik-kota-batam-pada-februari-2025-turun-sebesar-16-11-persen.html"
-                    class="brs-card">
-                    <div class="card-content">
-                        <div class="card-icon">
-                            <i class="fas fa-bus"></i>
-                        </div>
-                        <h3 class="card-title">Perkembangan Transportasi</h3>
-                        <p class="card-text">Data terkini mengenai Perkembangan Transportasi Udara dan Laut Kota Batam</p>
-                        <span class="card-link">
-                            Baca Selengkapnya
-                            <i class="fas fa-arrow-right"></i>
-                        </span>
+                <!-- BRS Card 2 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover" data-aos="fade-up"
+                    data-aos-delay="200">
+                    <div class="aspect-w-16 aspect-h-9 bg-gray-100"></div>
+                    <div class="p-5">
+                        <div class="text-sm text-blue-600 mb-2">2 Mei 2025</div>
+                        <h3 class="text-lg font-semibold mb-2">Perkembangan Indeks Harga Konsumen Kota Batam, April 2025
+                        </h3>
+                        <p class="text-gray-600 text-sm mb-3">IHK Kota Batam pada April 2025 tercatat 109,21 atau mengalami
+                            inflasi Year on Year (y-o-y) sebesar 2,81 persen ....</p>
+                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/05/02/701/pada-april-2025--kota-batam-mengalami-inflasi-year-on-year--y-on-y--sebesar-2-81-persen-dengan-indeks-harga-konsumen--ihk--sebesar-109-21-.html"
+                            class="text-blue-600 font-medium hover:text-blue-700 text-sm">Baca Selengkapnya →</a>
                     </div>
-                </a>
+                </div>
 
-                <!-- Transportasi -->
-                <a href="https://batamkota.bps.go.id/id/pressrelease/2025/04/09/653/tingkat-penghuni-kamar--tpk--hotel-bintang-bulan-februari--2025-di-kota-batam--sebesar-48-36-persen.html"
-                    class="brs-card">
-                    <div class="card-content">
-                        <div class="card-icon">
-                            <i class="fas fa-bus"></i>
-                        </div>
-                        <h3 class="card-title">Perkembangan Transportasi</h3>
-                        <p class="card-text">Data terkini mengenai Perkembangan Transportasi Udara dan Laut Kota Batam</p>
-                        <span class="card-link">
-                            Baca Selengkapnya
-                            <i class="fas fa-arrow-right"></i>
-                        </span>
+                <!-- BRS Card 1 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover" data-aos="fade-up"
+                    data-aos-delay="100">
+                    <div class="aspect-w-16 aspect-h-9 bg-gray-100"></div>
+                    <div class="p-5">
+                        <div class="text-sm text-blue-600 mb-2">5 Mei 2025</div>
+                        <h3 class="text-lg font-semibold mb-2">Perkembangan Ekspor dan Impor Kota Batam, Maret 2025</h3>
+                        <p class="text-gray-600 text-sm mb-3">Ekspor Maret 2025 sebesar US$ 1.496,46 juta atau naik 3,19
+                            persen dibandingkan ekspor Februari 2025. ...</p>
+                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/05/05/713/ekspor-maret-2025--naik-3-19-persen-dibandingkan-bulan-lalu-namun-impor-maret-2025--turun-1-09-persen-.html"
+                            class="text-blue-600 font-medium hover:text-blue-700 text-sm">Baca Selengkapnya →</a>
                     </div>
+                </div>
+                <!-- BRS Card 3 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover" data-aos="fade-up"
+                    data-aos-delay="300">
+                    <div class="aspect-w-16 aspect-h-9 bg-gray-100"></div>
+                    <div class="p-5">
+                        <div class="text-sm text-blue-600 mb-2">5 Mei 2025</div>
+                        <h3 class="text-lg font-semibold mb-2">Perkembangan Transportasi Kota Batam, Maret 2025</h3>
+                        <p class="text-gray-600 text-sm mb-3">Jumlah Penumpang angkutan udara domestik pada Maret 2025 sebanyak 293.416 orang sedangkan jumlah penumpang angkutan laut domestik pada Maret 2025 sebanyak 342.982 orang
+                            .....</p>
+                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/05/05/678/maret-2025--jumlah-penumpang-angkutan-udara-domestik-naik-sebesar-6-50-persen-.html"
+                            class="text-blue-600 font-medium hover:text-blue-700 text-sm">Baca Selengkapnya →</a>
+                    </div>
+                </div>
+
+                <!-- BRS Card 3 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover" data-aos="fade-up"
+                    data-aos-delay="300">
+                    <div class="aspect-w-16 aspect-h-9 bg-gray-100"></div>
+                    <div class="p-5">
+                        <div class="text-sm text-blue-600 mb-2">5 Mei 2025</div>
+                        <h3 class="text-lg font-semibold mb-2">Perkembangan Wisman Mancanegara Kota Batam, Maret 2025</h3>
+                        <p class="text-gray-600 text-sm mb-3">Pada Maret 2025 jumlah wisman mancanegara ke KotaBatam sebanyak 100.279 kunjungan, dan TPK hotel bintang di Kota Batam sebesar 46,25 persen.
+                            .....</p>
+                        <a href="https://batamkota.bps.go.id/id/pressrelease/2025/05/05/654/pada-maret-2025-jumlah-wisman-mancanegara-ke-kotabatam-sebanyak-100-279-kunjungan--.html"
+                            class="text-blue-600 font-medium hover:text-blue-700 text-sm">Baca Selengkapnya →</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-8" data-aos="fade-up">
+                <a href="https://batamkota.bps.go.id/id/pressrelease"
+                    class="inline-block bg-blue-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-700 transition-all transform hover:scale-105">
+                    Lihat Semua Berita
                 </a>
             </div>
         </div>
