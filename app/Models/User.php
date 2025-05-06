@@ -21,6 +21,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'institution_id',
+        'is_bps',
+        'is_admin',
+        'is_superadmin',
     ];
 
     /**
@@ -41,5 +45,16 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_bps' => 'boolean',
+        'is_admin' => 'boolean',
+        'is_superadmin' => 'boolean',
     ];
+
+    /**
+     * Get the institution that the user belongs to.
+     */
+    public function institution()
+    {
+        return $this->belongsTo(Institution::class);
+    }
 }
