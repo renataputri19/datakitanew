@@ -34,8 +34,8 @@ class CreateNewUser implements CreatesNewUsers
             'institution_type' => ['required_if:user_type,instansi', 'nullable', 'string', 'in:pemerintah,swasta,bumn,bumd,lainnya'],
             'institution_name' => ['required_if:user_type,instansi,akademisi', 'nullable', 'string', 'max:255'],
             'other_institution_name' => ['required_if:institution_name,Lainnya', 'nullable', 'string', 'max:255'],
-            'institution_address' => ['nullable', 'string', 'max:255'],
-            'institution_phone' => ['nullable', 'string', 'max:20'],
+            'institution_address' => ['required_if:user_type,instansi,akademisi', 'nullable', 'string', 'max:255'],
+            'institution_phone' => ['required_if:user_type,instansi,akademisi', 'nullable', 'string', 'max:20'],
             'institution_website' => ['nullable', 'string', 'max:255', 'url'],
         ])->validate();
 
@@ -43,30 +43,49 @@ class CreateNewUser implements CreatesNewUsers
         $institutionId = null;
 
         if (!empty($input['user_type'])) {
-            // Determine institution name
-            $institutionName = $input['name']; // Default to user's name for personal
+            // Only create institution for non-personal users
+            if ($input['user_type'] !== 'personal') {
+                // Determine institution name
+                $institutionName = '';
+                $academicType = null;
 
-            if ($input['user_type'] === 'instansi') {
-                $institutionName = $input['institution_name'];
-            } else if ($input['user_type'] === 'akademisi') {
-                if ($input['institution_name'] === 'Lainnya' && !empty($input['other_institution_name'])) {
-                    $institutionName = $input['other_institution_name'];
-                } else {
+                if ($input['user_type'] === 'instansi') {
                     $institutionName = $input['institution_name'];
+                } else if ($input['user_type'] === 'akademisi') {
+                    if ($input['institution_name'] === 'Lainnya' && !empty($input['other_institution_name'])) {
+                        $institutionName = $input['other_institution_name'];
+                    } else {
+                        $institutionName = $input['institution_name'];
+                    }
+
+                    // Determine academic type based on the selected institution
+                    // This is a simple approach - you might want to create a more sophisticated mapping
+                    if (strpos($institutionName, 'Universitas') !== false) {
+                        $academicType = 'university';
+                    } elseif (strpos($institutionName, 'Politeknik') !== false) {
+                        $academicType = 'polytechnic';
+                    } elseif (strpos($institutionName, 'Sekolah Tinggi') !== false || strpos($institutionName, 'STMIK') !== false || strpos($institutionName, 'STIE') !== false || strpos($institutionName, 'STAIN') !== false) {
+                        $academicType = 'college';
+                    } elseif (strpos($institutionName, 'Akademi') !== false) {
+                        $academicType = 'academy';
+                    } else {
+                        $academicType = 'other';
+                    }
                 }
+
+                // Create a new institution
+                $institution = Institution::create([
+                    'name' => $institutionName,
+                    'type' => $input['user_type'],
+                    'institution_type' => $input['user_type'] === 'instansi' ? $input['institution_type'] : null,
+                    'academic_type' => $academicType,
+                    'address' => $input['institution_address'] ?? null,
+                    'phone' => $input['institution_phone'] ?? null,
+                    'website' => $input['institution_website'] ?? null,
+                ]);
+
+                $institutionId = $institution->id;
             }
-
-            // Create a new institution
-            $institution = Institution::create([
-                'name' => $institutionName,
-                'type' => $input['user_type'],
-                'institution_type' => $input['user_type'] === 'instansi' ? $input['institution_type'] : null,
-                'address' => $input['institution_address'] ?? null,
-                'phone' => $input['institution_phone'] ?? null,
-                'website' => $input['institution_website'] ?? null,
-            ]);
-
-            $institutionId = $institution->id;
         }
 
         return User::create([

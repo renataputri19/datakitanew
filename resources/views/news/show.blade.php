@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', $newsItem['title'] . ' - Berita & Update - DataKita')
-@section('description', $newsItem['excerpt'])
+@section('title', $newsItem->title . ' - Berita & Update - DataKita')
+@section('description', $newsItem->excerpt)
 
 @section('content')
     <div class="container mx-auto px-4 py-8 md:px-6 md:py-12">
@@ -12,21 +12,21 @@
                         <path d="m15 18-6-6 6-6"></path>
                     </svg>
                 </a>
-                <h1 class="text-3xl font-bold tracking-tight">{{ $newsItem['title'] }}</h1>
+                <h1 class="text-3xl font-bold tracking-tight">{{ $newsItem->title }}</h1>
             </div>
             <div class="flex items-center gap-4" data-aos="fade-right" data-aos-delay="100">
                 <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-500/30">
-                    {{ $newsItem['category'] }}
+                    {{ $newsItem->category }}
                 </span>
                 <span class="text-sm text-gray-500 dark:text-gray-400">
-                    {{ $newsItem['date'] }}
+                    {{ $newsItem->formatted_date }}
                 </span>
             </div>
         </div>
 
         <div class="grid gap-8 md:grid-cols-3">
             <div class="md:col-span-2 space-y-8">
-                @if($newsItem['has_video'])
+                @if($newsItem->has_video)
                 <div class="overflow-hidden rounded-xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md" data-aos="fade-up">
                     <div class="relative">
                         <div class="aspect-video bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
@@ -36,7 +36,7 @@
                             </svg>
                         </div>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <a href="{{ $newsItem['video_url'] }}" target="_blank" class="rounded-full h-16 w-16 bg-blue-600/90 hover:bg-blue-600 text-white flex items-center justify-center transform hover:scale-110 transition-all duration-300" data-video-url="{{ $newsItem['video_url'] }}">
+                            <a href="{{ $newsItem->video_url }}" target="_blank" class="rounded-full h-16 w-16 bg-blue-600/90 hover:bg-blue-600 text-white flex items-center justify-center transform hover:scale-110 transition-all duration-300" data-video-url="{{ $newsItem->video_url }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8">
                                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                                 </svg>
@@ -48,7 +48,7 @@
 
                 <div class="overflow-hidden rounded-xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md p-6" data-aos="fade-up" data-aos-delay="200">
                     <div class="prose prose-blue max-w-none dark:prose-invert">
-                        {!! $newsItem['content'] !!}
+                        {!! $newsItem->content !!}
                     </div>
                 </div>
 
@@ -89,20 +89,22 @@
                 <div class="overflow-hidden rounded-xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md p-6" data-aos="fade-left">
                     <h2 class="text-xl font-bold mb-4">Berita Terkait</h2>
                     <div class="space-y-4">
-                        @foreach($newsItem['related_news'] as $relatedNews)
+                        @forelse($newsItem->related_news as $relatedNews)
                         <div class="flex items-center justify-between">
                             <div class="space-y-1">
-                                <p class="text-sm font-medium">{{ $relatedNews['title'] }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $relatedNews['date'] }}</p>
+                                <p class="text-sm font-medium">{{ $relatedNews->title }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $relatedNews->formatted_date }}</p>
                             </div>
-                            <a href="{{ route('news.show', $relatedNews['id']) }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 w-9 p-0">
+                            <a href="{{ route('news.show', $relatedNews->id) }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 w-9 p-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
                                     <path d="M5 12h14"></path>
                                     <path d="m12 5 7 7-7 7"></path>
                                 </svg>
                             </a>
                         </div>
-                        @endforeach
+                        @empty
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Tidak ada berita terkait.</p>
+                        @endforelse
                     </div>
                 </div>
 
@@ -125,7 +127,7 @@
     </div>
 
     <!-- Video Modal -->
-    <div id="video-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div id="video-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
         <div class="relative w-full max-w-4xl p-4">
             <div class="rounded-xl bg-white dark:bg-gray-950 overflow-hidden">
                 <div class="aspect-video">
@@ -149,24 +151,29 @@
         const videoModal = document.getElementById('video-modal');
         const videoFrame = document.getElementById('video-frame');
         const closeModal = document.getElementById('close-modal');
-        
+
         if (videoModal && videoFrame && closeModal) {
             videoButtons.forEach(button => {
                 button.addEventListener('click', function(e) {
                     e.preventDefault();
                     const videoUrl = this.getAttribute('data-video-url');
-                    videoFrame.src = videoUrl.replace('watch?v=', 'embed/');
+                    // Handle YouTube URLs
+                    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+                        videoFrame.src = videoUrl.replace('watch?v=', 'embed/');
+                    } else {
+                        videoFrame.src = videoUrl;
+                    }
                     videoModal.classList.remove('hidden');
                     document.body.classList.add('overflow-hidden');
                 });
             });
-            
+
             closeModal.addEventListener('click', function() {
                 videoModal.classList.add('hidden');
                 videoFrame.src = '';
                 document.body.classList.remove('overflow-hidden');
             });
-            
+
             // Close modal when clicking outside
             videoModal.addEventListener('click', function(e) {
                 if (e.target === videoModal) {

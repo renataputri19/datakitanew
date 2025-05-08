@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-class Institution extends Model
+class Video extends Model
 {
     use HasFactory, HasUuids;
 
@@ -16,21 +16,18 @@ class Institution extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'type',
-        'institution_type',
-        'academic_type',
-        'address',
-        'phone',
-        'website',
-        'description',
+        'title',
+        'date',
+        'thumbnail',
+        'url',
     ];
 
     /**
-     * Get the users associated with the institution.
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
      */
-    public function users()
-    {
-        return $this->hasMany(User::class);
-    }
+    protected $casts = [
+        'date' => 'date',
+    ];
 }

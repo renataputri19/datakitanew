@@ -1,15 +1,15 @@
 // Theme toggle functionality
 document.addEventListener("DOMContentLoaded", () => {
-    // Check for saved theme preference or respect OS preference
-    if (
-      localStorage.theme === "dark" ||
-      (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)
-    ) {
+    // Only use dark mode if explicitly set in localStorage
+    // Default to light mode
+    if (localStorage.theme === "dark") {
       document.documentElement.classList.add("dark")
     } else {
       document.documentElement.classList.remove("dark")
+      // Set light mode as default
+      localStorage.theme = "light"
     }
-  
+
     // Initialize AOS animation library
     AOS.init({
       duration: 800,
@@ -17,15 +17,15 @@ document.addEventListener("DOMContentLoaded", () => {
       once: true,
       mirror: false,
     })
-  
+
     // Add smooth scrolling to all links
     document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
       anchor.addEventListener("click", function (e) {
         e.preventDefault()
-  
+
         const targetId = this.getAttribute("href")
         if (targetId === "#") return
-  
+
         const targetElement = document.querySelector(targetId)
         if (targetElement) {
           targetElement.scrollIntoView({
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       })
     })
-  
+
     // Add parallax effect to hero section
     const heroSection = document.querySelector(".hero-pattern")
     if (heroSection) {
@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       })
     }
-  
+
     // Add counter animation to numbers
     const counters = document.querySelectorAll(".counter")
     if (counters.length > 0) {
@@ -62,13 +62,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         window.requestAnimationFrame(step)
       }
-  
+
       const observerOptions = {
         root: null,
         rootMargin: "0px",
         threshold: 0.1,
       }
-  
+
       const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -79,30 +79,30 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         })
       }, observerOptions)
-  
+
       counters.forEach((counter) => {
         observer.observe(counter)
       })
     }
-  
+
     // Add hover effects to cards
     const cards = document.querySelectorAll(".card-hover-effect")
     cards.forEach((card) => {
       card.addEventListener("mouseenter", function () {
         this.classList.add("transform", "scale-105", "shadow-lg")
       })
-  
+
       card.addEventListener("mouseleave", function () {
         this.classList.remove("transform", "scale-105", "shadow-lg")
       })
     })
-  
+
     // Add typing effect to hero title
     const heroTitle = document.querySelector(".hero-title")
     if (heroTitle) {
       const text = heroTitle.textContent
       heroTitle.textContent = ""
-  
+
       let i = 0
       const typeWriter = () => {
         if (i < text.length) {
@@ -111,8 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
           setTimeout(typeWriter, 100)
         }
       }
-  
+
       typeWriter()
     }
   })
-  

@@ -46,11 +46,11 @@
                             Beranda
                         </a>
                     </li>
-                    <li>
+                    {{-- <li>
                         <a href="{{ route('data') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
                             Data Statistik
                         </a>
-                    </li>
+                    </li> --}}
                     <li>
                         <a href="{{ route('news') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
                             Berita & Update
@@ -67,32 +67,38 @@
                 <h3 class="text-lg font-medium">Kategori Data</h3>
                 <ul class="space-y-2 text-sm">
                     <li>
-                        <a href="{{ route('data.category', 'ekonomi') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
+                        {{-- <a href="{{ route('data.category', 'ekonomi') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200"> --}}
+                        <a href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
                             Ekonomi
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('data.category', 'sosial') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
+                        {{-- <a href="{{ route('data.category', 'sosial') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200"> --}}
+                        <a href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
                             Sosial
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('data.category', 'demografi') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
+                        {{-- <a href="{{ route('data.category', 'demografi') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200"> --}}
+                        <a href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
                             Demografi
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('data.category', 'lingkungan') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
+                        {{-- <a href="{{ route('data.category', 'lingkungan') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200"> --}}
+                        <a href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
                             Lingkungan
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('data.category', 'publikasi') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
+                        {{-- <a href="{{ route('data.category', 'publikasi') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200"> --}}
+                        <a href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
                             Publikasi
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('data.category', 'tabel-dinamis') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
+                        {{-- <a href="{{ route('data.category', 'tabel-dinamis') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200"> --}}
+                        <a href="{{ route('home') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
                             Tabel Dinamis
                         </a>
                     </li>

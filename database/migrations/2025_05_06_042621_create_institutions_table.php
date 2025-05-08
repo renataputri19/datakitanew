@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('type'); // personal, instansi, akademisi
             $table->string('institution_type')->nullable(); // pemerintah, swasta, bumn, bumd, lainnya
+            $table->string('academic_type')->nullable(); // For akademisi: university, college, research, etc.
             $table->string('address')->nullable();
             $table->string('phone')->nullable();
             $table->string('website')->nullable();

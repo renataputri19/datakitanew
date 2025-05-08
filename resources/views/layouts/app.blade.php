@@ -11,10 +11,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="{{ asset('build/assets/app-DC3gS-DV.css') }}">
+    <link rel="stylesheet" href="{{ asset('build/assets/app-e1DX5Dd0.css') }}">
 
     <!-- Scripts -->
-    <script src="{{ asset('build/assets/app-CqflisoM.js') }}" defer></script>
+    <script src="{{ asset('build/assets/app-BFRkVXMS.js') }}" defer></script>
 
     <!-- AOS Animation Library -->
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
@@ -60,11 +60,14 @@
                 });
             }
 
-            // Check for saved theme preference or respect OS preference
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            // Only use dark mode if explicitly set in localStorage
+            // Default to light mode
+            if (localStorage.theme === 'dark') {
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
+                // Set light mode as default
+                localStorage.theme = 'light';
             }
         });
     </script>

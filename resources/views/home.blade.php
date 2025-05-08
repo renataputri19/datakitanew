@@ -26,7 +26,7 @@
                         Platform terpadu untuk akses data statistik, berita, dan sistem terintegrasi BPS Kota Batam
                     </p>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-3 w-full justify-center" data-aos="fade-up" data-aos-delay="200">
+                <div class="flex flex-row gap-4 w-full justify-center" data-aos="fade-up" data-aos-delay="200">
                     <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:focus-visible:ring-blue-600 h-11 px-6 py-2 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
                         <span>Mulai Sekarang</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 h-4 w-4">
@@ -57,13 +57,13 @@
                         Fitur Utama
                         <span class="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-blue-600 dark:bg-blue-500 rounded-full"></span>
                     </h2>
-                    <p class="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 text-base md:text-xl px-2">
+                    <p class="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 text-base md:text-xl px-2 py-2">
                         Akses data statistik, berita terbaru, dan sistem terintegrasi dalam satu platform
                     </p>
                 </div>
             </div>
-            <div class="mx-auto grid max-w-5xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 py-4 md:py-8">
-                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="100">
+            <div class="mx-auto grid max-w-5xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8 py-4 md:py-8">
+                {{-- <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="100">
                     <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
                     <div class="p-5 md:p-6">
                         <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">
@@ -86,7 +86,7 @@
                             </svg>
                         </a>
                     </div>
-                </div>
+                </div> --}}
 
                 <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="200">
                     <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
@@ -148,7 +148,7 @@
                         Berita & Update Terbaru
                         <span class="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-blue-600 dark:bg-blue-500 rounded-full"></span>
                     </h2>
-                    <p class="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 text-base md:text-xl px-2">
+                    <p class="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 text-base md:text-xl px-2 py-2">
                         Rilis Berita Resmi Statistik dan video terbaru dari BPS Kota Batam
                     </p>
                 </div>
@@ -157,19 +157,33 @@
             <div class="grid gap-8 md:grid-cols-2">
                 <!-- Latest Videos -->
                 <div class="space-y-5 md:space-y-6" data-aos="fade-right">
-                    <h3 class="text-xl md:text-2xl font-bold">Video Terbaru</h3>
+                    <h3 class="text-xl md:text-2xl font-bold mb-4">Video Terbaru</h3>
                     <div class="grid gap-4">
-                        @foreach($featuredVideos as $video)
+                        @forelse($featuredVideos as $video)
                         <div class="overflow-hidden rounded-xl bg-white dark:bg-gray-950 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                             <div class="relative">
-                                <div class="aspect-video bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-10 w-10 md:h-12 md:w-12 text-gray-400 dark:text-gray-600">
-                                        <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
-                                        <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
-                                    </svg>
+                                <div class="aspect-video bg-gray-200 dark:bg-gray-800 overflow-hidden">
+                                    @php
+                                        $videoId = App\Helpers\YoutubeHelper::extractYoutubeId($video->url);
+                                    @endphp
+
+                                    @if($video->thumbnail)
+                                        <img src="{{ Storage::url($video->thumbnail) }}" alt="{{ $video->title }}" class="w-full h-full object-cover">
+                                    @elseif($videoId)
+                                        <img src="https://img.youtube.com/vi/{{ $videoId }}/maxresdefault.jpg"
+                                             onerror="this.onerror=null; this.src='https://img.youtube.com/vi/{{ $videoId }}/hqdefault.jpg';"
+                                             alt="{{ $video->title }}"
+                                             class="w-full h-full object-cover">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                    @endif
                                 </div>
                                 <div class="absolute inset-0 flex items-center justify-center">
-                                    <a href="{{ $video['url'] }}" target="_blank" class="rounded-full h-10 w-10 md:h-12 md:w-12 bg-blue-600/90 hover:bg-blue-600 text-white flex items-center justify-center transform hover:scale-110 transition-all duration-300">
+                                    <a href="{{ $video->url }}" target="_blank" class="rounded-full h-10 w-10 md:h-12 md:w-12 bg-blue-600/90 hover:bg-blue-600 text-white flex items-center justify-center transform hover:scale-110 transition-all duration-300">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 md:h-6 md:w-6">
                                             <polygon points="5 3 19 12 5 21 5 3"></polygon>
                                         </svg>
@@ -177,15 +191,20 @@
                                 </div>
                             </div>
                             <div class="p-3 md:p-4">
-                                <h4 class="font-semibold text-sm md:text-base line-clamp-2">{{ $video['title'] }}</h4>
-                                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">{{ $video['date'] }}</p>
+                                <h4 class="font-semibold text-sm md:text-base line-clamp-2">{{ $video->title }}</h4>
+                                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">{{ $video->formatted_date }}</p>
                             </div>
                         </div>
-                        @endforeach
+                        @empty
+                        <div class="col-span-1 py-6 text-center">
+                            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Belum ada video</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Video terbaru akan segera ditambahkan.</p>
+                        </div>
+                        @endforelse
                     </div>
 
                     <div class="flex justify-center">
-                        <a href="{{ route('news') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-10 px-4 py-2 group">
+                        <a href="{{ $bpsYoutubeUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-10 px-4 py-2 group mt-6">
                             <span>Lihat Semua Video</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300">
                                 <path d="M5 12h14"></path>
@@ -197,17 +216,17 @@
 
                 <!-- Latest News -->
                 <div class="space-y-5 md:space-y-6" data-aos="fade-left">
-                    <h3 class="text-xl md:text-2xl font-bold">Berita Resmi Statistik</h3>
+                    <h3 class="text-xl md:text-2xl font-bold mb-4">Berita Resmi Statistik</h3>
                     <div class="space-y-4">
-                        @foreach($featuredNews as $news)
+                        @forelse($featuredNews as $news)
                         <div class="overflow-hidden rounded-xl bg-white dark:bg-gray-950 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                             <div class="p-4 md:p-6">
-                                <h4 class="text-base md:text-lg font-semibold mb-1 line-clamp-2">{{ $news['title'] }}</h4>
-                                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2 md:mb-3">{{ $news['date'] }}</p>
+                                <h4 class="text-base md:text-lg font-semibold mb-1 line-clamp-2">{{ $news->title }}</h4>
+                                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2 md:mb-3">{{ $news->formatted_date }}</p>
                                 <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4 line-clamp-3">
-                                    {{ $news['excerpt'] }}
+                                    {{ $news->excerpt }}
                                 </p>
-                                <a href="{{ route('news.show', $news['id']) }}" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group text-sm">
+                                <a href="{{ $news->source_url }}" target="_blank" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group text-sm">
                                     <span class="group-hover:mr-2 transition-all duration-300">Baca Selengkapnya</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300">
                                         <path d="M5 12h14"></path>
@@ -216,11 +235,16 @@
                                 </a>
                             </div>
                         </div>
-                        @endforeach
+                        @empty
+                        <div class="py-6 text-center">
+                            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Belum ada berita resmi statistik</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Berita resmi statistik terbaru akan segera ditambahkan.</p>
+                        </div>
+                        @endforelse
                     </div>
 
                     <div class="flex justify-center">
-                        <a href="{{ route('news') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-10 px-4 py-2 group">
+                        <a href="{{ $bpsNewsUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-10 px-4 py-2 group mt-6">
                             <span>Lihat Semua Berita</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300">
                                 <path d="M5 12h14"></path>
@@ -234,7 +258,7 @@
     </section>
 
     <!-- Data Categories Section -->
-    <section class="py-12 md:py-16 lg:py-20 bg-white dark:bg-gray-900 transition-colors duration-300">
+    {{-- <section class="py-12 md:py-16 lg:py-20 bg-white dark:bg-gray-900 transition-colors duration-300">
         <div class="container mx-auto px-4 md:px-6">
             <div class="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-10">
                 <div class="space-y-3" data-aos="fade-up">
@@ -242,7 +266,7 @@
                         Kategori Data
                         <span class="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-blue-600 dark:bg-blue-500 rounded-full"></span>
                     </h2>
-                    <p class="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 text-base md:text-xl px-2">
+                    <p class="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 text-base md:text-xl px-2 py-2">
                         Data statistik terkategorisasi untuk memudahkan pencarian
                     </p>
                 </div>
@@ -370,7 +394,7 @@
                 </a>
             </div>
         </div>
-    </section>
+    </section> --}}
 @endsection
 
 @push('styles')

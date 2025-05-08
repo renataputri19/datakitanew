@@ -145,21 +145,21 @@
                     </div>
 
                     <div class="mb-4">
-                        <label for="institution_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alamat Instansi</label>
+                        <label for="institution_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alamat Instansi/Institusi</label>
                         <input type="text" id="institution_address" name="institution_address" value="{{ old('institution_address') }}"
                             class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 dark:focus-visible:ring-blue-600 dark:bg-gray-900 dark:text-white"
-                            placeholder="Alamat instansi">
+                            placeholder="Alamat instansi/institusi">
                     </div>
 
                     <div class="mb-4">
-                        <label for="institution_phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telepon Instansi</label>
+                        <label for="institution_phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Telepon Instansi/Institusi</label>
                         <input type="text" id="institution_phone" name="institution_phone" value="{{ old('institution_phone') }}"
                             class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 dark:focus-visible:ring-blue-600 dark:bg-gray-900 dark:text-white"
-                            placeholder="Nomor telepon instansi">
+                            placeholder="Nomor telepon instansi/institusi">
                     </div>
 
                     <div class="mb-4">
-                        <label for="institution_website" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Website Instansi</label>
+                        <label for="institution_website" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Website Instansi/Institusi</label>
                         <input type="url" id="institution_website" name="institution_website" value="{{ old('institution_website') }}"
                             class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 dark:focus-visible:ring-blue-600 dark:bg-gray-900 dark:text-white"
                             placeholder="https://example.com">
