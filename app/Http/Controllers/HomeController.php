@@ -47,6 +47,16 @@ class HomeController extends Controller
         // Format dates for videos
         $featuredVideos = $this->formatDates($featuredVideos);
 
+        // Get latest video month and year for dynamic title
+        $latestVideo = Video::latest('date')->first();
+        $latestMonth = null;
+        $latestYear = null;
+
+        if ($latestVideo) {
+            $latestMonth = $latestVideo->date->translatedFormat('F');
+            $latestYear = $latestVideo->date->format('Y');
+        }
+
         // Add official URLs for "View More" links
         $bpsNewsUrl = self::BPS_NEWS_URL;
         $bpsYoutubeUrl = self::BPS_YOUTUBE_URL;
@@ -55,7 +65,9 @@ class HomeController extends Controller
             'featuredNews',
             'featuredVideos',
             'bpsNewsUrl',
-            'bpsYoutubeUrl'
+            'bpsYoutubeUrl',
+            'latestMonth',
+            'latestYear'
         );
     }
 
@@ -68,7 +80,7 @@ class HomeController extends Controller
     private function formatDates($items)
     {
         return $items->transform(function ($item) {
-            $item->formatted_date = $item->date->format('j F Y');
+            $item->formatted_date = $item->date->translatedFormat('j F Y');
             return $item;
         });
     }

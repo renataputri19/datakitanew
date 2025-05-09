@@ -149,7 +149,12 @@
                         <span class="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-blue-600 dark:bg-blue-500 rounded-full"></span>
                     </h2>
                     <p class="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 text-base md:text-xl px-2 py-2">
-                        Rilis Berita Resmi Statistik dan video terbaru dari BPS Kota Batam
+                        @if($latestMonth && $latestYear)
+                            Rilis Berita Resmi Statistik dan video terbaru
+                            dari BPS Kota Batam
+                        @else
+                            Rilis Berita Resmi Statistik dan video terbaru dari BPS Kota Batam
+                        @endif
                     </p>
                 </div>
             </div>
@@ -157,7 +162,14 @@
             <div class="grid gap-8 md:grid-cols-2">
                 <!-- Latest Videos -->
                 <div class="space-y-5 md:space-y-6" data-aos="fade-right">
-                    <h3 class="text-xl md:text-2xl font-bold mb-4">Video Terbaru</h3>
+                    <h3 class="text-xl md:text-2xl font-bold mb-4">
+                        Video Terbaru
+                        @if($latestMonth && $latestYear)
+                            <span class="inline-block ml-1 font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded text-sm md:text-base animate-pulse-subtle">
+                                {{ $latestMonth }} {{ $latestYear }}
+                            </span>
+                        @endif
+                    </h3>
                     <div class="grid gap-4">
                         @forelse($featuredVideos as $video)
                         <div class="overflow-hidden rounded-xl bg-white dark:bg-gray-950 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
@@ -216,7 +228,14 @@
 
                 <!-- Latest News -->
                 <div class="space-y-5 md:space-y-6" data-aos="fade-left">
-                    <h3 class="text-xl md:text-2xl font-bold mb-4">Berita Resmi Statistik</h3>
+                    <h3 class="text-xl md:text-2xl font-bold mb-4">
+                        Berita Resmi Statistik
+                        @if($latestMonth && $latestYear)
+                            <span class="inline-block ml-1 font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded text-sm md:text-base animate-pulse-subtle">
+                                {{ $latestMonth }} {{ $latestYear }}
+                            </span>
+                        @endif
+                    </h3>
                     <div class="space-y-4">
                         @forelse($featuredNews as $news)
                         <div class="overflow-hidden rounded-xl bg-white dark:bg-gray-950 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
@@ -423,6 +442,20 @@
         100% {
             transform: translate(0px, 0px) scale(1);
         }
+    }
+
+    /* Subtle pulse animation for highlighting */
+    @keyframes pulse-subtle {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.8;
+        }
+    }
+
+    .animate-pulse-subtle {
+        animation: pulse-subtle 2s ease-in-out infinite;
     }
 
     .animate-blob {

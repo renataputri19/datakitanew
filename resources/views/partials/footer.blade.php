@@ -108,7 +108,7 @@
                 <h3 class="text-lg font-medium">Kontak</h3>
                 <address class="not-italic text-sm text-gray-500 dark:text-gray-400">
                     <p>BPS Kota Batam</p>
-                    <p>Jl. Engku Putri No. 1, Batam Centre</p>
+                    <p>Jl. Abulyatama Batam Center</p>
                     <p>Kota Batam, Kepulauan Riau</p>
                     <p>Indonesia</p>
                 </address>
@@ -117,6 +117,9 @@
                     <a href="mailto:bps2171@bps.go.id" class="hover:text-blue-600 dark:hover:text-blue-500 transition-colors duration-200">
                         bps2171@bps.go.id
                     </a>
+                </p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    Telp. (0778) 5508877
                 </p>
             </div>
         </div>

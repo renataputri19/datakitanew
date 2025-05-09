@@ -68,7 +68,7 @@ class NewsController extends Controller
     private function formatDates($items)
     {
         return $items->transform(function ($item) {
-            $item->formatted_date = $item->date->format('j F Y');
+            $item->formatted_date = $item->date->translatedFormat('j F Y');
             return $item;
         });
     }
@@ -144,7 +144,7 @@ class NewsController extends Controller
         }
 
         // Format date for display
-        $newsItem->formatted_date = $newsItem->date->format('j F Y');
+        $newsItem->formatted_date = $newsItem->date->translatedFormat('j F Y');
 
         // Get related news
         $relatedNews = $newsItem->getRelatedNews();

@@ -17,7 +17,7 @@ class SystemController extends Controller
                 'description' => 'Monitoring dan Evaluasi Statistik Sektoral',
                 'detail' => 'Sistem untuk monitoring dan evaluasi statistik sektoral, memungkinkan dinas dan instansi untuk mengunggah dokumen, mengevaluasi indikator berdasarkan standar EPSS, dan memantau kemajuan secara real-time.',
                 'icon' => 'bar-chart-3',
-                'url' => 'https://monalisa.bpsbatam.com',
+                'url' => route('monalisa.home'),
                 'category' => 'monitoring'
             ],
             [
@@ -86,7 +86,7 @@ class SystemController extends Controller
                 'full_name' => 'Monitoring dan Evaluasi Statistik Sektoral',
                 'description' => 'Sistem untuk monitoring dan evaluasi statistik sektoral, memungkinkan dinas dan instansi untuk mengunggah dokumen, mengevaluasi indikator berdasarkan standar EPSS, dan memantau kemajuan secara real-time.',
                 'icon' => 'bar-chart-3',
-                'url' => 'https://monalisa.bpsbatam.com',
+                'url' => route('monalisa.home'),
                 'category' => 'monitoring',
                 'features' => [
                     [
