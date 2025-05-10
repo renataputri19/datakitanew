@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
             AcademicInstitutionSeeder::class,
             InstitutionSeeder::class,
             UserSeeder::class,
-            MonalisaSeeder::class,
+            SystemSeeder::class,
         ]);
     }
 }

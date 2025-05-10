@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Institution extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuid;
 
     /**
      * The attributes that are mass assignable.

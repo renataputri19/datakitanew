@@ -167,7 +167,7 @@ return [
         App\Providers\AuthServiceProvider::class,
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
-        App\Providers\Filament\MonalisaPanelProvider::class,
+        // App\Providers\Filament\MonalisaPanelProvider::class, // Removed Filament reference
         App\Providers\RouteServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
     ])->toArray(),

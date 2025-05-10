@@ -62,7 +62,7 @@
                     </p>
                 </div>
             </div>
-            <div class="mx-auto grid max-w-5xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8 py-4 md:py-8">
+            <div class="mx-auto grid max-w-5xl grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 py-4 md:py-8">
                 {{-- <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="100">
                     <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
                     <div class="p-5 md:p-6">
@@ -111,7 +111,7 @@
                     </div>
                 </div>
 
-                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group sm:col-span-2 lg:col-span-1" data-aos="fade-up" data-aos-delay="300">
+                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="300">
                     <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
                     <div class="p-5 md:p-6">
                         <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">

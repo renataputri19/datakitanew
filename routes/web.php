@@ -36,7 +36,7 @@ Route::get('/news', [NewsController::class, 'index'])->name('news');
 
 // Integrated Systems
 Route::get('/systems', [SystemController::class, 'index'])->name('systems');
-Route::get('/systems/{system}', [SystemController::class, 'show'])->name('systems.show');
+// Route::get('/systems/{system}', [SystemController::class, 'show'])->name('systems.show');
 
 // Authentication Routes are handled by Fortify
 
@@ -64,14 +64,7 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-// Monalisa System Routes
-Route::get('/monalisa', [App\Http\Controllers\MonalisaController::class, 'index'])->name('monalisa.home');
-Route::get('/monalisa/dashboard', [App\Http\Controllers\MonalisaController::class, 'dashboard'])->name('monalisa.dashboard');
 
-// Monalisa Filament Panel Route (handled by Filament)
-Route::get('/systems/monalisa', function() {
-    return redirect('/systems/monalisa/login');
-})->name('systems.monalisa');
 
 // Fallback Route
 Route::fallback(function () {
