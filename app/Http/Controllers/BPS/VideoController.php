@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\BPS;
 
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Video;
 use Illuminate\Http\Request;
@@ -62,6 +63,9 @@ class VideoController extends Controller
 
         // Handle thumbnail upload
         if ($request->hasFile('thumbnail')) {
+            // Ensure the videos directory exists
+            StorageHelper::ensureDirectoryExists('videos');
+
             $thumbnailPath = $request->file('thumbnail')->store('videos', 'public');
             $validated['thumbnail'] = $thumbnailPath;
         }
@@ -99,6 +103,9 @@ class VideoController extends Controller
             if ($video->thumbnail && Storage::disk('public')->exists($video->thumbnail)) {
                 Storage::disk('public')->delete($video->thumbnail);
             }
+
+            // Ensure the videos directory exists
+            StorageHelper::ensureDirectoryExists('videos');
 
             $thumbnailPath = $request->file('thumbnail')->store('videos', 'public');
             $validated['thumbnail'] = $thumbnailPath;

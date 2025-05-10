@@ -201,7 +201,7 @@
                             @endphp
 
                             @if($video->thumbnail)
-                                <img src="{{ Storage::url($video->thumbnail) }}" alt="{{ $video->title }}" class="w-full h-full object-cover">
+                                <img src="{{ $video->thumbnail_url }}" alt="{{ $video->title }}" class="w-full h-full object-cover">
                             @elseif($videoId)
                                 <img src="https://img.youtube.com/vi/{{ $videoId }}/maxresdefault.jpg"
                                      onerror="this.onerror=null; this.src='https://img.youtube.com/vi/{{ $videoId }}/hqdefault.jpg';"

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\BPS;
 
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
 use App\Models\News;
 use Illuminate\Http\Request;
@@ -73,6 +74,9 @@ class NewsController extends Controller
 
         // Handle thumbnail upload
         if ($request->hasFile('thumbnail')) {
+            // Ensure the news directory exists
+            StorageHelper::ensureDirectoryExists('news');
+
             $thumbnailPath = $request->file('thumbnail')->store('news', 'public');
             $validated['thumbnail'] = $thumbnailPath;
         }
@@ -117,6 +121,9 @@ class NewsController extends Controller
             if ($news->thumbnail && Storage::disk('public')->exists($news->thumbnail)) {
                 Storage::disk('public')->delete($news->thumbnail);
             }
+
+            // Ensure the news directory exists
+            StorageHelper::ensureDirectoryExists('news');
 
             $thumbnailPath = $request->file('thumbnail')->store('news', 'public');
             $validated['thumbnail'] = $thumbnailPath;

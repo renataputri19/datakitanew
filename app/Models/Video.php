@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Helpers\StorageHelper;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,4 +31,24 @@ class Video extends Model
     protected $casts = [
         'date' => 'date',
     ];
+
+    /**
+     * Get the thumbnail URL.
+     *
+     * @return string|null
+     */
+    public function getThumbnailUrlAttribute()
+    {
+        return StorageHelper::url($this->thumbnail);
+    }
+
+    /**
+     * Get the formatted date.
+     *
+     * @return string
+     */
+    public function getFormattedDateAttribute()
+    {
+        return $this->date->format('d M Y');
+    }
 }
