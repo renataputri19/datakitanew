@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="{{ asset('build/assets/app-BEt2Mqdt.css') }}">
+    <link rel="stylesheet" href="{{ asset('build/assets/app-xg3de5Kj.css') }}">
 
     <!-- Scripts -->
     <script src="{{ asset('build/assets/app-BFRkVXMS.js') }}" defer></script>
