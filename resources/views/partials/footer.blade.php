@@ -61,6 +61,11 @@
                             Sistem Terintegrasi
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('faq') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
+                            FAQ
+                        </a>
+                    </li>
                 </ul>
             </div>
             <div class="space-y-4" data-aos="fade-up" data-aos-delay="300">
