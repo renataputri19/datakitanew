@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             InstitutionSeeder::class,
             UserSeeder::class,
             SystemSeeder::class,
+            QueueLoketSeeder::class,
         ]);
     }
 }

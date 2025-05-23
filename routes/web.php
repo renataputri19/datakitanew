@@ -7,6 +7,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\SystemController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AntrianController;
 use App\Http\Controllers\BPS\NewsController as BPSNewsController;
 use App\Http\Controllers\BPS\VideoController as BPSVideoController;
 use App\Http\Controllers\BPS\DashboardController as BPSDashboardController;
@@ -38,6 +39,28 @@ Route::get('/news', [NewsController::class, 'index'])->name('news');
 // Integrated Systems
 Route::get('/systems', [SystemController::class, 'index'])->name('systems');
 // Route::get('/systems/{system}', [SystemController::class, 'show'])->name('systems.show');
+
+// Antrian Routes
+Route::prefix('antriantamu')->name('antrian.')->group(function () {
+    Route::get('/', [AntrianController::class, 'index'])->name('index');
+    Route::get('/nomor', [AntrianController::class, 'nomor'])->name('nomor');
+    Route::get('/panggilan', [AntrianController::class, 'panggilan'])->name('panggilan');
+    Route::get('/monitor', [AntrianController::class, 'monitor'])->name('monitor');
+
+    // Setting route protected by auth and is_bps middleware
+    Route::middleware(['auth', 'is_bps'])->get('/setting', [AntrianController::class, 'setting'])->name('setting');
+
+    // API Routes
+    Route::prefix('api')->name('api.')->group(function () {
+        Route::get('/loket', [AntrianController::class, 'getLoket'])->name('loket');
+        Route::post('/generate', [AntrianController::class, 'generateAntrian'])->name('generate');
+        Route::post('/next', [AntrianController::class, 'getNextAntrian'])->name('next');
+        Route::get('/status', [AntrianController::class, 'getAntrianStatus'])->name('status');
+        Route::post('/setting', [AntrianController::class, 'saveSetting'])->name('setting');
+        Route::post('/add-loket', [AntrianController::class, 'addLoket'])->name('add-loket');
+        Route::post('/delete-loket', [AntrianController::class, 'deleteLoket'])->name('delete-loket');
+    });
+});
 
 // Authentication Routes are handled by Fortify
 

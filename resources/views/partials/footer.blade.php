@@ -62,6 +62,11 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('antrian.index') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
+                            Antrian Tamu
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('faq') }}" class="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-500 transition-colors duration-200">
                             FAQ
                         </a>
