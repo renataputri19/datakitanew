@@ -5,7 +5,7 @@
 
 @section('content')
     <!-- Hero Section -->
-    <section class="hero-pattern py-16 md:py-20 lg:py-28 relative overflow-hidden">
+    <section class="hero-pattern py-8 md:py-12 lg:py-14 relative overflow-hidden">
         <!-- Animated Background Elements -->
         <div class="absolute inset-0 overflow-hidden">
             <div class="absolute -top-10 -left-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl animate-blob"></div>
@@ -26,7 +26,7 @@
                         Platform terpadu untuk akses data statistik, berita, dan sistem terintegrasi BPS Kota Batam
                     </p>
                 </div>
-                <div class="flex flex-row gap-4 w-full justify-center" data-aos="fade-up" data-aos-delay="200">
+                {{-- <div class="flex flex-row gap-4 w-full justify-center" data-aos="fade-up" data-aos-delay="200">
                     <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:focus-visible:ring-blue-600 h-11 px-6 py-2 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
                         <span>Mulai Sekarang</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 h-4 w-4">
@@ -36,7 +36,7 @@
                     <a href="{{ route('home') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-11 px-6 py-2 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
                         Pelajari Lebih Lanjut
                     </a>
-                </div>
+                </div> --}}
             </div>
         </div>
 
@@ -48,131 +48,8 @@
         </div>
     </section>
 
-    <!-- Features Section - Highlighted -->
-    <section class="py-12 md:py-16 lg:py-20 bg-white dark:bg-gray-900 transition-colors duration-300">
-        <div class="container mx-auto px-4 md:px-6">
-            <div class="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-10">
-                <div class="space-y-3" data-aos="fade-up">
-                    <h2 class="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl lg:text-5xl relative inline-block">
-                        Fitur Utama
-                        <span class="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-blue-600 dark:bg-blue-500 rounded-full"></span>
-                    </h2>
-                    <p class="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 text-base md:text-xl px-2 py-2">
-                        Akses data statistik, berita terbaru, dan sistem terintegrasi dalam satu platform
-                    </p>
-                </div>
-            </div>
-            <div class="mx-auto grid max-w-5xl grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 py-4 md:py-8">
-                {{-- <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="100">
-                    <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
-                    <div class="p-5 md:p-6">
-                        <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-500 group-hover:text-white transition-colors duration-300">
-                                <path d="M3 3v18h18"></path>
-                                <path d="M18 17V9"></path>
-                                <path d="M13 17V5"></path>
-                                <path d="M8 17v-3"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg md:text-xl font-bold mb-2">Data Statistik</h3>
-                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
-                            Data ekonomi, sosial, demografi, lingkungan, publikasi, dan tabel dinamis dari BPS Kota Batam
-                        </p>
-                        <a href="{{ route('data') }}" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group-hover:font-medium transition-all duration-300">
-                            <span class="group-hover:mr-2 transition-all duration-300">Lihat Data</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                <path d="M5 12h14"></path>
-                                <path d="m12 5 7 7-7 7"></path>
-                            </svg>
-                        </a>
-                    </div>
-                </div> --}}
-
-                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="100">
-                    <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
-                    <div class="p-5 md:p-6">
-                        <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-500 group-hover:text-white transition-colors duration-300">
-                                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
-                                <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg md:text-xl font-bold mb-2">Berita & Update</h3>
-                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
-                            Rilis Berita Resmi Statistik bulanan dan update terbaru dari kanal YouTube BPS
-                        </p>
-                        <a href="{{ route('news') }}" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group-hover:font-medium transition-all duration-300">
-                            <span class="group-hover:mr-2 transition-all duration-300">Lihat Berita</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                <path d="M5 12h14"></path>
-                                <path d="m12 5 7 7-7 7"></path>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="200">
-                    <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
-                    <div class="p-5 md:p-6">
-                        <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-500 group-hover:text-white transition-colors duration-300">
-                                <path d="M3 3v18h18"></path>
-                                <path d="m3 8 4-4 5 5 5-5 4 4"></path>
-                                <path d="m3 14 4-4 5 5 5-5 4 4"></path>
-                                <path d="m3 20 4-4 5 5 5-5 4 4"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg md:text-xl font-bold mb-2">Sistem Terintegrasi</h3>
-                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
-                            Monitoring dan Evaluasi Statistik Sektoral dan sistem terintegrasi lainnya
-                        </p>
-                        <a href="{{ route('systems') }}" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group-hover:font-medium transition-all duration-300">
-                            <span class="group-hover:mr-2 transition-all duration-300">Akses Sistem</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                <path d="M5 12h14"></path>
-                                <path d="m12 5 7 7-7 7"></path>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="300">
-                    <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
-                    <div class="p-5 md:p-6">
-                        <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-500 group-hover:text-white transition-colors duration-300">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                                <path d="M8 14h.01"></path>
-                                <path d="M12 14h.01"></path>
-                                <path d="M16 14h.01"></path>
-                                <path d="M8 18h.01"></path>
-                                <path d="M12 18h.01"></path>
-                                <path d="M16 18h.01"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg md:text-xl font-bold mb-2">Antrian Tamu</h3>
-                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
-                            Sistem antrian tamu terintegrasi untuk pelayanan di BPS Kota Batam
-                        </p>
-                        <a href="{{ route('antrian.index') }}" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group-hover:font-medium transition-all duration-300">
-                            <span class="group-hover:mr-2 transition-all duration-300">Ambil Antrian</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                <path d="M5 12h14"></path>
-                                <path d="m12 5 7 7-7 7"></path>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
     <!-- Latest News & Updates Section -->
-    <section class="py-12 md:py-16 lg:py-20 bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
+    <section class="py-8 md:py-12 lg:py-16 bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
         <div class="container mx-auto px-4 md:px-6">
             <div class="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-10">
                 <div class="space-y-3" data-aos="fade-up">
@@ -307,6 +184,131 @@
             </div>
         </div>
     </section>
+
+    <!-- Features Section - Highlighted -->
+    <section class="py-12 md:py-16 lg:py-20 bg-white dark:bg-gray-900 transition-colors duration-300">
+        <div class="container mx-auto px-4 md:px-6">
+            <div class="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-10">
+                <div class="space-y-3" data-aos="fade-up">
+                    <h2 class="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl lg:text-5xl relative inline-block">
+                        Fitur Utama
+                        <span class="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-blue-600 dark:bg-blue-500 rounded-full"></span>
+                    </h2>
+                    <p class="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 text-base md:text-xl px-2 py-2">
+                        Akses data statistik, berita terbaru, dan sistem terintegrasi dalam satu platform
+                    </p>
+                </div>
+            </div>
+            <div class="mx-auto grid max-w-5xl grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 py-4 md:py-8">
+                {{-- <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="100">
+                    <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
+                    <div class="p-5 md:p-6">
+                        <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-500 group-hover:text-white transition-colors duration-300">
+                                <path d="M3 3v18h18"></path>
+                                <path d="M18 17V9"></path>
+                                <path d="M13 17V5"></path>
+                                <path d="M8 17v-3"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg md:text-xl font-bold mb-2">Data Statistik</h3>
+                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
+                            Data ekonomi, sosial, demografi, lingkungan, publikasi, dan tabel dinamis dari BPS Kota Batam
+                        </p>
+                        <a href="{{ route('data') }}" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group-hover:font-medium transition-all duration-300">
+                            <span class="group-hover:mr-2 transition-all duration-300">Lihat Data</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                <path d="M5 12h14"></path>
+                                <path d="m12 5 7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div> --}}
+
+                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="100">
+                    <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
+                    <div class="p-5 md:p-6">
+                        <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-500 group-hover:text-white transition-colors duration-300">
+                                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+                                <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg md:text-xl font-bold mb-2">Berita & Update</h3>
+                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
+                            Rilis Berita Resmi Statistik bulanan dan update terbaru dari kanal YouTube BPS
+                        </p>
+                        <a href="{{ route('news') }}" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group-hover:font-medium transition-all duration-300">
+                            <span class="group-hover:mr-2 transition-all duration-300">Lihat Berita</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                <path d="M5 12h14"></path>
+                                <path d="m12 5 7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="200">
+                    <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
+                    <div class="p-5 md:p-6">
+                        <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-500 group-hover:text-white transition-colors duration-300">
+                                <path d="M3 3v18h18"></path>
+                                <path d="m3 8 4-4 5 5 5-5 4 4"></path>
+                                <path d="m3 14 4-4 5 5 5-5 4 4"></path>
+                                <path d="m3 20 4-4 5 5 5-5 4 4"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg md:text-xl font-bold mb-2">Sistem Terintegrasi</h3>
+                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
+                            Monitoring dan Evaluasi Statistik Sektoral dan sistem terintegrasi lainnya
+                        </p>
+                        <a href="{{ route('systems') }}" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group-hover:font-medium transition-all duration-300">
+                            <span class="group-hover:mr-2 transition-all duration-300">Akses Sistem</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                <path d="M5 12h14"></path>
+                                <path d="m12 5 7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="300">
+                    <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
+                    <div class="p-5 md:p-6">
+                        <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 md:h-8 md:w-8 text-blue-600 dark:text-blue-500 group-hover:text-white transition-colors duration-300">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                <path d="M8 14h.01"></path>
+                                <path d="M12 14h.01"></path>
+                                <path d="M16 14h.01"></path>
+                                <path d="M8 18h.01"></path>
+                                <path d="M12 18h.01"></path>
+                                <path d="M16 18h.01"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg md:text-xl font-bold mb-2">Antrian Tamu</h3>
+                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
+                            Sistem antrian tamu terintegrasi untuk pelayanan di BPS Kota Batam
+                        </p>
+                        <a href="{{ route('antrian.index') }}" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group-hover:font-medium transition-all duration-300">
+                            <span class="group-hover:mr-2 transition-all duration-300">Ambil Antrian</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                <path d="M5 12h14"></path>
+                                <path d="m12 5 7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
 
     <!-- Data Categories Section -->
     {{-- <section class="py-12 md:py-16 lg:py-20 bg-white dark:bg-gray-900 transition-colors duration-300">
