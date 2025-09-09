@@ -54,12 +54,12 @@
             <div class="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-10">
                 <div class="space-y-3" data-aos="fade-up">
                     <h2 class="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl lg:text-5xl relative inline-block">
-                        Berita & Update Terbaru
+                        Berita & Update 
                         <span class="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-blue-600 dark:bg-blue-500 rounded-full"></span>
                     </h2>
                     <p class="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 text-base md:text-xl px-2 py-2">
                         @if($latestMonth && $latestYear)
-                            Rilis Berita Resmi Statistik dan video terbaru
+                            Rilis Berita Resmi Statistik dan video 
                             dari BPS Kota Batam
                         @else
                             Rilis Berita Resmi Statistik dan video terbaru dari BPS Kota Batam
@@ -73,11 +73,11 @@
                 <div class="space-y-5 md:space-y-6" data-aos="fade-right">
                     <h3 class="text-xl md:text-2xl font-bold mb-4">
                         Video Terbaru
-                        @if($latestMonth && $latestYear)
+                        {{-- @if($latestMonth && $latestYear)
                             <span class="inline-block ml-1 font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded text-sm md:text-base animate-pulse-subtle">
                                 {{ $latestMonth }} {{ $latestYear }}
                             </span>
-                        @endif
+                        @endif --}}
                     </h3>
                     <div class="grid gap-4">
                         @forelse($featuredVideos as $video)
@@ -139,11 +139,11 @@
                 <div class="space-y-5 md:space-y-6" data-aos="fade-left">
                     <h3 class="text-xl md:text-2xl font-bold mb-4">
                         Berita Resmi Statistik
-                        @if($latestMonth && $latestYear)
+                        {{-- @if($latestMonth && $latestYear)
                             <span class="inline-block ml-1 font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded text-sm md:text-base animate-pulse-subtle">
                                 {{ $latestMonth }} {{ $latestYear }}
                             </span>
-                        @endif
+                        @endif --}}
                     </h3>
                     <div class="space-y-4">
                         @forelse($featuredNews as $news)
