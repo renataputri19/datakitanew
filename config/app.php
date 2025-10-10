@@ -171,6 +171,11 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\StorageLinkServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
+        
+        /*
+         * Package Service Providers...
+         */
+        Maatwebsite\Excel\ExcelServiceProvider::class,
     ])->toArray(),
 
     /*
