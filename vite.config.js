@@ -19,7 +19,7 @@ export default defineConfig({
             }
         },
         // Generate manifest for Laravel to read asset paths
-        manifest: true,
+        manifest: 'manifest.json', // Place manifest.json directly in build directory
         outDir: 'public/build',
     },
 });
