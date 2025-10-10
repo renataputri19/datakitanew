@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('survey_responses', function (Blueprint $table) {
             // Blok IIIA fields - KONDISI PEREKONOMIAN (PELAKU USAHA)
             // Store as JSON to handle dynamic product entries
-            $table->json('blok3a_products')->nullable()->after('catatan');
+            $table->json('blok3a_products')->nullable()->after('blok6_completed');
             $table->json('blok3a_lainnya')->nullable()->after('blok3a_products');
             $table->json('blok3a_totals')->nullable()->after('blok3a_lainnya');
         });
