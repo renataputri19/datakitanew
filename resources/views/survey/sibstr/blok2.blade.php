@@ -114,7 +114,7 @@
                         <div class="radio-option">
                             <input type="radio" name="jaringan_unit_kegiatan" id="jaringan_pabrik_unit_produksi" value="pabrik_unit_produksi"
                                    {{ ($surveyResponse->jaringan_unit_kegiatan ?? '') == 'pabrik_unit_produksi' ? 'checked' : '' }}
-                                   class="radio-input">
+                                   class="radio-input" required>
                             <label for="jaringan_pabrik_unit_produksi" class="radio-label">
                                 b. Pabrik / Unit Produksi
                             </label>
@@ -122,7 +122,7 @@
                         <div class="radio-option">
                             <input type="radio" name="jaringan_unit_kegiatan" id="jaringan_pusat_ada_kegiatan_produksi" value="pusat_ada_kegiatan_produksi"
                                    {{ ($surveyResponse->jaringan_unit_kegiatan ?? '') == 'pusat_ada_kegiatan_produksi' ? 'checked' : '' }}
-                                   class="radio-input">
+                                   class="radio-input" required>
                             <label for="jaringan_pusat_ada_kegiatan_produksi" class="radio-label">
                                 c. Pusat ada kegiatan produksi
                             </label>
@@ -130,7 +130,7 @@
                         <div class="radio-option">
                             <input type="radio" name="jaringan_unit_kegiatan" id="jaringan_kantor_pusat_administrasi_perwakilan" value="kantor_pusat_administrasi_perwakilan"
                                    {{ ($surveyResponse->jaringan_unit_kegiatan ?? '') == 'kantor_pusat_administrasi_perwakilan' ? 'checked' : '' }}
-                                   class="radio-input">
+                                   class="radio-input" required>
                             <label for="jaringan_kantor_pusat_administrasi_perwakilan" class="radio-label">
                                 d. Kantor Pusat / Kantor Administrasi / Kantor Perwakilan
                             </label>
