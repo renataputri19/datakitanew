@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('survey_responses', function (Blueprint $table) {
             // Add Blok 6 fields for SIBSTR survey
-            $table->json('blok6_data')->nullable()->after('blok3a_totals');
+            $table->json('blok6_data')->nullable()->after('kbli_utama');
             $table->boolean('blok6_completed')->default(false)->after('blok6_data');
         });
     }
