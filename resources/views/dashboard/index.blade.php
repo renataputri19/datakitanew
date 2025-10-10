@@ -49,7 +49,7 @@
                         
                         <div class="flex flex-col sm:flex-row sm:items-center">
                             <span class="text-sm font-medium text-gray-500 dark:text-gray-400 sm:w-1/4">Bergabung pada:</span>
-                            <span class="text-gray-900 dark:text-white">{{ $user->created_at->format('d M Y') }}</span>
+                            <span class="text-gray-900 dark:text-white">{{ $user->created_at->setTimezone('Asia/Jakarta')->format('d M Y') }}</span>
                         </div>
                     </div>
                     

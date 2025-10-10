@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vite Test</title>
-    <link rel="stylesheet" href="{{ asset('build/assets/app-DC3gS-DV.css') }}">
-    <script src="{{ asset('build/assets/app-CqflisoM.js') }}" defer></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-blue-500 text-white p-8">
     <h1 class="text-3xl font-bold">Vite Test</h1>

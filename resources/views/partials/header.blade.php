@@ -6,7 +6,7 @@
                     <span class="text-blue-600 dark:text-blue-500">Data</span>Kita
                 </span>
             </a>
-            <nav class="hidden gap-6 md:flex">
+            <nav class="hidden gap-6 lg:flex">
                 <a href="{{ route('home') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('home') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                     Beranda
                 </a>
@@ -16,7 +16,10 @@
                 <a href="{{ route('news') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('news*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                     Berita & Update
                 </a>
-                <a href="{{ route('systems') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('systems*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                <a href="{{ route('temporary.survey.sibstr') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('temporary.survey.sibstr*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
+                    SIBSTR
+                </a>
+                {{-- <a href="{{ route('systems') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('systems*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                     Sistem Terintegrasi
                 </a>
                 <a href="{{ route('antrian.index') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('antrian*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
@@ -24,25 +27,58 @@
                 </a>
                 <a href="{{ route('faq') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('faq') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                     FAQ
-                </a>
+                </a> --}}
+                @auth
+                    {{-- Dashboard dropdown for role-based navigation --}}
+                    @if(Auth::user()->is_superadmin || Auth::user()->is_bps)
+                        <div class="relative" id="dashboard-dropdown">
+                            <button type="button" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('superadmin.*') || request()->routeIs('bps.*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}" id="dashboard-dropdown-button" aria-expanded="false">
+                                Dashboard
+                                <svg class="ml-1 h-4 w-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50 hidden" id="dashboard-dropdown-menu" role="menu">
+                                <div class="py-1" role="none">
+                                    @if(Auth::user()->is_superadmin)
+                                        <a href="{{ route('superadmin.dashboard') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white {{ request()->routeIs('superadmin.*') ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : '' }}" role="menuitem">
+                                            <svg class="mr-3 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Dashboard Superadmin
+                                        </a>
+                                    @endif
+                                    @if(Auth::user()->is_bps)
+                                        <a href="{{ route('bps.dashboard') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white {{ request()->routeIs('bps.*') ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : '' }}" role="menuitem">
+                                            <svg class="mr-3 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                            </svg>
+                                            Dashboard Admin
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @endauth
             </nav>
         </div>
         <div class="flex items-center gap-2">
             @auth
-                <span class="hidden md:inline-flex items-center mr-2 text-sm text-gray-700 dark:text-gray-300">
+                <span class="hidden lg:inline-flex items-center mr-2 text-sm text-gray-700 dark:text-gray-300">
                     Halo, {{ Auth::user()->name }}
                 </span>
-                <form method="POST" action="{{ route('logout') }}" class="hidden md:block">
+                <form method="POST" action="{{ route('logout') }}" class="hidden lg:block">
                     @csrf
                     <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 px-4 py-2">
                         Keluar
                     </button>
                 </form>
             @else
-                <a href="{{ route('login') }}" class="hidden md:inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 px-4 py-2">
+                <a href="{{ route('login') }}" class="hidden lg:inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 px-4 py-2">
                     Masuk
                 </a>
-                <a href="{{ route('register') }}" class="hidden md:inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:focus-visible:ring-blue-600 h-9 px-4 py-2">
+                <a href="{{ route('register') }}" class="hidden lg:inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:focus-visible:ring-blue-600 h-9 px-4 py-2">
                     Daftar
                 </a>
             @endauth
@@ -63,7 +99,7 @@
                 </svg>
                 <span class="sr-only">Toggle theme</span>
             </button>
-            <button type="button" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 w-9 p-0 md:hidden" id="mobile-menu-button">
+            <button type="button" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 w-9 p-0 lg:hidden" id="mobile-menu-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
                     <line x1="4" x2="20" y1="12" y2="12"></line>
                     <line x1="4" x2="20" y1="6" y2="6"></line>
@@ -106,7 +142,19 @@
                 </div>
                 <span>Berita & Update</span>
             </a>
-            <a href="{{ route('systems') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('systems*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
+            <a href="{{ route('temporary.survey.sibstr') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('temporary.survey.sibstr') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
+                <div class="w-8 flex-shrink-0 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <span>SIBSTR</span>
+            </a>
+            {{-- <a href="{{ route('systems') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('systems*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
                 <div class="w-8 flex-shrink-0 mr-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
                         <path d="M3 3v18h18"></path>
@@ -143,7 +191,38 @@
                     </svg>
                 </div>
                 <span>FAQ</span>
-            </a>
+            </a> --}}
+
+            @auth
+                {{-- Role-based navigation links for mobile --}}
+                @if(Auth::user()->is_superadmin)
+                    <div class="border-t border-gray-200 dark:border-gray-800 my-2"></div>
+                    <a href="{{ route('superadmin.dashboard') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('superadmin.*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
+                        <div class="w-8 flex-shrink-0 mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                            </svg>
+                        </div>
+                        <span>Dashboard Superadmin</span>
+                    </a>
+                @endif
+                @if(Auth::user()->is_bps)
+                    @if(!Auth::user()->is_superadmin)
+                        <div class="border-t border-gray-200 dark:border-gray-800 my-2"></div>
+                    @endif
+                    <a href="{{ route('bps.dashboard') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('bps.*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
+                        <div class="w-8 flex-shrink-0 mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                                <path d="M3 3v18h18"></path>
+                                <path d="m3 8 4-4 5 5 5-5 4 4"></path>
+                                <path d="m3 14 4-4 5 5 5-5 4 4"></path>
+                                <path d="m3 20 4-4 5 5 5-5 4 4"></path>
+                            </svg>
+                        </div>
+                        <span>Dashboard Admin</span>
+                    </a>
+                @endif
+            @endauth
         </nav>
 
         <div class="border-t border-gray-200 dark:border-gray-800 py-2 px-4">
@@ -182,6 +261,92 @@
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
         const mobileMenuLinks = mobileMenu.querySelectorAll('a');
+
+        // Dashboard dropdown functionality
+        const dashboardDropdown = document.getElementById('dashboard-dropdown');
+        const dashboardDropdownButton = document.getElementById('dashboard-dropdown-button');
+        const dashboardDropdownMenu = document.getElementById('dashboard-dropdown-menu');
+
+        if (dashboardDropdown && dashboardDropdownButton && dashboardDropdownMenu) {
+            // Toggle dashboard dropdown
+            function toggleDashboardDropdown() {
+                const isHidden = dashboardDropdownMenu.classList.contains('hidden');
+                
+                if (isHidden) {
+                    // Open dropdown
+                    dashboardDropdownMenu.classList.remove('hidden');
+                    dashboardDropdownButton.setAttribute('aria-expanded', 'true');
+                    
+                    // Rotate arrow
+                    const arrow = dashboardDropdownButton.querySelector('svg');
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(180deg)';
+                    }
+                    
+                    // Add animation
+                    setTimeout(() => {
+                        dashboardDropdownMenu.style.opacity = '1';
+                        dashboardDropdownMenu.style.transform = 'translateY(0)';
+                    }, 10);
+                } else {
+                    // Close dropdown
+                    dashboardDropdownMenu.style.opacity = '0';
+                    dashboardDropdownMenu.style.transform = 'translateY(-10px)';
+                    dashboardDropdownButton.setAttribute('aria-expanded', 'false');
+                    
+                    // Rotate arrow back
+                    const arrow = dashboardDropdownButton.querySelector('svg');
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(0deg)';
+                    }
+                    
+                    setTimeout(() => {
+                        dashboardDropdownMenu.classList.add('hidden');
+                    }, 200);
+                }
+            }
+
+            dashboardDropdownButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleDashboardDropdown();
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!dashboardDropdown.contains(e.target) && !dashboardDropdownMenu.classList.contains('hidden')) {
+                    dashboardDropdownMenu.style.opacity = '0';
+                    dashboardDropdownMenu.style.transform = 'translateY(-10px)';
+                    dashboardDropdownButton.setAttribute('aria-expanded', 'false');
+                    
+                    const arrow = dashboardDropdownButton.querySelector('svg');
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(0deg)';
+                    }
+                    
+                    setTimeout(() => {
+                        dashboardDropdownMenu.classList.add('hidden');
+                    }, 200);
+                }
+            });
+
+            // Close dropdown when pressing escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !dashboardDropdownMenu.classList.contains('hidden')) {
+                    dashboardDropdownMenu.style.opacity = '0';
+                    dashboardDropdownMenu.style.transform = 'translateY(-10px)';
+                    dashboardDropdownButton.setAttribute('aria-expanded', 'false');
+                    
+                    const arrow = dashboardDropdownButton.querySelector('svg');
+                    if (arrow) {
+                        arrow.style.transform = 'rotate(0deg)';
+                    }
+                    
+                    setTimeout(() => {
+                        dashboardDropdownMenu.classList.add('hidden');
+                    }, 200);
+                }
+            });
+        }
 
         // Toggle mobile menu
         function toggleMobileMenu() {
@@ -238,6 +403,27 @@
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
 
+    /* Dashboard dropdown styling */
+    #dashboard-dropdown-menu {
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    #dashboard-dropdown-button svg {
+        transition: transform 0.2s ease;
+    }
+
+    /* Hover effects for dropdown items */
+    #dashboard-dropdown-menu a {
+        transition: all 0.15s ease;
+    }
+
+    #dashboard-dropdown-menu a:hover {
+        transform: translateX(4px);
+    }
+
     /* Responsive adjustments */
     @media (max-width: 640px) {
         #mobile-menu {
@@ -247,8 +433,20 @@
     }
 
     /* Dark mode shadow */
-    .dark #mobile-menu {
+    .dark #mobile-menu,
+    .dark #dashboard-dropdown-menu {
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Focus styles for accessibility */
+    #dashboard-dropdown-button:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+    }
+
+    #dashboard-dropdown-menu a:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: -2px;
     }
 </style>
 

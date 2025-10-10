@@ -6,15 +6,13 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>@yield('title', 'DataKita - BPS Kota Batam')</title>
     <meta name="description" content="@yield('description', 'Platform terpadu untuk akses data statistik, berita, dan sistem terintegrasi BPS Kota Batam')">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="{{ asset('build/assets/app-B6P9xIR8.css') }}">
-
-    <!-- Scripts -->
-    <script src="{{ asset('build/assets/app-BFRkVXMS.js') }}" defer></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- AOS Animation Library -->
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />

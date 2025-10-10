@@ -96,7 +96,7 @@
                                         <span class="bps-badge {{ $news->category == 'BRS' ? 'bps-badge-blue' : ($news->category == 'Event' ? 'bps-badge-purple' : 'bps-badge-green') }} mr-2">
                                             {{ $news->category }}
                                         </span>
-                                        <span>{{ $news->date->format('d M Y') }}</span>
+                                        <span>{{ $news->date->setTimezone('Asia/Jakarta')->format('d M Y') }}</span>
                                     </div>
                                 </div>
                                 <a href="{{ route('bps.news.edit', $news->id) }}" class="text-indigo-600 dark:text-indigo-500 hover:text-indigo-900 dark:hover:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 p-2 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-800/30 transition-colors duration-200" title="Edit Berita">
@@ -164,7 +164,7 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        <span>{{ $video->date->format('d M Y') }}</span>
+                                        <span>{{ $video->date->setTimezone('Asia/Jakarta')->format('d M Y') }}</span>
                                     </div>
                                 </div>
                                 <div class="flex-shrink-0 self-center">
