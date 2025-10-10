@@ -923,19 +923,6 @@
         transition: left 0.6s ease;
     }
 
-    .survey-submit-btn::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: 1.25rem;
-        padding: 2px;
-        background: linear-gradient(135deg, #10b981, #059669, #047857);
-        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        mask-composite: xor;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
     .survey-submit-btn:hover {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
@@ -948,10 +935,6 @@
 
     .survey-submit-btn:hover::before {
         left: 100%;
-    }
-
-    .survey-submit-btn:hover::after {
-        opacity: 1;
     }
 
     .survey-submit-btn:active {
