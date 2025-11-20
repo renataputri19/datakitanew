@@ -16,14 +16,7 @@ class LoginResponse implements LoginResponseContract
      */
     public function toResponse($request): JsonResponse|RedirectResponse
     {
-        $user = $request->user();
-
-        // Keep superadmin users on their dedicated dashboard
-        if ($user && $user->is_superadmin) {
-            return redirect()->intended(route('superadmin.dashboard'));
-        }
-
-        // Redirect all authenticated users to the unified /dashboard
+        // Always redirect all authenticated users to the unified /dashboard
         return redirect()->intended(route('dashboard'));
     }
 }

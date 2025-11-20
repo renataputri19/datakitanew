@@ -70,16 +70,8 @@ class AuthController extends Controller
             // Clear login attempts on successful login
             cache()->forget($key);
 
-            // Determine redirect based on user role
-            $user = Auth::user();
-            
-            if ($user->is_superadmin) {
-                return redirect()->intended('/superadmin/dashboard');
-            } elseif ($user->is_bps || $user->is_admin) {
-                return redirect()->intended('/dashboard');
-            } else {
-                return redirect()->intended('/userdashboard');
-            }
+            // Unified redirect for all authenticated users
+            return redirect()->intended(route('dashboard'));
         }
 
         // Increment failed login attempts
@@ -283,17 +275,9 @@ class AuthController extends Controller
             // Log the user in
             Auth::login($user);
 
-            // Role-based redirection
-            if ($user->is_superadmin) {
-                return redirect()->route('superadmin.dashboard')
-                    ->with('success', 'Pendaftaran berhasil! Selamat datang di DataKita.');
-            } elseif ($user->is_bps || $user->is_admin) {
-                return redirect()->route('dashboard')
-                    ->with('success', 'Pendaftaran berhasil! Selamat datang di DataKita.');
-            } else {
-                return redirect()->route('dashboard')
-                    ->with('success', 'Pendaftaran berhasil! Selamat datang di DataKita.');
-            }
+            // Unified redirect after successful registration
+            return redirect()->route('dashboard')
+                ->with('success', 'Pendaftaran berhasil! Selamat datang di DataKita.');
 
         } catch (\Exception $e) {
             Log::error('Registration failed: ' . $e->getMessage());

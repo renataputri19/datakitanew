@@ -35,33 +35,7 @@
                 <a href="{{ route('faq') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('faq') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                     FAQ
                 </a> --}}
-                @auth
-                    {{-- Dashboard dropdown for role-based navigation (hidden for superadmin; direct Dashboard link shown instead) --}}
-                    @if(Auth::user()->is_bps && !Auth::user()->is_superadmin)
-                        <div class="relative" id="dashboard-dropdown">
-                            <button type="button" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('superadmin.*') || request()->routeIs('bps.*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}" id="dashboard-dropdown-button" aria-expanded="false" aria-label="Dashboard menu">
-                                <svg class="h-4 w-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                                </svg>
-                                <svg class="ml-1 h-4 w-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50 hidden" id="dashboard-dropdown-menu" role="menu">
-                                <div class="py-1" role="none">
-                                    @if(Auth::user()->is_bps)
-                                        <a href="{{ route('bps.dashboard') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white {{ request()->routeIs('bps.*') ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : '' }}" role="menuitem">
-                                            <svg class="mr-3 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                            </svg>
-                                            Dashboard Admin
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-                @endauth
+                {{-- Admin dropdown removed: dashboard now consolidated under global Dashboard link --}}
             </nav>
         </div>
         <div class="flex items-center gap-2">
@@ -277,91 +251,7 @@
         const mobileMenu = document.getElementById('mobile-menu');
         const mobileMenuLinks = mobileMenu ? mobileMenu.querySelectorAll('a') : [];
 
-        // Dashboard dropdown functionality
-        const dashboardDropdown = document.getElementById('dashboard-dropdown');
-        const dashboardDropdownButton = document.getElementById('dashboard-dropdown-button');
-        const dashboardDropdownMenu = document.getElementById('dashboard-dropdown-menu');
-
-        if (dashboardDropdown && dashboardDropdownButton && dashboardDropdownMenu) {
-            // Toggle dashboard dropdown
-            function toggleDashboardDropdown() {
-                const isHidden = dashboardDropdownMenu.classList.contains('hidden');
-                
-                if (isHidden) {
-                    // Open dropdown
-                    dashboardDropdownMenu.classList.remove('hidden');
-                    dashboardDropdownButton.setAttribute('aria-expanded', 'true');
-                    
-                    // Rotate arrow
-                    const arrow = dashboardDropdownButton.querySelector('svg');
-                    if (arrow) {
-                        arrow.style.transform = 'rotate(180deg)';
-                    }
-                    
-                    // Add animation
-                    setTimeout(() => {
-                        dashboardDropdownMenu.style.opacity = '1';
-                        dashboardDropdownMenu.style.transform = 'translateY(0)';
-                    }, 10);
-                } else {
-                    // Close dropdown
-                    dashboardDropdownMenu.style.opacity = '0';
-                    dashboardDropdownMenu.style.transform = 'translateY(-10px)';
-                    dashboardDropdownButton.setAttribute('aria-expanded', 'false');
-                    
-                    // Rotate arrow back
-                    const arrow = dashboardDropdownButton.querySelector('svg');
-                    if (arrow) {
-                        arrow.style.transform = 'rotate(0deg)';
-                    }
-                    
-                    setTimeout(() => {
-                        dashboardDropdownMenu.classList.add('hidden');
-                    }, 200);
-                }
-            }
-
-            dashboardDropdownButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                toggleDashboardDropdown();
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!dashboardDropdown.contains(e.target) && !dashboardDropdownMenu.classList.contains('hidden')) {
-                    dashboardDropdownMenu.style.opacity = '0';
-                    dashboardDropdownMenu.style.transform = 'translateY(-10px)';
-                    dashboardDropdownButton.setAttribute('aria-expanded', 'false');
-                    
-                    const arrow = dashboardDropdownButton.querySelector('svg');
-                    if (arrow) {
-                        arrow.style.transform = 'rotate(0deg)';
-                    }
-                    
-                    setTimeout(() => {
-                        dashboardDropdownMenu.classList.add('hidden');
-                    }, 200);
-                }
-            });
-
-            // Close dropdown when pressing escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && !dashboardDropdownMenu.classList.contains('hidden')) {
-                    dashboardDropdownMenu.style.opacity = '0';
-                    dashboardDropdownMenu.style.transform = 'translateY(-10px)';
-                    dashboardDropdownButton.setAttribute('aria-expanded', 'false');
-                    
-                    const arrow = dashboardDropdownButton.querySelector('svg');
-                    if (arrow) {
-                        arrow.style.transform = 'rotate(0deg)';
-                    }
-                    
-                    setTimeout(() => {
-                        dashboardDropdownMenu.classList.add('hidden');
-                    }, 200);
-                }
-            });
-        }
+        // Admin dropdown removed; no dropdown interactions needed
 
         // Toggle mobile menu
         function toggleMobileMenu() {
@@ -424,26 +314,7 @@
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
 
-    /* Dashboard dropdown styling */
-    #dashboard-dropdown-menu {
-        opacity: 0;
-        transform: translateY(-10px);
-        transition: opacity 0.2s ease, transform 0.2s ease;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-
-    #dashboard-dropdown-button svg {
-        transition: transform 0.2s ease;
-    }
-
-    /* Hover effects for dropdown items */
-    #dashboard-dropdown-menu a {
-        transition: all 0.15s ease;
-    }
-
-    #dashboard-dropdown-menu a:hover {
-        transform: translateX(4px);
-    }
+    /* Admin dropdown removed: styles cleaned up */
 
     /* Responsive adjustments */
     @media (max-width: 640px) {
@@ -454,21 +325,12 @@
     }
 
     /* Dark mode shadow */
-    .dark #mobile-menu,
-    .dark #dashboard-dropdown-menu {
+    .dark #mobile-menu {
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
     }
 
     /* Focus styles for accessibility */
-    #dashboard-dropdown-button:focus {
-        outline: 2px solid #3b82f6;
-        outline-offset: 2px;
-    }
-
-    #dashboard-dropdown-menu a:focus {
-        outline: 2px solid #3b82f6;
-        outline-offset: -2px;
-    }
+    /* Focus styles removed for deleted dropdown */
 
     /* Nav CTA styling (Dashboard) */
     .nav-cta {
