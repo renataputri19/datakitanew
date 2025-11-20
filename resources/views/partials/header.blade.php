@@ -195,7 +195,7 @@
                         <span>Dashboard</span>
                     </a>
                 @endif
-                @if(Auth::user()->is_bps)
+                {{-- @if(Auth::user()->is_bps)
                     @if(!Auth::user()->is_superadmin)
                         <div class="border-t border-gray-200 dark:border-gray-800 my-2"></div>
                     @endif
@@ -210,7 +210,7 @@
                         </div>
                         <span>Dashboard Admin</span>
                     </a>
-                @endif
+                @endif --}}
             @endauth
         </nav>
 

@@ -921,6 +921,19 @@
     margin-bottom: var(--ud-spacing-lg);
 }
 
+/* Action buttons container inside welcome section */
+.ud-welcome-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--ud-spacing-md);
+}
+
+/* Ensure buttons inside actions have no extra margins */
+.ud-welcome-actions .ud-btn {
+    margin: 0;
+}
+
 /* ============================================
    Responsive Design
    ============================================ */
@@ -996,6 +1009,11 @@
     .ud-btn {
         padding: 0.625rem 1.25rem;
         font-size: 0.875rem;
+    }
+
+    /* Tighter spacing for stacked action buttons on small devices */
+    .ud-welcome-actions {
+        gap: var(--ud-spacing-xs);
     }
 
     .ud-pagination {

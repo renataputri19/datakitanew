@@ -29,10 +29,10 @@
                         Meningkatkan kualitas statistik di Batam melalui sistem monitoring real-time yang dirancang khusus untuk mendukung Evaluasi Penyelenggaraan Statistik Sektoral (EPSS)
                     </p>
                 </div>
-                <div class="flex flex-row gap-4 w-full justify-center">
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full justify-center">
                     @auth
                         @if(auth()->user()->is_bps || auth()->user()->is_kominfo_user)
-                            <a href="{{ route('monalisa.dashboard') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:focus-visible:ring-blue-600 h-11 px-6 py-2 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                            <a href="{{ route('monalisa.dashboard') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:focus-visible:ring-blue-600 h-11 px-6 py-2 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300 w-full sm:w-auto">
                                 <span>Dashboard</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 h-4 w-4">
                                     <polyline points="9 18 15 12 9 6"></polyline>
@@ -40,14 +40,14 @@
                             </a>
                         @endif
                     @else
-                        <a href="{{ route('login') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:focus-visible:ring-blue-600 h-11 px-6 py-2 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                        <a href="{{ route('login') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700 dark:focus-visible:ring-blue-600 h-11 px-6 py-2 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300 w-full sm:w-auto">
                             <span>Mulai Sekarang</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 h-4 w-4">
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </a>
                     @endauth
-                    <a href="#tentang" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-11 px-6 py-2 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                    <a href="#tentang" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-11 px-6 py-2 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300 w-full sm:w-auto">
                         Pelajari Lebih Lanjut
                     </a>
                 </div>
@@ -332,7 +332,7 @@
     </section>
 
     <!-- CTA Section -->
-    <section class="py-8 md:py-12 lg:py-16 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 relative overflow-hidden">
+    {{-- <section class="py-8 md:py-12 lg:py-16 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 relative overflow-hidden">
         <!-- Background Pattern -->
         <div class="absolute inset-0 bg-black/10"></div>
         <div class="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20"></div>
@@ -373,7 +373,7 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> --}}
 @endsection
 
 @push('styles')
