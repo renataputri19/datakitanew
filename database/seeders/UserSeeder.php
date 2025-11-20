@@ -413,9 +413,12 @@ class UserSeeder extends Seeder
 
         ];
 
-        // Insert users into the database
-        foreach ($users as $user) {
-            User::create($user);
+        // Insert or update users idempotently (by email)
+        foreach ($users as $attrs) {
+            User::updateOrCreate(
+                ['email' => $attrs['email']],
+                $attrs
+            );
         }
     }
 }
