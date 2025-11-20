@@ -156,7 +156,9 @@
 
             <!-- Action Buttons -->
             <div class="monalisa-domain-actions">
-                <a href="{{ route('monalisa.bps.domain', $domain->id) }}"
+                <a href="{{ auth()->user() && auth()->user()->is_bps
+                    ? route('monalisa.bps.domain', $domain->id)
+                    : route('monalisa.kominfo.domain', $domain->id) }}"
                    class="monalisa-domain-action-btn monalisa-domain-action-btn-primary">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -164,7 +166,7 @@
                     </svg>
                     Lihat Detail Domain
                 </a>
-                @if($submittedCount > 0)
+                @if(($isBpsUser ?? (auth()->user() && auth()->user()->is_bps)) && $submittedCount > 0)
                 <a href="{{ route('monalisa.bps.assessments', ['domain' => $domain->id, 'status' => 'submitted']) }}"
                    class="monalisa-domain-action-btn monalisa-domain-action-btn-secondary">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,6 +181,7 @@
     </div>
 
     <!-- Pending Verifications -->
+    @if($isBpsUser ?? (auth()->user() && auth()->user()->is_bps))
     <div>
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Pending Verifications</h2>
 
@@ -330,6 +333,7 @@
             @endif
         </div>
     </div>
+    @endif
 
     <!-- Back to Dashboard Button -->
     <div class="mt-8 text-center">
