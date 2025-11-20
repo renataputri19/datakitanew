@@ -213,3 +213,15 @@
     </div>
 @endsection
 
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    @if(session('success'))
+        if (window.MonalisaNotifications && typeof window.MonalisaNotifications.showToast === 'function') {
+            window.MonalisaNotifications.showToast('Berhasil', @json(session('success')), 'success');
+        }
+    @endif
+});
+</script>
+@endpush
+

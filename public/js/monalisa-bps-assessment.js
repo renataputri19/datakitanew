@@ -175,7 +175,15 @@ class BpsAssessmentForm {
     }
 
     showNotification(message, type = 'success') {
-        // Create notification element
+        // Use global MONALISA/DataKita toast if available for consistent styling
+        if (window.MonalisaNotifications && typeof window.MonalisaNotifications.showToast === 'function') {
+            const title = type === 'success' ? 'Berhasil' :
+                          type === 'error' ? 'Kesalahan' : 'Info';
+            window.MonalisaNotifications.showToast(title, message, type);
+            return;
+        }
+
+        // Fallback inline notification (keeps previous behavior if toast script missing)
         const notification = document.createElement('div');
         notification.className = `monalisa-notification monalisa-notification-${type}`;
         notification.style.cssText = `
@@ -192,15 +200,10 @@ class BpsAssessmentForm {
             max-width: 400px;
         `;
         notification.textContent = message;
-
         document.body.appendChild(notification);
-
-        // Auto-remove after 5 seconds
         setTimeout(() => {
             notification.style.animation = 'slideOutRight 0.3s ease';
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
+            setTimeout(() => notification.remove(), 300);
         }, 5000);
     }
 

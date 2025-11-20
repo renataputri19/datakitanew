@@ -117,9 +117,11 @@ class BpsController extends Controller
             MonalisaNotification::createForVerification($assessment, auth()->id());
         }
 
+        $message = 'Assessment berhasil diverifikasi.';
+        session()->flash('success', $message);
         return response()->json([
             'success' => true,
-            'message' => 'Assessment berhasil diverifikasi.',
+            'message' => $message,
             'redirect' => route('monalisa.bps.domain', $assessment->indikator->aspek->domain_id),
         ]);
     }
@@ -163,9 +165,11 @@ class BpsController extends Controller
         // Create notification for all Kominfo users
         MonalisaNotification::createForRejection($assessment, auth()->id());
 
+        $message = 'Assessment ditolak. Kominfo dapat melakukan revisi dan submit ulang.';
+        session()->flash('success', $message);
         return response()->json([
             'success' => true,
-            'message' => 'Assessment ditolak. Kominfo dapat melakukan revisi dan submit ulang.',
+            'message' => $message,
             'redirect' => route('monalisa.bps.domain', $assessment->indikator->aspek->domain_id),
         ]);
     }

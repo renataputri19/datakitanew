@@ -152,3 +152,17 @@
     </div>
 @endsection
 
+@push('scripts')
+<script>
+// Show success toast after redirect from assessment submission
+document.addEventListener('DOMContentLoaded', function() {
+    @if(session('success'))
+        // Use DataKita-styled toast via MONALISA notification system
+        if (window.MonalisaNotifications && typeof window.MonalisaNotifications.showToast === 'function') {
+            window.MonalisaNotifications.showToast('Berhasil', @json(session('success')), 'success');
+        }
+    @endif
+});
+</script>
+@endpush
+

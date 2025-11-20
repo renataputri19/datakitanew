@@ -1104,9 +1104,18 @@ function performDelete(documentId) {
     });
 }
 
-// Simple notification function
+// Simple notification function - unified with DataKita toast
 function showNotification(message, type = 'info') {
-    // Create notification element
+    // Prefer the global MONALISA notification toast for consistency
+    if (window.MonalisaNotifications && typeof window.MonalisaNotifications.showToast === 'function') {
+        const title = type === 'success' ? 'Berhasil' :
+                      type === 'error' ? 'Kesalahan' :
+                      type === 'warning' ? 'Peringatan' : 'Info';
+        window.MonalisaNotifications.showToast(title, message, type);
+        return;
+    }
+
+    // Fallback: minimal inline notification (only if toast is unavailable)
     const notification = document.createElement('div');
     notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 ${
         type === 'success' ? 'bg-green-500 text-white' :
@@ -1115,20 +1124,11 @@ function showNotification(message, type = 'info') {
         'bg-gray-500 text-white'
     }`;
     notification.textContent = message;
-
     document.body.appendChild(notification);
-
-    // Animate in
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-    }, 10);
-
-    // Remove after 3 seconds
+    setTimeout(() => { notification.style.transform = 'translateX(0)'; }, 10);
     setTimeout(() => {
         notification.style.transform = 'translateX(400px)';
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
+        setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
 </script>
