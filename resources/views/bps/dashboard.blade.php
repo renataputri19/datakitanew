@@ -191,6 +191,16 @@
                 @endif
             </div>
         </div>
+
+        <!-- Back to Dashboard Button -->
+        <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+            <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Kembali ke Dashboard
+            </a>
+        </div>
     </div>
 </div>
 @endsection

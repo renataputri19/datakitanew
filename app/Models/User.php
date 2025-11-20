@@ -24,6 +24,7 @@ class User extends Authenticatable
         'password',
         'institution_id',
         'is_bps',
+        'is_kominfo_user',
         'is_admin',
         'is_superadmin',
     ];
@@ -47,6 +48,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_bps' => 'boolean',
+        'is_kominfo_user' => 'boolean',
         'is_admin' => 'boolean',
         'is_superadmin' => 'boolean',
     ];

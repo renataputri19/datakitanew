@@ -54,12 +54,12 @@
             <div class="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-10">
                 <div class="space-y-3" data-aos="fade-up">
                     <h2 class="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl lg:text-5xl relative inline-block">
-                        Berita & Update 
+                        Berita & Update
                         <span class="absolute -bottom-2 left-1/4 right-1/4 h-1 bg-blue-600 dark:bg-blue-500 rounded-full"></span>
                     </h2>
                     <p class="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 text-base md:text-xl px-2 py-2">
                         @if($latestMonth && $latestYear)
-                            Rilis Berita Resmi Statistik dan video 
+                            Rilis Berita Resmi Statistik dan video
                             dari BPS Kota Batam
                         @else
                             Rilis Berita Resmi Statistik dan video terbaru dari BPS Kota Batam
@@ -68,118 +68,160 @@
                 </div>
             </div>
 
-            <div class="grid gap-8 md:grid-cols-2">
-                <!-- Latest Videos -->
-                <div class="space-y-5 md:space-y-6" data-aos="fade-right">
-                    <h3 class="text-xl md:text-2xl font-bold mb-4">
-                        Video Terbaru
-                        {{-- @if($latestMonth && $latestYear)
-                            <span class="inline-block ml-1 font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded text-sm md:text-base animate-pulse-subtle">
-                                {{ $latestMonth }} {{ $latestYear }}
-                            </span>
-                        @endif --}}
+            <!-- Latest News (Now First) -->
+            <div class="mb-12 md:mb-16" data-aos="fade-up">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl md:text-2xl font-bold">
+                        Berita Resmi Statistik
                     </h3>
-                    <div class="grid gap-4">
-                        @forelse($featuredVideos as $video)
-                        <div class="overflow-hidden rounded-xl bg-white dark:bg-gray-950 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                            <div class="relative">
-                                <div class="aspect-video bg-gray-200 dark:bg-gray-800 overflow-hidden">
-                                    @php
-                                        $videoId = App\Helpers\YoutubeHelper::extractYoutubeId($video->url);
-                                    @endphp
-
-                                    @if($video->thumbnail)
-                                        <img src="{{ Storage::url($video->thumbnail) }}" alt="{{ $video->title }}" class="w-full h-full object-cover">
-                                    @elseif($videoId)
-                                        <img src="https://img.youtube.com/vi/{{ $videoId }}/maxresdefault.jpg"
-                                             onerror="this.onerror=null; this.src='https://img.youtube.com/vi/{{ $videoId }}/hqdefault.jpg';"
-                                             alt="{{ $video->title }}"
-                                             class="w-full h-full object-cover">
-                                    @else
-                                        <div class="w-full h-full flex items-center justify-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                            </svg>
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <a href="{{ $video->url }}" target="_blank" class="rounded-full h-10 w-10 md:h-12 md:w-12 bg-blue-600/90 hover:bg-blue-600 text-white flex items-center justify-center transform hover:scale-110 transition-all duration-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 md:h-6 md:w-6">
-                                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="p-3 md:p-4">
-                                <h4 class="font-semibold text-sm md:text-base line-clamp-2">{{ $video->title }}</h4>
-                                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">{{ $video->formatted_date }}</p>
-                            </div>
-                        </div>
-                        @empty
-                        <div class="col-span-1 py-6 text-center">
-                            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Belum ada video</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Video terbaru akan segera ditambahkan.</p>
-                        </div>
-                        @endforelse
-                    </div>
-
-                    <div class="flex justify-center">
-                        <a href="{{ $bpsYoutubeUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-10 px-4 py-2 group mt-6">
-                            <span>Lihat Semua Video</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300">
-                                <path d="M5 12h14"></path>
-                                <path d="m12 5 7 7-7 7"></path>
-                            </svg>
-                        </a>
-                    </div>
                 </div>
 
-                <!-- Latest News -->
-                <div class="space-y-5 md:space-y-6" data-aos="fade-left">
-                    <h3 class="text-xl md:text-2xl font-bold mb-4">
-                        Berita Resmi Statistik
-                        {{-- @if($latestMonth && $latestYear)
-                            <span class="inline-block ml-1 font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded text-sm md:text-base animate-pulse-subtle">
-                                {{ $latestMonth }} {{ $latestYear }}
-                            </span>
-                        @endif --}}
+                <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    @forelse($featuredNews as $news)
+                    <div class="group overflow-hidden rounded-xl bg-white dark:bg-gray-950 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-800 hover:border-blue-500 dark:hover:border-blue-500">
+                        <!-- Text-only News Card Content -->
+                        <div class="p-6">
+                            <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span>{{ $news->formatted_date }}</span>
+                            </div>
+
+                            <h4 class="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                                {{ $news->title }}
+                            </h4>
+
+                            <p class="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                                {{ $news->excerpt }}
+                            </p>
+
+                            <a href="{{ $news->source_url }}" target="_blank" class="inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 group/link">
+                                <span>Baca Selengkapnya</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 h-4 w-4 group-hover/link:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="col-span-full py-12 text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Belum ada berita resmi statistik</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Berita resmi statistik terbaru akan segera ditambahkan.</p>
+                    </div>
+                    @endforelse
+                </div>
+
+                <div class="flex justify-center mt-8">
+                    <a href="{{ $bpsNewsUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-300 border-2 border-blue-600 bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700 dark:border-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 dark:hover:border-blue-600 h-11 px-6 py-2 group shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        <span>Lihat Semua Berita</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Latest Videos (Now Second) -->
+            <div data-aos="fade-up">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl md:text-2xl font-bold">
+                        Video Terbaru
                     </h3>
-                    <div class="space-y-4">
-                        @forelse($featuredNews as $news)
-                        <div class="overflow-hidden rounded-xl bg-white dark:bg-gray-950 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                            <div class="p-4 md:p-6">
-                                <h4 class="text-base md:text-lg font-semibold mb-1 line-clamp-2">{{ $news->title }}</h4>
-                                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2 md:mb-3">{{ $news->formatted_date }}</p>
-                                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-3 md:mb-4 line-clamp-3">
-                                    {{ $news->excerpt }}
-                                </p>
-                                <a href="{{ $news->source_url }}" target="_blank" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group text-sm">
-                                    <span class="group-hover:mr-2 transition-all duration-300">Baca Selengkapnya</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300">
-                                        <path d="M5 12h14"></path>
-                                        <path d="m12 5 7 7-7 7"></path>
+                </div>
+
+                <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+                    @forelse($featuredVideos as $video)
+                    <div class="group overflow-hidden rounded-xl bg-white dark:bg-gray-950 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-800 hover:border-purple-500 dark:hover:border-purple-500">
+                        <!-- Video Thumbnail -->
+                        <div class="relative aspect-video bg-gray-200 dark:bg-gray-800 overflow-hidden">
+                            @php
+                                $videoId = App\Helpers\YoutubeHelper::extractYoutubeId($video->url);
+                            @endphp
+
+                            @if($video->thumbnail)
+                                <img src="{{ Storage::url($video->thumbnail) }}" alt="{{ $video->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            @elseif($videoId)
+                                <img src="https://img.youtube.com/vi/{{ $videoId }}/maxresdefault.jpg"
+                                     onerror="this.onerror=null; this.src='https://img.youtube.com/vi/{{ $videoId }}/hqdefault.jpg';"
+                                     alt="{{ $video->title }}"
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            @else
+                                <div class="w-full h-full flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                            @endif
+
+                            <!-- Play Button Overlay -->
+                            <div class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
+                                <a href="{{ $video->url }}" target="_blank" class="rounded-full h-16 w-16 bg-red-600/95 hover:bg-red-600 text-white flex items-center justify-center transform group-hover:scale-110 transition-all duration-300 shadow-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M8 5v14l11-7z"/>
                                     </svg>
                                 </a>
                             </div>
-                        </div>
-                        @empty
-                        <div class="py-6 text-center">
-                            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Belum ada berita resmi statistik</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Berita resmi statistik terbaru akan segera ditambahkan.</p>
-                        </div>
-                        @endforelse
-                    </div>
 
-                    <div class="flex justify-center">
-                        <a href="{{ $bpsNewsUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-10 px-4 py-2 group mt-6">
-                            <span>Lihat Semua Berita</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300">
-                                <path d="M5 12h14"></path>
-                                <path d="m12 5 7 7-7 7"></path>
-                            </svg>
-                        </a>
+                            <!-- Duration Badge (Optional) -->
+                            <div class="absolute bottom-3 right-3 bg-black/80 text-white text-xs px-2 py-1 rounded">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Video
+                            </div>
+                        </div>
+
+                        <!-- Video Content -->
+                        <div class="p-5">
+                            <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span>{{ $video->formatted_date }}</span>
+                            </div>
+
+                            <h4 class="text-base font-bold mb-3 line-clamp-2 min-h-[3rem] group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300">
+                                {{ $video->title }}
+                            </h4>
+
+                            <a href="{{ $video->url }}" target="_blank" class="inline-flex items-center text-sm font-medium text-purple-600 dark:text-purple-500 hover:text-purple-700 dark:hover:text-purple-400 group/link">
+                                <span>Tonton Video</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 h-4 w-4 group-hover/link:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        </div>
                     </div>
+                    @empty
+                    <div class="col-span-full py-12 text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Belum ada video</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Video terbaru akan segera ditambahkan.</p>
+                    </div>
+                    @endforelse
+                </div>
+
+                <div class="flex justify-center mt-8">
+                    <a href="{{ $bpsYoutubeUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-lg text-sm font-medium transition-all duration-300 border-2 border-purple-600 bg-purple-600 text-white hover:bg-purple-700 hover:border-purple-700 dark:border-purple-500 dark:bg-purple-500 dark:hover:bg-purple-600 dark:hover:border-purple-600 h-11 px-6 py-2 group shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                        </svg>
+                        <span>Lihat Semua Video</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                    </a>
                 </div>
             </div>
         </div>
@@ -273,7 +315,29 @@
                     </div>
                 </div>
 
-                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="300">
+                <div class="relative overflow-hidden rounded-xl border-2 border-purple-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-purple-600 dark:hover:border-purple-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="250">
+                    <div class="absolute top-0 right-0 h-20 w-20 bg-purple-600/10 dark:bg-purple-500/10 rounded-bl-full"></div>
+                    <div class="p-5 md:p-6">
+                        <div class="rounded-full bg-purple-600/10 dark:bg-purple-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-purple-600 dark:group-hover:bg-purple-500 transition-colors duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 md:h-8 md:w-8 text-purple-600 dark:text-purple-500 group-hover:text-white transition-colors duration-300">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg md:text-xl font-bold mb-2">MONALISA</h3>
+                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
+                            Monitoring dan Evaluasi Statistik Sektoral untuk meningkatkan kualitas data statistik
+                        </p>
+                        <a href="{{ route('monalisa.home') }}" class="inline-flex items-center text-purple-600 dark:text-purple-500 hover:underline group-hover:font-medium transition-all duration-300">
+                            <span class="group-hover:mr-2 transition-all duration-300">Akses MONALISA</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                <path d="M5 12h14"></path>
+                                <path d="m12 5 7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="350">
                     <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
                     <div class="p-5 md:p-6">
                         <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">
@@ -304,7 +368,7 @@
                     </div>
                 </div>
 
-                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="400">
+                <div class="relative overflow-hidden rounded-xl border-2 border-blue-100 dark:border-gray-800 bg-white dark:bg-gray-950 transition-all duration-300 hover:border-blue-600 dark:hover:border-blue-500 hover:shadow-xl group" data-aos="fade-up" data-aos-delay="450">
                     <div class="absolute top-0 right-0 h-20 w-20 bg-blue-600/10 dark:bg-blue-500/10 rounded-bl-full"></div>
                     <div class="p-5 md:p-6">
                         <div class="rounded-full bg-blue-600/10 dark:bg-blue-500/10 p-3 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center mb-4 group-hover:bg-blue-600 dark:group-hover:bg-blue-500 transition-colors duration-300">

@@ -7,6 +7,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\SystemController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\AntrianController;
 use App\Http\Controllers\BPS\NewsController as BPSNewsController;
 use App\Http\Controllers\BPS\VideoController as BPSVideoController;
@@ -15,6 +16,11 @@ use App\Http\Controllers\BPS\UserController as BPSUserController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\TemporarySurveyController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\FormController;
+use App\Http\Controllers\MonalisaController;
+use App\Http\Controllers\Monalisa\KominfoController;
+use App\Http\Controllers\Monalisa\BpsController as MonalisaBpsController;
+use App\Http\Controllers\Monalisa\NotificationController as MonalisaNotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,7 +71,72 @@ Route::prefix('antriantamu')->name('antrian.')->group(function () {
     });
 });
 
+// MONALISA Routes
+Route::prefix('monalisa')->name('monalisa.')->group(function () {
+    // Public homepage (no authentication required)
+    Route::get('/', [MonalisaController::class, 'index'])->name('index');
+    Route::get('/home', [MonalisaController::class, 'index'])->name('home');
+
+    // Dashboard route (requires authentication - redirects to appropriate dashboard)
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/dashboard', [MonalisaController::class, 'dashboard'])->name('dashboard');
+    });
+
+    // Kominfo User Routes (Self-Assessment)
+    Route::middleware(['auth', 'is_kominfo'])->prefix('kominfo')->name('kominfo.')->group(function () {
+        Route::get('/dashboard', [KominfoController::class, 'dashboard'])->name('dashboard');
+        // Route::get('/charts', [KominfoController::class, 'showCharts'])->name('charts'); // Commented out - Visualisasi page displays too much data
+        Route::get('/indicator-analysis', [KominfoController::class, 'showIndicatorAnalysis'])->name('indicator-analysis');
+        Route::get('/domain/{domainId}', [KominfoController::class, 'showDomain'])->name('domain');
+        Route::get('/assessment/{indikatorId}', [KominfoController::class, 'showAssessment'])->name('assessment.show');
+        Route::post('/assessment/{indikatorId}', [KominfoController::class, 'saveAssessment'])->name('assessment.save');
+        Route::post('/assessment/{assessmentId}/submit', [KominfoController::class, 'submitAssessment'])->name('assessment.submit');
+        Route::post('/assessment/{assessmentId}/upload', [KominfoController::class, 'uploadDocument'])->name('document.upload');
+        Route::post('/document/{documentId}/replace', [KominfoController::class, 'replaceDocument'])->name('document.replace');
+        Route::delete('/document/{documentId}', [KominfoController::class, 'deleteDocument'])->name('document.delete');
+        Route::get('/document/{documentId}/download', [KominfoController::class, 'downloadDocument'])->name('document.download');
+
+        // Notifications
+        Route::get('/notifications', [MonalisaNotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/notifications/unread-count', [MonalisaNotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
+        Route::get('/notifications/recent', [MonalisaNotificationController::class, 'getRecent'])->name('notifications.recent');
+        Route::post('/notifications/{notificationId}/read', [MonalisaNotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::post('/notifications/read-all', [MonalisaNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+        Route::delete('/notifications/{notificationId}', [MonalisaNotificationController::class, 'destroy'])->name('notifications.delete');
+    });
+
+    // BPS User Routes (Verification/Audit)
+    Route::middleware(['auth', 'is_bps'])->prefix('bps')->name('bps.')->group(function () {
+        Route::get('/dashboard', [MonalisaBpsController::class, 'dashboard'])->name('dashboard');
+        // Route::get('/charts', [MonalisaBpsController::class, 'showCharts'])->name('charts'); // Commented out - Visualisasi page displays too much data
+        Route::get('/indicator-analysis', [MonalisaBpsController::class, 'showIndicatorAnalysis'])->name('indicator-analysis');
+        Route::get('/domain/{domainId}', [MonalisaBpsController::class, 'showDomain'])->name('domain');
+        Route::get('/assessments', [MonalisaBpsController::class, 'assessmentList'])->name('assessments');
+        Route::get('/assessment/{assessmentId}', [MonalisaBpsController::class, 'showAssessment'])->name('assessment.show');
+        Route::post('/assessment/{assessmentId}/verify', [MonalisaBpsController::class, 'verifyAssessment'])->name('assessment.verify');
+        Route::post('/assessment/{assessmentId}/reject', [MonalisaBpsController::class, 'rejectAssessment'])->name('assessment.reject');
+        Route::post('/document/{documentId}/comment', [MonalisaBpsController::class, 'addDocumentComment'])->name('document.comment');
+        Route::get('/document/{documentId}/download', [MonalisaBpsController::class, 'downloadDocument'])->name('document.download');
+
+        // Notifications
+        Route::get('/notifications', [MonalisaNotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/notifications/unread-count', [MonalisaNotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
+        Route::get('/notifications/recent', [MonalisaNotificationController::class, 'getRecent'])->name('notifications.recent');
+        Route::post('/notifications/{notificationId}/read', [MonalisaNotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::post('/notifications/read-all', [MonalisaNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+        Route::delete('/notifications/{notificationId}', [MonalisaNotificationController::class, 'destroy'])->name('notifications.delete');
+    });
+});
+
 // Authentication Routes are handled by Fortify
+// Email check route for registration validation
+Route::post('/check-email', [App\Http\Controllers\AuthController::class, 'checkEmail'])->name('check.email');
+
+// Test route for registration validation
+Route::get('/test-registration', function () {
+    return view('test-registration');
+});
+
 // Temporary SIBSTR Survey Routes (Public Access)
 Route::get('/survei/sibstr', [TemporarySurveyController::class, 'showSurvey'])->name('temporary.survey.sibstr');
 Route::post('/survei/sibstr', [TemporarySurveyController::class, 'submitSurvey'])->name('temporary.survey.sibstr.submit');
@@ -73,7 +144,24 @@ Route::get('/survei/sibstr/companies/search', [TemporarySurveyController::class,
 
 // Dashboard (Protected Routes)
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Unified user dashboard accessible to all authenticated users
+    Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
+
+    // Dashboard subpages
+    Route::get('/dashboard/apps', [UserDashboardController::class, 'apps'])->name('dashboard.apps');
+    Route::get('/dashboard/profile', [UserDashboardController::class, 'profile'])->name('dashboard.profile');
+    Route::get('/dashboard/news', [UserDashboardController::class, 'news'])->name('dashboard.news');
+    Route::get('/dashboard/videos', [UserDashboardController::class, 'videos'])->name('dashboard.videos');
+    Route::get('/dashboard/settings', [UserDashboardController::class, 'settings'])->name('dashboard.settings');
+
+    // Legacy user dashboard routes (still available for backward compatibility)
+    Route::get('/userdashboard', [UserDashboardController::class, 'index'])->name('userdashboard');
+    Route::get('/userdashboard/profile', [UserDashboardController::class, 'profile'])->name('userdashboard.profile');
+    Route::get('/userdashboard/news', [UserDashboardController::class, 'news'])->name('userdashboard.news');
+    Route::get('/userdashboard/videos', [UserDashboardController::class, 'videos'])->name('userdashboard.videos');
+    Route::get('/userdashboard/settings', [UserDashboardController::class, 'settings'])->name('userdashboard.settings');
+    Route::put('/user/profile/update', [UserDashboardController::class, 'updateProfile'])->name('user.profile.update');
+    Route::put('/user/password/update', [UserDashboardController::class, 'updatePassword'])->name('user.password.update');
 
     // User Profile Routes
     Route::get('/user/profile', [UserController::class, 'profile'])->name('user.profile.show');
@@ -146,6 +234,10 @@ Route::middleware(['auth', 'is_superadmin'])->prefix('superadmin')->name('supera
     Route::post('/companies/import', [CompanyController::class, 'import'])->name('companies.import');
     Route::get('/companies/search', [CompanyController::class, 'search'])->name('companies.search');
 });
+
+// Form Routes
+Route::get('/form/institution', [FormController::class, 'showInstitutionForm'])->name('form.institution');
+Route::post('/form/institution', [FormController::class, 'submitInstitutionForm'])->name('form.institution.submit');
 
 // Fallback Route
 Route::fallback(function () {

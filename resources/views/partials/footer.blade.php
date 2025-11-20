@@ -1,7 +1,8 @@
 <footer class="border-t bg-white dark:bg-gray-900 transition-colors duration-300">
+    @php($disableAos = request()->routeIs('monalisa.*'))
     <div class="container mx-auto px-4 py-8 md:px-6 md:py-12">
         <div class="grid grid-cols-1 gap-8 md:grid-cols-4">
-            <div class="space-y-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="space-y-4" @unless($disableAos) data-aos="fade-up" data-aos-delay="100" @endunless>
                 <h3 class="text-lg font-medium">
                     <span class="text-blue-600 dark:text-blue-500">Data</span>Kita
                 </h3>
@@ -38,7 +39,7 @@
                     </a>
                 </div>
             </div>
-            <div class="space-y-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="space-y-4" @unless($disableAos) data-aos="fade-up" data-aos-delay="200" @endunless>
                 <h3 class="text-lg font-medium">Navigasi</h3>
                 <ul class="space-y-2 text-sm">
                     <li>
@@ -73,7 +74,7 @@
                     </li>
                 </ul>
             </div>
-            <div class="space-y-4" data-aos="fade-up" data-aos-delay="300">
+            <div class="space-y-4" @unless($disableAos) data-aos="fade-up" data-aos-delay="300" @endunless>
                 <h3 class="text-lg font-medium">Kategori Data</h3>
                 <ul class="space-y-2 text-sm">
                     <li>
@@ -114,7 +115,7 @@
                     </li>
                 </ul>
             </div>
-            <div class="space-y-4" data-aos="fade-up" data-aos-delay="400">
+            <div class="space-y-4" @unless($disableAos) data-aos="fade-up" data-aos-delay="400" @endunless>
                 <h3 class="text-lg font-medium">Kontak</h3>
                 <address class="not-italic text-sm text-gray-500 dark:text-gray-400">
                     <p>BPS Kota Batam</p>

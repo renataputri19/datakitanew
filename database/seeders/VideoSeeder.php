@@ -27,6 +27,26 @@ class VideoSeeder extends Seeder
                 'title' => 'Penyampaian BRS Pariwisata, Ekspor, Impor dan Transportasi, Mei 2025',
                 'date' => '2025-05-05',
                 'url' => 'https://www.youtube.com/watch?v=MNP-nRpTX1U'
+            ],
+                        [
+                'title' => 'Penyampaian Berita Resmi Statistik Inflasi Bulan April 2025',
+                'date' => '2025-05-02',
+                'url' => 'https://www.youtube.com/watch?v=cTjssxScosc'
+            ],
+            [
+                'title' => 'Penyampaian BRS Pariwisata, Ekspor, Impor dan Transportasi, Mei 2025',
+                'date' => '2025-05-05',
+                'url' => 'https://www.youtube.com/watch?v=MNP-nRpTX1U'
+            ],
+                        [
+                'title' => 'Penyampaian Berita Resmi Statistik Inflasi Bulan April 2025',
+                'date' => '2025-05-02',
+                'url' => 'https://www.youtube.com/watch?v=cTjssxScosc'
+            ],
+            [
+                'title' => 'Penyampaian BRS Pariwisata, Ekspor, Impor dan Transportasi, Mei 2025',
+                'date' => '2025-05-05',
+                'url' => 'https://www.youtube.com/watch?v=MNP-nRpTX1U'
             ]
         ];
 

@@ -20,13 +20,16 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
-            NewsSeeder::class,
-            VideoSeeder::class,
-            AcademicInstitutionSeeder::class,
-            InstitutionSeeder::class,
+            // Monalisa structure (domains/aspects/indikators)
+            MonalisaStructureSeeder::class,
+            // Users (BPS + Kominfo sample users)
             UserSeeder::class,
-            SystemSeeder::class,
-            QueueLoketSeeder::class,
+            // NewsSeeder::class,
+            // VideoSeeder::class,
+            // AcademicInstitutionSeeder::class,
+            // InstitutionSeeder::class,
+            // SystemSeeder::class,
+            // QueueLoketSeeder::class,
         ]);
     }
 }

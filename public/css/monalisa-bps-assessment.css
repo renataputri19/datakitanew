@@ -1,0 +1,39 @@
+/* MONALISA BPS Assessment - Mobile/Small Screen Tweaks (<768px) */
+
+/* Ensure long filenames wrap within container */
+.monalisa-file-name {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
+/* Action bar responsive layout and comfortable tap targets */
+@media (max-width: 767px) {
+  .monalisa-action-bar {
+    gap: 0.75rem;
+  }
+
+  .monalisa-action-group {
+    width: 100%;
+  }
+
+  .monalisa-action-bar .monalisa-btn,
+  .monalisa-action-group .monalisa-btn {
+    width: 100%;
+    min-height: 44px; /* Comfortable touch target */
+    padding: 0.5rem 0.875rem; /* Slightly smaller on mobile */
+    font-size: 0.875rem;
+  }
+
+  /* Tighten card padding slightly for small screens without breaking design */
+  .ud-card {
+    padding: 1rem;
+  }
+
+  /* Document item inner layout: allow text to wrap and avoid overflow */
+  .ud-card .min-w-0 .monalisa-file-name {
+    display: block;
+    max-width: 100%;
+    line-height: 1.3;
+  }
+}

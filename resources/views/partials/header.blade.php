@@ -1,6 +1,9 @@
 <header class="sticky top-0 z-50 w-full border-b bg-white/95 dark:bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-900/60 transition-colors duration-300">
     <div class="container mx-auto px-4 flex h-16 items-center justify-between">
         <div class="flex items-center">
+            {{-- @if(request()->routeIs('dashboard*'))
+                <img src="{{ asset('img/Logo BPS 1.png') }}" alt="Logo BPS" class="h-6 w-auto mr-3" loading="lazy">
+            @endif --}}
             <a href="{{ route('home') }}" class="mr-6 flex items-center space-x-2">
                 <span class="font-bold text-lg">
                     <span class="text-blue-600 dark:text-blue-500">Data</span>Kita
@@ -19,6 +22,10 @@
                 <a href="{{ route('temporary.survey.sibstr') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('temporary.survey.sibstr*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                     SIBSTR
                 </a>
+                <!-- Global Dashboard link: goes to /dashboard and requires auth -->
+                <a href="http://datakitanew.test/dashboard" class="nav-cta {{ request()->routeIs('dashboard') ? 'nav-cta-active' : '' }}">
+                    Dashboard
+                </a>
                 {{-- <a href="{{ route('systems') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('systems*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                     Sistem Terintegrasi
                 </a>
@@ -29,25 +36,19 @@
                     FAQ
                 </a> --}}
                 @auth
-                    {{-- Dashboard dropdown for role-based navigation --}}
-                    @if(Auth::user()->is_superadmin || Auth::user()->is_bps)
+                    {{-- Dashboard dropdown for role-based navigation (hidden for superadmin; direct Dashboard link shown instead) --}}
+                    @if(Auth::user()->is_bps && !Auth::user()->is_superadmin)
                         <div class="relative" id="dashboard-dropdown">
-                            <button type="button" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('superadmin.*') || request()->routeIs('bps.*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}" id="dashboard-dropdown-button" aria-expanded="false">
-                                Dashboard
-                                <svg class="ml-1 h-4 w-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <button type="button" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('superadmin.*') || request()->routeIs('bps.*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}" id="dashboard-dropdown-button" aria-expanded="false" aria-label="Dashboard menu">
+                                <svg class="h-4 w-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                                </svg>
+                                <svg class="ml-1 h-4 w-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
                             <div class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50 hidden" id="dashboard-dropdown-menu" role="menu">
                                 <div class="py-1" role="none">
-                                    @if(Auth::user()->is_superadmin)
-                                        <a href="{{ route('superadmin.dashboard') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white {{ request()->routeIs('superadmin.*') ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : '' }}" role="menuitem">
-                                            <svg class="mr-3 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                            Dashboard Superadmin
-                                        </a>
-                                    @endif
                                     @if(Auth::user()->is_bps)
                                         <a href="{{ route('bps.dashboard') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white {{ request()->routeIs('bps.*') ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : '' }}" role="menuitem">
                                             <svg class="mr-3 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,9 +69,9 @@
                 <span class="hidden lg:inline-flex items-center mr-2 text-sm text-gray-700 dark:text-gray-300">
                     Halo, {{ Auth::user()->name }}
                 </span>
-                <form method="POST" action="{{ route('logout') }}" class="hidden lg:block">
+                <form method="POST" action="{{ route('logout') }}" class="hidden lg:block" id="logout-form-header">
                     @csrf
-                    <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 px-4 py-2">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 px-4 py-2" data-no-loading>
                         Keluar
                     </button>
                 </form>
@@ -99,6 +100,7 @@
                 </svg>
                 <span class="sr-only">Toggle theme</span>
             </button>
+            @if(!(Auth::check() && Auth::user()->is_superadmin))
             <button type="button" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 w-9 p-0 lg:hidden" id="mobile-menu-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
                     <line x1="4" x2="20" y1="12" y2="12"></line>
@@ -107,6 +109,7 @@
                 </svg>
                 <span class="sr-only">Toggle menu</span>
             </button>
+            @endif
         </div>
     </div>
 
@@ -154,6 +157,16 @@
                 </div>
                 <span>SIBSTR</span>
             </a>
+            <!-- Global Dashboard link on mobile -->
+            <a href="http://datakitanew.test/dashboard" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('dashboard') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
+                <div class="w-8 flex-shrink-0 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                        <path d="M3 3h18v18H3z"></path>
+                        <path d="M7 7h10v10H7z"></path>
+                    </svg>
+                </div>
+                <span>Dashboard</span>
+            </a>
             {{-- <a href="{{ route('systems') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('systems*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
                 <div class="w-8 flex-shrink-0 mr-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
@@ -197,13 +210,15 @@
                 {{-- Role-based navigation links for mobile --}}
                 @if(Auth::user()->is_superadmin)
                     <div class="border-t border-gray-200 dark:border-gray-800 my-2"></div>
-                    <a href="{{ route('superadmin.dashboard') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('superadmin.*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
+                    <!-- Superadmin direct dashboard link -->
+                    <a href="http://datakitanew.test/dashboard" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('dashboard') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
                         <div class="w-8 flex-shrink-0 mr-3">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                                <path d="M3 3h18v18H3z"></path>
+                                <path d="M7 7h10v10H7z"></path>
                             </svg>
                         </div>
-                        <span>Dashboard Superadmin</span>
+                        <span>Dashboard</span>
                     </a>
                 @endif
                 @if(Auth::user()->is_bps)
@@ -236,9 +251,9 @@
                         Halo, {{ Auth::user()->name }}
                     </span>
                 </div>
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('logout') }}" id="logout-form-mobile">
                     @csrf
-                    <button type="submit" class="w-full inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 px-4 py-2">
+                    <button type="submit" class="w-full inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 px-4 py-2" data-no-loading>
                         Keluar
                     </button>
                 </form>
@@ -260,7 +275,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
-        const mobileMenuLinks = mobileMenu.querySelectorAll('a');
+        const mobileMenuLinks = mobileMenu ? mobileMenu.querySelectorAll('a') : [];
 
         // Dashboard dropdown functionality
         const dashboardDropdown = document.getElementById('dashboard-dropdown');
@@ -372,11 +387,17 @@
             }
         }
 
-        mobileMenuButton.addEventListener('click', toggleMobileMenu);
+        // Bind toggle only if button exists (e.g., hidden for superadmin)
+        if (mobileMenuButton) {
+            mobileMenuButton.addEventListener('click', toggleMobileMenu);
+        }
 
         // Close menu when clicking outside
         document.addEventListener('click', function(e) {
-            if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target) && !mobileMenu.classList.contains('hidden')) {
+            // Safely handle absence of mobileMenuButton (e.g., superadmin)
+            const clickedOutsideMenu = !mobileMenu?.contains(e.target);
+            const clickedOutsideButton = !mobileMenuButton || !mobileMenuButton.contains(e.target);
+            if (clickedOutsideMenu && clickedOutsideButton && !mobileMenu.classList.contains('hidden')) {
                 toggleMobileMenu();
             }
         });
@@ -388,7 +409,7 @@
 
         // Close menu when pressing escape key
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
+            if (e.key === 'Escape' && mobileMenu && !mobileMenu.classList.contains('hidden')) {
                 toggleMobileMenu();
             }
         });
@@ -447,6 +468,36 @@
     #dashboard-dropdown-menu a:focus {
         outline: 2px solid #3b82f6;
         outline-offset: -2px;
+    }
+
+    /* Nav CTA styling (Dashboard) */
+    .nav-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 0.5rem 0.75rem;
+        color: #ffffff;
+        background-image: linear-gradient(90deg, #2563eb, #7c3aed);
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
+        transition: all 0.2s ease;
+    }
+    .nav-cta:hover {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+    }
+    .nav-cta:focus-visible {
+        outline: 2px solid #2563eb;
+        outline-offset: 2px;
+    }
+    .dark .nav-cta {
+        color: #ffffff;
+        background-image: linear-gradient(90deg, #2563eb, #7c3aed);
+    }
+    .nav-cta-active {
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,0.25);
     }
 </style>
 

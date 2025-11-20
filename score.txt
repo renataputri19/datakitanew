@@ -1,0 +1,141 @@
+## 🟩 **Domain 1 — Prinsip Satu Data Indonesia (SDI)**
+
+**Bobot Domain: 28% — 4 Aspek, 4 Indikator**
+
+**Aspek 1 — Standar Data Statistik → 25%**
+
+Indikator 1.1: Tingkat Kematangan Penerapan Standar Data Statistik (SDS)
+
+**Aspek 2 — Metadata Statistik → 25%**
+
+Indikator 2.1: Tingkat Kematangan Penerapan Metadata Statistik
+
+**Aspek 3 — Interoperabilitas Data → 25%**
+
+Indikator 3.1: Tingkat Kematangan Penerapan Interoperabilitas Data
+
+**Aspek 4 — Kode Referensi dan/atau Data Induk → 25%**
+
+Indikator 4.1: Tingkat Kematangan Penerapan Kode Referensi 
+
+---
+
+## 🟩 **Domain 2 — Kualitas Data**
+
+**Bobot Domain: 24% — 5 Aspek, 10 Indikator**
+
+**Aspek 1 — Relevansi → 21%**
+
+Indikator 1.1: Tingkat Kematangan Relevansi Data terhadap Pengguna
+
+Indikator 1.2: Tingkat Kematangan Proses Identifikasi Kebutuhan Data
+
+**Aspek 2 — Akurasi → 16%**
+
+Indikator 2.1: Tingkat Kematangan Penilaian Akurasi Data
+
+**Aspek 3 — Aktualitas dan Ketepatan Waktu → 21%**
+
+Indikator 3.1: Tingkat Kematangan Penjaminan Aktualitas Data
+
+Indikator 3.2: Tingkat Kematangan Pemantauan Ketepatan Waktu Diseminasi
+
+**Aspek 4 — Aksesibilitas → 21%**
+
+Indikator 4.1: Tingkat Kematangan Ketersediaan Data untuk Pengguna Data
+
+Indikator 4.2: Tingkat Kematangan Akses Media Penyebarluasan Data
+
+Indikator 4.3: Tingkat Kematangan Penyediaan Format Data
+
+**Aspek 5 — Keterbandingan dan Konsistensi → 21%**
+
+Indikator 5.1: Tingkat Kematangan Keterbandingan Data
+
+Indikator 5.2: Tingkat Kematangan Konsistensi Statistik
+
+---
+
+## 🟩 **Domain 3 — Proses Bisnis Statistik**
+
+**Bobot Domain: 19% — 4 Aspek, 7 Indikator**
+
+**Aspek 1 — Perencanaan Data → 32%**
+
+Indikator 1.1: Tingkat Kematangan Pendefinisian Kebutuhan Statistik
+
+Indikator 1.2: Tingkat Kematangan Desain Statistik
+
+Indikator 1.3: Tingkat Kematangan Penyiapan Instrumen
+
+**Aspek 2 — Pengumpulan Data → 26%**
+
+Indikator 2.1: Tingkat Kematangan Proses Pengumpulan Data/Akuisisi Data
+
+**Aspek 3 — Pemeriksaan Data → 21%**
+
+Indikator 3.1: Tingkat Kematangan Pengolahan Data
+
+Indikator 3.2: Tingkat Kematangan Analisis Data
+
+**Aspek 4 — Penyebarluasan Data → 21%**
+
+Indikator 4.1: Tingkat Kematangan Diseminasi Data
+
+---
+
+## 🟩 **Domain 4 — Kelembagaan**
+
+**Bobot Domain: 17% — 3 Aspek, 10 Indikator**
+
+**Aspek 1 — Profesionalitas → 35%**
+
+Indikator 1.1: Tingkat Kematangan Penjaminan Transparansi Informasi Statistik
+
+Indikator 1.2: Tingkat Kematangan Penjaminan Netralitas dan Objektivitas terhadap Penggunaan Sumber Data dan Metodologi
+
+Indikator 1.3: Tingkat Kematangan Penjaminan Kualitas Data
+
+Indikator 1.4: Tingkat Kematangan Penjaminan Konfidensialitas Data
+
+**Aspek 2 — SDM yang Memadai dan Kapabel → 30%**
+
+Indikator 2.1: Tingkat Kematangan Pemenuhan Kompetensi SDM Bidang Statistik
+
+Indikator 2.2: Tingkat Kematangan Pemenuhan Kompetensi SDM Bidang Manajemen Data
+
+**Aspek 3 — Pengorganisasian Statistik → 35%**
+
+Indikator 3.1: Tingkat Kematangan Kolaborasi Penyelenggaraan Kegiatan Statistik
+
+Indikator 3.2: Tingkat Kematangan Penyelenggaraan Forum Satu Data Indonesia
+
+Indikator 3.3: Tingkat Kematangan Kolaborasi dengan Pembina Data Statistik
+
+Indikator 3.4: Tingkat Kematangan Pelaksanaan Tugas sebagai Walidata
+
+---
+
+## 🟩 **Domain 5 — Statistik Nasional**
+
+**Bobot Domain: 12% — 3 Aspek, 7 Indikator**
+
+**Aspek 1 — Pemanfaatan Data Statistik → 34%**
+
+Indikator 1.1: Tingkat Kematangan Penggunaan Data Statistik Dasar untuk Perencanaan, Monitoring, dan Evaluasi, dan atau Penyusunan Kebijakan
+
+Indikator 1.2: Tingkat Kematangan Penggunaan Data Statistik Sektoral untuk Perencanaan, Monitoring, dan Evaluasi, dan atau Penyusunan Kebijakan
+
+Indikator 1.3: Tingkat Kematangan Sosialisasi dan Literasi Hasil Statistik
+
+**Aspek 2 — Pengelolaan Kegiatan Statistik → 33%**
+
+Indikator 2.1: Tingkat Kematangan Pelaksanaan Rekomendasi Kegiatan Statistik
+
+**Aspek 3 — Penguatan SSN Berkelanjutan → 33%**
+
+Indikator 3.1: Tingkat Kematangan Perencanaan Pembangunan Statistik
+
+Indikator 3.2: Tingkat Kematangan Penyebarluasan Data
+
+Indikator 3.3: Tingkat Kematangan Pemanfaatan Big Data

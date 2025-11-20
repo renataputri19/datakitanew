@@ -18,17 +18,12 @@ class LoginResponse implements LoginResponseContract
     {
         $user = $request->user();
 
-        // Redirect superadmin users to their dashboard
+        // Keep superadmin users on their dedicated dashboard
         if ($user && $user->is_superadmin) {
             return redirect()->intended(route('superadmin.dashboard'));
         }
 
-        // Redirect BPS users to their dashboard
-        if ($user && $user->is_bps) {
-            return redirect()->intended(route('bps.dashboard'));
-        }
-
-        // Default redirect for regular users
+        // Redirect all authenticated users to the unified /dashboard
         return redirect()->intended(route('dashboard'));
     }
 }

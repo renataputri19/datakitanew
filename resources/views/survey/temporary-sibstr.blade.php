@@ -1191,7 +1191,7 @@
             </div>
         </div>
         <h1 class="survey-title">
-            SURVEI INDUSTRI BESAR DAN SEDANG TRIWULANAN (SIBSTR)
+            SURVEI TRIWULANAN PELAKU USAHA (STPU) / SURVEI INDUSTRI BESAR DAN SEDANG TRIWULANAN (SIBSTR)
         </h1>
         <p class="survey-subtitle">
             Formulir survei untuk pengumpulan data industri besar dan sedang triwulanan sesuai standar BPS

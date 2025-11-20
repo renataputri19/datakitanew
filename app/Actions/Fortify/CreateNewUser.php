@@ -31,11 +31,11 @@ class CreateNewUser implements CreatesNewUsers
             ],
             'password' => $this->passwordRules(),
             'user_type' => ['required', 'string', 'in:personal,instansi,akademisi'],
-            'institution_type' => ['required_if:user_type,instansi', 'nullable', 'string', 'in:pemerintah,swasta,bumn,bumd,lainnya'],
+            'institution_type' => ['required_if:user_type,instansi', 'nullable', 'string', 'in:pemerintah,swasta,universitas,sekolah,institut,politeknik,lembaga_penelitian,perusahaan,organisasi,lainnya'],
             'institution_name' => ['required_if:user_type,instansi,akademisi', 'nullable', 'string', 'max:255'],
             'other_institution_name' => ['required_if:institution_name,Lainnya', 'nullable', 'string', 'max:255'],
-            'institution_address' => ['required_if:user_type,instansi,akademisi', 'nullable', 'string', 'max:255'],
-            'institution_phone' => ['required_if:user_type,instansi,akademisi', 'nullable', 'string', 'max:20'],
+            'institution_address' => ['nullable', 'string', 'max:255'],
+            'institution_phone' => ['nullable', 'string', 'max:20'],
             'institution_website' => ['nullable', 'string', 'max:255', 'url'],
         ])->validate();
 

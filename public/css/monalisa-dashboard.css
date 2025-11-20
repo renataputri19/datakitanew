@@ -1,0 +1,398 @@
+/* MONALISA Dashboard Styles */
+/* Distinctive visual identity with blue primary and purple accents */
+
+:root {
+    --monalisa-primary: #2563eb;
+    --monalisa-primary-dark: #1e40af;
+    --monalisa-primary-light: #3b82f6;
+    --monalisa-accent: #7c3aed;
+    --monalisa-accent-dark: #6d28d9;
+    --monalisa-accent-light: #8b5cf6;
+    --monalisa-success: #10b981;
+    --monalisa-warning: #f59e0b;
+    --monalisa-danger: #ef4444;
+    --monalisa-info: #06b6d4;
+    --monalisa-gray-50: #f9fafb;
+    --monalisa-gray-100: #f3f4f6;
+    --monalisa-gray-200: #e5e7eb;
+    --monalisa-gray-300: #d1d5db;
+    --monalisa-gray-700: #374151;
+    --monalisa-gray-800: #1f2937;
+    --monalisa-gray-900: #111827;
+}
+
+/* Dashboard Container */
+.monalisa-dashboard {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+    padding: 2rem 0;
+}
+
+/* Score Cards */
+.monalisa-score-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    border-left: 4px solid var(--monalisa-primary);
+}
+
+.monalisa-score-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.monalisa-score-card.accent {
+    border-left-color: var(--monalisa-accent);
+}
+
+.monalisa-score-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--monalisa-primary), var(--monalisa-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.monalisa-score-label {
+    color: var(--monalisa-gray-700);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Domain Cards */
+.monalisa-domain-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    border-top: 3px solid var(--monalisa-primary);
+    transition: all 0.3s ease;
+}
+
+.monalisa-domain-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.monalisa-domain-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.monalisa-domain-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--monalisa-gray-900);
+}
+
+.monalisa-domain-weight {
+    background: linear-gradient(135deg, var(--monalisa-primary), var(--monalisa-accent));
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Progress Bar */
+.monalisa-progress {
+    width: 100%;
+    height: 0.75rem;
+    background-color: var(--monalisa-gray-200);
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.monalisa-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--monalisa-primary), var(--monalisa-accent));
+    border-radius: 9999px;
+    transition: width 0.6s ease;
+}
+
+/* Assessment Form */
+.monalisa-assessment-form {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.monalisa-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.monalisa-form-label {
+    display: block;
+    font-weight: 600;
+    color: var(--monalisa-gray-900);
+    margin-bottom: 0.5rem;
+}
+
+.monalisa-form-input,
+.monalisa-form-textarea,
+.monalisa-form-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--monalisa-gray-300);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.monalisa-form-input:focus,
+.monalisa-form-textarea:focus,
+.monalisa-form-select:focus {
+    outline: none;
+    border-color: var(--monalisa-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Maturity Level Selector */
+.monalisa-maturity-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.monalisa-maturity-option {
+    position: relative;
+}
+
+.monalisa-maturity-input {
+    position: absolute;
+    opacity: 0;
+}
+
+.monalisa-maturity-label {
+    display: block;
+    padding: 1rem;
+    border: 2px solid var(--monalisa-gray-300);
+    border-radius: 0.75rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.monalisa-maturity-input:checked + .monalisa-maturity-label {
+    border-color: var(--monalisa-primary);
+    background: linear-gradient(135deg, var(--monalisa-primary), var(--monalisa-accent));
+    color: white;
+    transform: scale(1.05);
+}
+
+.monalisa-maturity-label:hover {
+    border-color: var(--monalisa-primary-light);
+    transform: translateY(-2px);
+}
+
+.monalisa-maturity-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: block;
+}
+
+.monalisa-maturity-name {
+    font-size: 0.875rem;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+/* Document Upload */
+.monalisa-upload-area {
+    border: 2px dashed var(--monalisa-gray-300);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--monalisa-gray-50);
+}
+
+.monalisa-upload-area:hover {
+    border-color: var(--monalisa-primary);
+    background: #eff6ff;
+}
+
+.monalisa-upload-area.dragover {
+    border-color: var(--monalisa-accent);
+    background: #f5f3ff;
+}
+
+.monalisa-document-list {
+    margin-top: 1rem;
+}
+
+.monalisa-document-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: var(--monalisa-gray-50);
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.monalisa-document-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Notifications: Mobile readability improvements */
+.notification-message {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+}
+
+@media (max-width: 768px) {
+    /* Increase card breathing room on mobile for notifications */
+    #notifications-list .notification-item {
+        padding: 1rem;
+    }
+
+    /* Ensure actions are comfortable to tap in vertical layout */
+    #notifications-list .notification-item .transition-colors {
+        min-height: 40px;
+    }
+}
+
+.monalisa-document-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: linear-gradient(135deg, var(--monalisa-primary), var(--monalisa-accent));
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+/* Buttons */
+.monalisa-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.monalisa-btn-primary {
+    background: linear-gradient(135deg, var(--monalisa-primary), var(--monalisa-accent));
+    color: white;
+}
+
+.monalisa-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+}
+
+.monalisa-btn-secondary {
+    background: var(--monalisa-gray-200);
+    color: var(--monalisa-gray-900);
+}
+
+.monalisa-btn-secondary:hover {
+    background: var(--monalisa-gray-300);
+}
+
+.monalisa-btn-success {
+    background: var(--monalisa-success);
+    color: white;
+}
+
+.monalisa-btn-danger {
+    background: var(--monalisa-danger);
+    color: white;
+}
+
+/* Badges */
+.monalisa-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.monalisa-badge-draft {
+    background: var(--monalisa-gray-200);
+    color: var(--monalisa-gray-700);
+}
+
+.monalisa-badge-submitted {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.monalisa-badge-verified {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.monalisa-badge-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Sidebar Navigation */
+.monalisa-sidebar {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.monalisa-sidebar-item {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--monalisa-gray-700);
+}
+
+.monalisa-sidebar-item:hover {
+    background: var(--monalisa-gray-100);
+    color: var(--monalisa-primary);
+}
+
+.monalisa-sidebar-item.active {
+    background: linear-gradient(135deg, var(--monalisa-primary), var(--monalisa-accent));
+    color: white;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .monalisa-dashboard {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    }
+    
+    .monalisa-score-card,
+    .monalisa-domain-card,
+    .monalisa-assessment-form,
+    .monalisa-sidebar {
+        background: #1e293b;
+        color: #f1f5f9;
+    }
+    
+    .monalisa-domain-title,
+    .monalisa-form-label {
+        color: #f1f5f9;
+    }
+}
+
