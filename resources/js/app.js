@@ -10,13 +10,16 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.theme = "light"
     }
 
-    // Initialize AOS animation library
-    AOS.init({
-      duration: 800,
-      easing: "ease-in-out",
-      once: true,
-      mirror: false,
-    })
+    // Initialize AOS animation library, except on /dashboard routes
+    const isDashboardRoute = window.location.pathname.startsWith('/dashboard')
+    if (typeof AOS !== 'undefined' && !isDashboardRoute) {
+      AOS.init({
+        duration: 800,
+        easing: "ease-in-out",
+        once: true,
+        mirror: false,
+      })
+    }
 
     // Add smooth scrolling to all links
     document.querySelectorAll('a[href^="#"]').forEach((anchor) => {

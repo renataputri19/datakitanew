@@ -67,10 +67,6 @@
 @endsection
 
 @push('scripts')
-<!-- AOS Animation Library -->
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-
 <!-- User Dashboard Centralized JavaScript -->
 <script src="{{ asset('js/user-dashboard.js') }}"></script>
 @endpush

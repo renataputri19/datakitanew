@@ -18,7 +18,7 @@
     </div>
 
     <!-- Professional Page Header -->
-    <div class="ud-page-header" data-aos="fade-up">
+<div class="ud-page-header">
         <div class="ud-page-header-content">
             <h1 class="ud-page-title">Berita</h1>
             <p class="ud-page-description mb-4">Akses lengkap berita resmi statistik dari BPS Kota Batam</p>
@@ -34,7 +34,7 @@
     </div>
 
     <!-- Berita Section -->
-    <section class="ud-mb-6" data-aos="fade-up" data-aos-delay="100">
+<section class="ud-mb-6">
         <div class="ud-section-header">
             <div class="ud-section-title">
                 <div class="ud-section-icon">
@@ -52,7 +52,7 @@
         @if($news->count() > 0)
             <div class="ud-grid ud-grid-cols-2 ud-mb-5">
                 @foreach($news as $item)
-                    <article class="ud-news-card" data-aos="fade-up" data-aos-delay="{{ $loop->index * 100 }}">
+<article class="ud-news-card">
                         @if($item->thumbnail)
                             <img src="{{ asset('storage/' . $item->thumbnail) }}" alt="{{ $item->title }}" class="ud-news-image">
                         @else
@@ -98,7 +98,7 @@
 
             <!-- News Pagination -->
             @if($news->hasPages())
-                <div class="ud-pagination-wrapper" data-aos="fade-up" data-aos-delay="300">
+<div class="ud-pagination-wrapper">
                     <div class="ud-pagination">
                         {{-- Previous Page Link --}}
                         @if ($news->onFirstPage())
@@ -143,7 +143,7 @@
             @endif
         @else
             <!-- Empty State for News -->
-            <div class="ud-empty-state" data-aos="fade-up" data-aos-delay="100">
+<div class="ud-empty-state">
                 <svg class="ud-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
                 </svg>

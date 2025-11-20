@@ -19,7 +19,7 @@
 </div>
 
 <!-- Page Header -->
-<div class="ud-page-header" data-aos="fade-up">
+<div class="ud-page-header">
     <div class="ud-page-header-content">
         <h1 class="ud-page-title">Pengaturan</h1>
         <p class="ud-page-description">Kelola informasi akun dan preferensi Anda</p>
@@ -28,7 +28,7 @@
 
 <!-- Success/Error Messages -->
 @if(session('success'))
-    <div class="ud-alert ud-alert-success ud-mb-4" data-aos="fade-up">
+<div class="ud-alert ud-alert-success ud-mb-4">
         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
@@ -37,7 +37,7 @@
 @endif
 
 @if(session('error'))
-    <div class="ud-alert ud-alert-error ud-mb-4" data-aos="fade-up">
+<div class="ud-alert ud-alert-error ud-mb-4">
         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
@@ -46,7 +46,7 @@
 @endif
 
 <!-- Profile Settings -->
-<div id="profile-section" class="ud-card ud-mb-4" data-aos="fade-up" data-aos-delay="100">
+<div id="profile-section" class="ud-card ud-mb-4">
     <div class="ud-card-header">
         <h2 class="ud-card-title flex items-center gap-2">
             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,7 +254,7 @@
 </div>
 
 <!-- Password Settings -->
-<div class="ud-card ud-mb-4" data-aos="fade-up" data-aos-delay="200">
+<div class="ud-card ud-mb-4">
     <div class="ud-card-header">
         <h2 class="ud-card-title flex items-center gap-2">
             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

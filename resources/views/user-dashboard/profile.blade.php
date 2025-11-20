@@ -15,7 +15,7 @@
     </div>
 
     <!-- Page Header -->
-    <div class="ud-page-header" data-aos="fade-up">
+<div class="ud-page-header">
         <div class="ud-page-header-content">
             <h1 class="ud-page-title">Profil Saya</h1>
             <p class="ud-page-description">Kelola informasi profil dan data pribadi Anda</p>
@@ -23,7 +23,7 @@
     </div>
 
     <!-- Profile Card -->
-    <div class="ud-card" data-aos="fade-up" data-aos-delay="100">
+<div class="ud-card">
         <!-- Profile Avatar -->
         <div class="text-center ud-mb-5">
             <div class="ud-profile-avatar">

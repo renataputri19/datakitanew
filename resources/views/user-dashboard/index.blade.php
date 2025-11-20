@@ -17,7 +17,7 @@
     </div>
 
     <!-- Welcome Section -->
-    <div class="ud-welcome" data-aos="fade-up">
+    <div class="ud-welcome">
         <h1 class="ud-welcome-title">Selamat Datang, {{ $user->name }}!</h1>
         <p class="ud-welcome-description">Kelola profil Anda dan akses berita terbaru dari BPS Kota Batam</p>
         <div class="ud-welcome-actions">
@@ -58,7 +58,7 @@
     </div> --}}
 
     <!-- Apps Section -->
-    <div class="ud-card ud-mb-4" data-aos="fade-up" data-aos-delay="100">
+    <div class="ud-card ud-mb-4">
         <div class="ud-section-header">
             <h2 class="ud-section-title">
                 <div class="ud-section-icon">
@@ -208,7 +208,7 @@
     </div>
 
     <!-- Content Grid: News and Videos -->
-    <div class="ud-grid ud-grid-cols-2 ud-mt-4" data-aos="fade-up" data-aos-delay="200">
+    <div class="ud-grid ud-grid-cols-2 ud-mt-4">
         <!-- Recent News -->
         <div class="ud-card">
             <div class="ud-section-header">
@@ -317,7 +317,7 @@
     </div>
 
     <!-- Apps Navigation Section -->
-    <div class="mt-8 text-center" data-aos="fade-up" data-aos-delay="300">
+    <div class="mt-8 text-center">
         <a href="{{ route('dashboard.apps') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>

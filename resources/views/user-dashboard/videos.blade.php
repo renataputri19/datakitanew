@@ -18,7 +18,7 @@
     </div>
 
     <!-- Professional Page Header -->
-    <div class="ud-page-header" data-aos="fade-up">
+<div class="ud-page-header">
         <div class="ud-page-header-content">
             <h1 class="ud-page-title">Video</h1>
             <p class="ud-page-description mb-4">Akses lengkap video terbaru dari BPS Kota Batam</p>
@@ -34,7 +34,7 @@
     </div>
 
     <!-- Video Section -->
-    <section class="ud-mb-6" data-aos="fade-up" data-aos-delay="100">
+<section class="ud-mb-6">
         <div class="ud-section-header">
             <div class="ud-section-title">
                 <div class="ud-section-icon">
@@ -52,7 +52,7 @@
         @if($videos->count() > 0)
             <div class="ud-grid ud-grid-cols-2 ud-mb-5">
                 @foreach($videos as $video)
-                    <article class="ud-video-card" data-aos="fade-up" data-aos-delay="{{ $loop->index * 100 }}">
+<article class="ud-video-card">
                         <div class="ud-video-thumbnail">
                             @php
                                 $videoId = App\Helpers\YoutubeHelper::extractYoutubeId($video->url);
@@ -93,7 +93,7 @@
 
             <!-- Video Pagination -->
             @if($videos->hasPages())
-                <div class="ud-pagination-wrapper" data-aos="fade-up" data-aos-delay="300">
+<div class="ud-pagination-wrapper">
                     <div class="ud-pagination">
                         {{-- Previous Page Link --}}
                         @if ($videos->onFirstPage())
@@ -138,7 +138,7 @@
             @endif
         @else
             <!-- Empty State for Videos -->
-            <div class="ud-empty-state" data-aos="fade-up" data-aos-delay="100">
+<div class="ud-empty-state">
                 <svg class="ud-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 002 2v8a2 2 0 002 2z"></path>
                 </svg>

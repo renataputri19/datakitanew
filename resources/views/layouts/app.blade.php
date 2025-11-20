@@ -16,8 +16,10 @@
     <!-- Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <!-- AOS Animation Library -->
+    <!-- AOS Animation Library (excluded on /dashboard routes) -->
+    @unless (request()->is('dashboard*'))
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    @endunless
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -35,15 +37,18 @@
         @include('partials.footer')
     </div>
 
-    <!-- AOS Animation Library -->
+    <!-- AOS Animation Library (excluded on /dashboard routes) -->
+    @unless (request()->is('dashboard*'))
     <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            AOS.init({
-                duration: 800,
-                easing: 'ease-in-out',
-                once: true
-            });
+            if (typeof AOS !== 'undefined') {
+                AOS.init({
+                    duration: 800,
+                    easing: 'ease-in-out',
+                    once: true
+                });
+            }
 
             // Theme toggle functionality
             const themeToggle = document.getElementById('theme-toggle');
@@ -71,6 +76,7 @@
             }
         });
     </script>
+    @endunless
 
     @stack('scripts')
 </body>

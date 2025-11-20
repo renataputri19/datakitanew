@@ -6,20 +6,7 @@
 (function() {
     'use strict';
 
-    /**
-     * Initialize AOS (Animate On Scroll) if available
-     */
-    function initAOS() {
-        if (typeof AOS !== 'undefined') {
-            AOS.init({
-                duration: 800,
-                easing: 'ease-out-cubic',
-                once: true,
-                offset: 50,
-                disable: 'mobile' // Disable on mobile for better performance
-            });
-        }
-    }
+    // AOS removed from dashboard for improved scroll performance
 
     /**
      * Sidebar Toggle Functionality
@@ -262,7 +249,6 @@
      */
     function init() {
         initSidebar();
-        initAOS();
         initSmoothScroll();
         initAlerts();
         initFormValidation();

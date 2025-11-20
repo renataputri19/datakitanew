@@ -15,7 +15,7 @@
     </div>
 
     <!-- Page Header -->
-    <div class="ud-page-header" data-aos="fade-up">
+<div class="ud-page-header">
         <div class="ud-page-header-content">
             <h1 class="ud-page-title">Aplikasi DataKita</h1>
             <p class="ud-page-description">Akses berbagai aplikasi dan fitur yang tersedia untuk Anda</p>
@@ -23,7 +23,7 @@
     </div>
 
     <!-- Apps Grid -->
-    <div class="apps-grid" data-aos="fade-up" data-aos-delay="100">
+<div class="apps-grid">
         
         <!-- Basic User Apps - Available to All Users -->
         
@@ -202,7 +202,7 @@
     </div>
 
     <!-- Back to Dashboard Button -->
-    <div class="mt-8" data-aos="fade-up" data-aos-delay="200">
+<div class="mt-8">
         <a href="{{ route('dashboard') }}" class="ud-btn ud-btn-secondary inline-flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
