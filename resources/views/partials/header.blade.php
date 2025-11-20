@@ -23,7 +23,7 @@
                     SIBSTR
                 </a>
                 <!-- Global Dashboard link: goes to /dashboard and requires auth -->
-                <a href="http://datakitanew.test/dashboard" class="nav-cta {{ request()->routeIs('dashboard') ? 'nav-cta-active' : '' }}">
+                <a href="{{ route('dashboard') }}" class="nav-cta {{ request()->routeIs('dashboard') ? 'nav-cta-active' : '' }}">
                     Dashboard
                 </a>
                 {{-- <a href="{{ route('systems') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('systems*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
@@ -132,7 +132,7 @@
                 <span>SIBSTR</span>
             </a>
             <!-- Global Dashboard link on mobile -->
-            <a href="http://datakitanew.test/dashboard" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('dashboard') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
+            <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('dashboard') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
                 <div class="w-8 flex-shrink-0 mr-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
                         <path d="M3 3h18v18H3z"></path>
@@ -185,7 +185,7 @@
                 @if(Auth::user()->is_superadmin)
                     <div class="border-t border-gray-200 dark:border-gray-800 my-2"></div>
                     <!-- Superadmin direct dashboard link -->
-                    <a href="http://datakitanew.test/dashboard" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('dashboard') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
+                    <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('dashboard') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
                         <div class="w-8 flex-shrink-0 mr-3">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
                                 <path d="M3 3h18v18H3z"></path>
