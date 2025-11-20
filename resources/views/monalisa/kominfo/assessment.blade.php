@@ -1026,7 +1026,10 @@ function performReplace(documentId) {
                 const docElement = document.querySelector(`[data-document-id="${documentId}"]`);
                 if (docElement) {
                     const nameEl = docElement.querySelector('.font-medium');
-                    const infoEl = docElement.querySelector('.text-sm.text-gray-500, .dark\:text-gray-400');
+                    // Use robust selectors to handle Tailwind dark variant without CSS escaping issues
+                    // Prefer the light mode classes; fall back to matching the dark variant token in class attribute
+                    const infoEl = docElement.querySelector('.text-sm.text-gray-500')
+                        || docElement.querySelector('[class~="dark:text-gray-400"]');
                     if (nameEl) nameEl.textContent = data.document.original_filename;
                     if (infoEl) {
                         const sizeKb = (data.document.file_size / 1024).toFixed(2);
