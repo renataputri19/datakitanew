@@ -296,18 +296,27 @@ class BpsController extends Controller
             'bpsUser'
         ]);
 
-        // Filter by status
-        if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+        // Filter by status (use filled to avoid empty value issues)
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
         } else {
             // Default: show submitted, verified, and rejected assessments
             $query->whereIn('status', ['submitted', 'verified', 'rejected']);
         }
 
-        // Filter by domain
-        if ($request->has('domain_id') && $request->domain_id) {
+        // Filter by domain (view uses 'domain' param)
+        if ($request->filled('domain')) {
             $query->whereHas('indikator.aspek', function ($q) use ($request) {
-                $q->where('domain_id', $request->domain_id);
+                $q->where('domain_id', $request->input('domain'));
+            });
+        }
+
+        // Search by indikator name or code
+        if ($request->filled('search')) {
+            $search = trim($request->input('search'));
+            $query->whereHas('indikator', function ($q) use ($search) {
+                $q->where('name', 'like', "%$search%")
+                  ->orWhere('indikator_code', 'like', "%$search%");
             });
         }
 
