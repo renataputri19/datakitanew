@@ -58,94 +58,92 @@ class SurveyBlok2Manager {
     }
 
     initializeConditionalLogic() {
-        // Check current kondisi perusahaan value and apply logic
+        // Gate Blok 2 by Question 201 (Kondisi Perusahaan)
         const checkedKondisi = document.querySelector('input[name="kondisi_perusahaan"]:checked');
         if (checkedKondisi) {
             this.handleKondisiPerusahaanChange(checkedKondisi.value);
+        } else {
+            // No selection yet: hide 202+ to ensure 201 is answered first
+            const q202Row = this.getFormRowsByQuestionNumbers(['202'])[0] || null;
+            const q203Input = document.querySelector('input[name="jumlah_cabang_dan_unit_usaha"]');
+            const q203Row = q203Input ? q203Input.closest('.form-row') : null;
+            const q204Row = document.getElementById('informasi_kantor_pusat_row');
+            const rows205to211 = this.getFormRowsByQuestionNumbers(['205','206','207','208','209','210','210a','210b','211']);
+            this.setRowVisible(q202Row, false);
+            this.setRowVisible(q203Row, false);
+            this.setRowVisible(q204Row, false);
+            rows205to211.forEach(row => this.setRowVisible(row, false));
+            const saveCompleteButton = document.getElementById('save-complete');
+            const blok6Button = document.getElementById('go-to-blok6');
+            if (saveCompleteButton) saveCompleteButton.style.display = 'none';
+            if (blok6Button) blok6Button.style.display = 'none';
         }
 
-        // Initialize conditional routing for R202 then enforce 204 required state
-        this.updateR202ConditionalFlow();
-        this.updateInformasiKantorPusatVisibility();
-
-        // Initialize visibility for Tujuan Penggunaan Internet (R210a) and Teknologi Digital (R210b)
-        this.updateInternetUsageVisibility();
+        // Initialize conditional routing only if perusahaan masih aktif
+        if (checkedKondisi && checkedKondisi.value === 'masih_aktif') {
+            this.updateR202ConditionalFlow();
+            this.updateInformasiKantorPusatVisibility();
+            this.updateInternetUsageVisibility();
+        }
     }
 
-    handleKondisiPerusahaanChange(value) {
-        console.log('Kondisi perusahaan changed to:', value);
-
-        // Get all conditional question rows by finding the form rows that contain these inputs
-        const conditionalQuestions = [
-            'jaringan_unit_kegiatan',
-            'rata_rata_tenaga_kerja', 
-            'kegiatan_utama_perusahaan',
-            'kbli_utama'
-        ];
-
-        const shouldShowQuestions = value === 'masih_aktif';
-
-        conditionalQuestions.forEach(questionName => {
-            // Find the input element first
-            const inputElement = document.querySelector(`input[name="${questionName}"], textarea[name="${questionName}"]`);
-            
-            if (inputElement) {
-                // Find the parent form-row
-                const formRow = inputElement.closest('.form-row');
-                
-                if (formRow) {
-                    if (shouldShowQuestions) {
-                        // Show the question
-                        formRow.style.display = '';
-                        formRow.style.opacity = '1';
-                        
-                        // Restore required validation
-                        const inputs = formRow.querySelectorAll('input, textarea, select');
-                        inputs.forEach(input => {
-                            if (input.dataset.originalRequired === 'true') {
-                                input.required = true;
-                            }
-                        });
-                    } else {
-                        // Hide the question
-                        formRow.style.display = 'none';
-                        formRow.style.opacity = '0';
-                        
-                        // Disable required validation and clear values
-                        const inputs = formRow.querySelectorAll('input, textarea, select');
-                        inputs.forEach(input => {
-                            // Store original required state
-                            input.dataset.originalRequired = input.required ? 'true' : 'false';
-                            input.required = false;
-                            
-                            // Clear values and validation states
-                            if (input.type === 'radio' || input.type === 'checkbox') {
-                                input.checked = false;
-                            } else {
-                                input.value = '';
-                            }
-                            
-                            // Clear any error messages
-                            this.clearFieldError(input);
-                        });
+    // Generic visibility helper to toggle a form row and manage required/clearing
+    setRowVisible(row, visible, options = {}) {
+        if (!row) return;
+        row.style.display = visible ? '' : 'none';
+        row.style.opacity = visible ? '1' : '0';
+        const inputs = row.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            if (input.dataset.originalRequired === undefined) {
+                input.dataset.originalRequired = input.required ? 'true' : 'false';
+            }
+            input.required = visible ? (input.dataset.originalRequired === 'true') : false;
+            if (!visible) {
+                if (input.type === 'radio' || input.type === 'checkbox') {
+                    input.checked = false;
+                } else {
+                    input.value = '';
+                }
+                this.clearFieldError(input);
+                // Optional auto-save clearing for specific fields/prefixes
+                if (window.surveyManager) {
+                    const name = input.name || '';
+                    if (Array.isArray(options.autoSaveNames) && options.autoSaveNames.includes(name)) {
+                        window.surveyManager.scheduleAutoSave(name, '', true);
+                    }
+                    if (typeof options.autoSavePrefix === 'string' && name.startsWith(options.autoSavePrefix)) {
+                        window.surveyManager.scheduleAutoSave(name, '', true);
                     }
                 }
             }
         });
+    }
 
-        // If not "Masih Aktif", also clear any auto-saved data for hidden fields
-        if (!shouldShowQuestions) {
-            const fieldsToClear = ['jaringan_unit_kegiatan', 'rata_rata_tenaga_kerja', 'kegiatan_utama_perusahaan', 'kbli_utama'];
-            fieldsToClear.forEach(fieldName => {
-                // Auto-save empty values to clear the database
-                if (window.surveyManager) {
-                    window.surveyManager.scheduleAutoSave(fieldName, '', true);
-                }
-            });
-        }
+    handleKondisiPerusahaanChange(value) {
+        console.log('Kondisi perusahaan changed to:', value);
+        const isActive = value === 'masih_aktif';
 
-        // Update navigation buttons based on kondisi perusahaan
+        const q202Row = this.getFormRowsByQuestionNumbers(['202'])[0] || null;
+        const q203Input = document.querySelector('input[name="jumlah_cabang_dan_unit_usaha"]');
+        const q203Row = q203Input ? q203Input.closest('.form-row') : null;
+        const q204Row = document.getElementById('informasi_kantor_pusat_row');
+        const rows205to211 = this.getFormRowsByQuestionNumbers(['205','206','207','208','209','210','210a','210b','211']);
+
+        // Toggle rows based on kondisi perusahaan
+        this.setRowVisible(q202Row, isActive, { autoSaveNames: ['jaringan_unit_kegiatan'] });
+        this.setRowVisible(q203Row, isActive, { autoSaveNames: ['jumlah_cabang_dan_unit_usaha'] });
+        this.setRowVisible(q204Row, isActive, { autoSavePrefix: 'info_kantor_pusat_' });
+        rows205to211.forEach(row => this.setRowVisible(row, isActive));
+
+        // Update navigation buttons immediately
         this.updateNavigationButtons(value);
+
+        // When active, re-evaluate 202-based flows and internet usage visibility
+        if (isActive) {
+            this.updateR202ConditionalFlow();
+            this.updateInformasiKantorPusatVisibility();
+            this.updateInternetUsageVisibility();
+        }
     }
 
     updateNavigationButtons(kondisiValue) {
@@ -174,10 +172,16 @@ class SurveyBlok2Manager {
 
     // ---- Custom conditional handlers for newly added questions ----
     updateInformasiKantorPusatVisibility() {
-        // R204 shown only if R202 = b (pabrik_unit_produksi)
-        const selectedJaringan = document.querySelector('input[name="jaringan_unit_kegiatan"]:checked');
+        // Respect 201: only relevant when perusahaan masih aktif
+        const kondisi = document.querySelector('input[name="kondisi_perusahaan"]:checked');
         const infoRow = document.getElementById('informasi_kantor_pusat_row');
         if (!infoRow) return;
+        if (!kondisi || kondisi.value !== 'masih_aktif') {
+            this.setRowVisible(infoRow, false, { autoSavePrefix: 'info_kantor_pusat_' });
+            return;
+        }
+        // R204 shown only if R202 = b (pabrik_unit_produksi)
+        const selectedJaringan = document.querySelector('input[name="jaringan_unit_kegiatan"]:checked');
 
         const shouldShow = selectedJaringan && selectedJaringan.value === 'pabrik_unit_produksi';
 
@@ -195,25 +199,8 @@ class SurveyBlok2Manager {
             });
         } else {
             // Hide and clear inputs, and auto-save empty values to clear server state
-            infoRow.style.display = 'none';
-            infoRow.style.opacity = '0';
-            const inputs = infoRow.querySelectorAll('input, textarea, select');
-            inputs.forEach(input => {
-                // Remove required state when hidden
-                input.required = false;
-                if (input.type === 'radio' || input.type === 'checkbox') {
-                    input.checked = false;
-                } else {
-                    input.value = '';
-                }
-                this.clearFieldError(input);
-                if (window.surveyManager) {
-                    const name = input.name || '';
-                    if (name.startsWith('info_kantor_pusat_')) {
-                        window.surveyManager.scheduleAutoSave(name, '', true);
-                    }
-                }
-            });
+            // Hide and clear inputs, and auto-save empty values to clear server state
+            this.setRowVisible(infoRow, false, { autoSavePrefix: 'info_kantor_pusat_' });
             // Remove 204 label required indicator
             const label = infoRow.querySelector('.form-label');
             if (label) {
@@ -224,48 +211,36 @@ class SurveyBlok2Manager {
 
     // Handle visibility routing for R202 selections
     updateR202ConditionalFlow() {
+        // Guard by 201: only run this flow when perusahaan masih aktif
+        const kondisi = document.querySelector('input[name="kondisi_perusahaan"]:checked');
         const selected = document.querySelector('input[name="jaringan_unit_kegiatan"]:checked');
+        const q202Row = this.getFormRowsByQuestionNumbers(['202'])[0] || null;
         const q203Input = document.querySelector('input[name="jumlah_cabang_dan_unit_usaha"]');
         const q203Row = q203Input ? q203Input.closest('.form-row') : null;
         const q204Row = document.getElementById('informasi_kantor_pusat_row');
 
-        const rows205to211 = this.getFormRowsByQuestionNumbers(['205', '206', '207', '208', '209', '210', '211']);
+        const rows205to211 = this.getFormRowsByQuestionNumbers(['205','206','207','208','209','210','210a','210b','211']);
 
         const saveCompleteButton = document.getElementById('save-complete');
         const blok6Button = document.getElementById('go-to-blok6');
 
-        const setRowVisible = (row, visible) => {
-            if (!row) return;
-            row.style.display = visible ? '' : 'none';
-            row.style.opacity = visible ? '1' : '0';
-            const inputs = row.querySelectorAll('input, textarea, select');
-            inputs.forEach(input => {
-                if (input.dataset.originalRequired === undefined) {
-                    input.dataset.originalRequired = input.required ? 'true' : 'false';
-                }
-                input.required = visible ? (input.dataset.originalRequired === 'true') : false;
-                if (!visible) {
-                    if (input.type === 'radio' || input.type === 'checkbox') {
-                        input.checked = false;
-                    } else {
-                        input.value = '';
-                    }
-                    this.clearFieldError(input);
-                    // Auto-save empty values to clear previously saved data for Q203/Q204
-                    if (window.surveyManager) {
-                        const name = input.name || '';
-                        if (name === 'jumlah_cabang_dan_unit_usaha' || name.startsWith('info_kantor_pusat_')) {
-                            window.surveyManager.scheduleAutoSave(name, '', true);
-                        }
-                    }
-                }
-            });
-        };
+        if (!kondisi || kondisi.value !== 'masih_aktif') {
+            // Hide everything after 201, show Blok VI button
+            this.setRowVisible(q202Row, false);
+            this.setRowVisible(q203Row, false, { autoSaveNames: ['jumlah_cabang_dan_unit_usaha'] });
+            this.setRowVisible(q204Row, false, { autoSavePrefix: 'info_kantor_pusat_' });
+            rows205to211.forEach(row => this.setRowVisible(row, false));
+            if (saveCompleteButton) saveCompleteButton.style.display = 'none';
+            if (blok6Button) blok6Button.style.display = '';
+            return;
+        }
 
         if (!selected) {
-            setRowVisible(q203Row, true);
-            setRowVisible(q204Row, false);
-            rows205to211.forEach(row => setRowVisible(row, true));
+            // No selection yet: show 202, hide 203 and 204, keep 205+ visible
+            this.setRowVisible(q202Row, true);
+            this.setRowVisible(q203Row, false);
+            this.setRowVisible(q204Row, false);
+            rows205to211.forEach(row => this.setRowVisible(row, true));
             if (saveCompleteButton) saveCompleteButton.style.display = '';
             if (blok6Button) blok6Button.style.display = 'none';
             return;
@@ -274,18 +249,18 @@ class SurveyBlok2Manager {
         switch (selected.value) {
             case 'tunggal':
                 // Skip to 205: hide 203 and 204
-                setRowVisible(q203Row, false);
-                setRowVisible(q204Row, false);
-                rows205to211.forEach(row => setRowVisible(row, true));
+                this.setRowVisible(q203Row, false);
+                this.setRowVisible(q204Row, false);
+                rows205to211.forEach(row => this.setRowVisible(row, true));
                 if (saveCompleteButton) saveCompleteButton.style.display = '';
                 if (blok6Button) blok6Button.style.display = 'none';
                 break;
 
             case 'pabrik_unit_produksi':
                 // Continue to 204: show 204, 203 not required
-                setRowVisible(q203Row, false);
-                setRowVisible(q204Row, true);
-                rows205to211.forEach(row => setRowVisible(row, true));
+                this.setRowVisible(q203Row, false);
+                this.setRowVisible(q204Row, true);
+                rows205to211.forEach(row => this.setRowVisible(row, true));
                 if (saveCompleteButton) saveCompleteButton.style.display = '';
                 if (blok6Button) blok6Button.style.display = 'none';
                 break;
@@ -293,18 +268,18 @@ class SurveyBlok2Manager {
             case 'pusat_ada_kegiatan_produksi':
             case 'kantor_pusat_administrasi_perwakilan':
                 // Continue to 203: show 203 only
-                setRowVisible(q203Row, true);
-                setRowVisible(q204Row, false);
-                rows205to211.forEach(row => setRowVisible(row, true));
+                this.setRowVisible(q203Row, true);
+                this.setRowVisible(q204Row, false);
+                rows205to211.forEach(row => this.setRowVisible(row, true));
                 if (saveCompleteButton) saveCompleteButton.style.display = '';
                 if (blok6Button) blok6Button.style.display = 'none';
                 break;
 
             case 'unit_pembantu_penunjang':
                 // Skip to Blok VI: hide 203, 204, and 205 onwards
-                setRowVisible(q203Row, false);
-                setRowVisible(q204Row, false);
-                rows205to211.forEach(row => setRowVisible(row, false));
+                this.setRowVisible(q203Row, false);
+                this.setRowVisible(q204Row, false);
+                rows205to211.forEach(row => this.setRowVisible(row, false));
                 if (saveCompleteButton) saveCompleteButton.style.display = 'none';
                 if (blok6Button) blok6Button.style.display = '';
                 break;
@@ -323,10 +298,19 @@ class SurveyBlok2Manager {
     }
 
     updateInternetUsageVisibility() {
-        // If R210 = "ya" show 210a and 210b, else hide and clear
-        const selectedInternet = document.querySelector('input[name="penggunaan_internet"]:checked');
+        // Guard by 201: only relevant when perusahaan masih aktif
+        const kondisi = document.querySelector('input[name="kondisi_perusahaan"]:checked');
         const tujuanRow = document.getElementById('tujuan_penggunaan_internet_row');
         const techRow = document.getElementById('teknologi_digital_row');
+        if (!kondisi || kondisi.value !== 'masih_aktif') {
+            [tujuanRow, techRow].forEach(row => {
+                if (row) this.setRowVisible(row, false);
+            });
+            return;
+        }
+
+        // If R210 = "ya" show 210a and 210b, else hide and clear
+        const selectedInternet = document.querySelector('input[name="penggunaan_internet"]:checked');
 
         const shouldShow = selectedInternet && selectedInternet.value === 'ya';
 
@@ -367,17 +351,7 @@ class SurveyBlok2Manager {
                     label.classList.add('required');
                 }
             } else {
-                row.style.display = 'none';
-                row.style.opacity = '0';
-                const inputs = row.querySelectorAll('input, textarea, select');
-                inputs.forEach(input => {
-                    if (input.type === 'radio' || input.type === 'checkbox') {
-                        input.checked = false;
-                    } else {
-                        input.value = '';
-                    }
-                    this.clearFieldError(input);
-                });
+                this.setRowVisible(row, false);
                 const label = row.querySelector('.form-label');
                 if (label) {
                     label.classList.remove('required');
