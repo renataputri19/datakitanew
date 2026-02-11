@@ -44,89 +44,57 @@
 
             <!-- Dynamic Products Table -->
             <div class="products-table-container">
+                <!-- Quarter/Month Tabs -->
+                <div class="months-tabs" id="months-tabs">
+                    <button type="button" class="month-tab active" data-quarter="dec2024">Des 2024</button>
+                    <button type="button" class="month-tab" data-quarter="q1">Triwulan I (Jan–Mar)</button>
+                    <button type="button" class="month-tab" data-quarter="q2">Triwulan II (Apr–Jun)</button>
+                    <button type="button" class="month-tab" data-quarter="q3">Triwulan III (Jul–Sep)</button>
+                    <button type="button" class="month-tab" data-quarter="q4">Triwulan IV (Okt–Des)</button>
+                </div>
                 <div class="table-responsive">
                     <table class="products-table" id="products-table">
                         <thead>
                             <!-- Header Row 1: Main Headers -->
                             <tr class="header-row-1">
-                                <th rowspan="3" class="col-no">No.</th>
-                                <th rowspan="3" class="col-jenis">301. Jenis Barang yang dihasilkan/diproduksi</th>
-                                <th rowspan="3" class="col-uraian">Uraian</th>
-                                <th rowspan="3" class="col-satuan">Satuan</th>
-                                <th rowspan="2" class="col-2024">2024</th>
-                                <th colspan="12" class="col-2025">2025</th>
+                                <th rowspan="3" class="col-no sticky-col" data-sticky-col="1">No.</th>
+                                <th rowspan="3" class="col-jenis sticky-col" data-sticky-col="2">301. Jenis Barang yang dihasilkan/diproduksi</th>
+                                <th rowspan="3" class="col-uraian sticky-col" data-sticky-col="3">Uraian</th>
+                                <th rowspan="2" class="col-2024 year-col year-2024" data-quarter="dec2024">2024</th>
+                                <th colspan="12" class="col-2025 year-col year-2025" data-quarter="q1 q2 q3 q4">2025</th>
                             </tr>
                             
                             <!-- Header Row 2: Quarter Groups -->
                             <tr class="header-row-2">
-                                <th colspan="3" class="quarter-header">Triwulan I</th>
-                                <th colspan="3" class="quarter-header">Triwulan II</th>
-                                <th colspan="3" class="quarter-header">Triwulan III</th>
-                                <th colspan="3" class="quarter-header">Triwulan IV</th>
+                                <th colspan="3" class="quarter-header quarter-q1" data-quarter="q1">Triwulan I</th>
+                                <th colspan="3" class="quarter-header quarter-q2" data-quarter="q2">Triwulan II</th>
+                                <th colspan="3" class="quarter-header quarter-q3" data-quarter="q3">Triwulan III</th>
+                                <th colspan="3" class="quarter-header quarter-q4" data-quarter="q4">Triwulan IV</th>
                             </tr>
                             
                             <!-- Header Row 3: Months and Column Numbers -->
-                            <tr class="header-row-3">
-                                <th class="month-header">Desember</th>
-                                <th class="month-header">Januari</th>
-                                <th class="month-header">Februari</th>
-                                <th class="month-header">Maret</th>
-                                <th class="month-header">April</th>
-                                <th class="month-header">Mei</th>
-                                <th class="month-header">Juni</th>
-                                <th class="month-header">Juli</th>
-                                <th class="month-header">Agustus</th>
-                                <th class="month-header">September</th>
-                                <th class="month-header">Oktober</th>
-                                <th class="month-header">Nopember</th>
-                                <th class="month-header">Desember</th>
-                            </tr>
+                            <tr class="header-row-3"><!-- Month headers will be rendered dynamically by JS --></tr>
                             
                             <!-- Column Numbers Row -->
                             <tr class="column-numbers-row">
                                 <td class="col-number">(1)</td>
                                 <td class="col-number">(2)</td>
                                 <td class="col-number">(3)</td>
-                                <td class="col-number">(4)</td>
-                                <td class="col-number">(5)</td>
-                                <td class="col-number">(6)</td>
-                                <td class="col-number">(7)</td>
-                                <td class="col-number">(8)</td>
-                                <td class="col-number">(9)</td>
-                                <td class="col-number">(10)</td>
-                                <td class="col-number">(11)</td>
-                                <td class="col-number">(12)</td>
-                                <td class="col-number">(13)</td>
-                                <td class="col-number">(14)</td>
-                                <td class="col-number">(15)</td>
-                                <td class="col-number">(16)</td>
-                                <td class="col-number">(17)</td>
+                                <!-- Month column numbers will be rendered dynamically by JS -->
                             </tr>
                         </thead>
                         <tbody id="products-tbody">
                             <!-- Dynamic product rows will be inserted here -->
                         </tbody>
-                        <tfoot>
-                            <!-- Row 302: Lainnya -->
+                            <tfoot>
+                                <!-- Row 302: Lainnya -->
                             <tr class="lainnya-row">
                                 <td class="row-number">302.</td>
                                 <td class="product-info">
                                     <strong>Lainnya*)</strong>
                                 </td>
                                 <td class="sub-row-label">Nilai</td>
-                                <td class="sub-row-unit">Jutaan Rp</td>
-                                @foreach(['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'] as $month)
-                                <td>
-                                    <input type="number"
-                                           name="blok3a_lainnya[nilai][{{ $month }}]"
-                                           value="{{ ($surveyResponse->blok3a_lainnya['nilai'][$month] ?? '') }}"
-                                           class="form-control form-control-sm nilai-input lainnya-nilai"
-                                           data-month="{{ $month }}"
-                                           step="0.01"
-                                           min="0"
-                                           placeholder="">
-                                </td>
-                                @endforeach
+                                <!-- Month inputs will be rendered dynamically by JS -->
                             </tr>
 
                             <!-- Row 303: Total -->
@@ -134,18 +102,7 @@
                                 <td class="row-number">303.</td>
                                 <td class="product-info"><strong>Total</strong></td>
                                 <td class="sub-row-label">Nilai</td>
-                                <td class="sub-row-unit">Jutaan Rp</td>
-                                @foreach(['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'] as $month)
-                                <td>
-                                    <input type="number"
-                                           name="blok3a_totals[{{ $month }}]"
-                                           value="{{ ($surveyResponse->blok3a_totals[$month] ?? 0) }}"
-                                           class="form-control form-control-sm total-input"
-                                           data-month="{{ $month }}"
-                                           readonly
-                                           tabindex="-1">
-                                </td>
-                                @endforeach
+                                <!-- Month totals will be rendered dynamically by JS -->
                             </tr>
                         </tfoot>
                     </table>
@@ -179,7 +136,7 @@
                     Kembali ke Bab 2
                 </button>
 
-                <button type="button" id="save-draft" class="btn btn-outline-primary">
+                <button type="button" id="save-draft" class="btn btn-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                         <polyline points="17,21 17,13 7,13 7,21"></polyline>
@@ -211,7 +168,9 @@ window.surveyRoutes = {
     saveAll: '{{ route("survey.sibstr.blok3a.save") }}',
     status: '{{ route("survey.sibstr.blok3a.status") }}',
     backToBlok2: '{{ route("survey.sibstr.blok2") }}',
-    nextBlok: '{{ route("survey.sibstr.blok6") }}'
+    nextBlok: '{{ route("survey.sibstr.blok6") }}',
+    blok3b_industri: '{{ route("survey.sibstr.blok3b.industri") }}',
+    blok3b_nonindustri: '{{ route("survey.sibstr.blok3b.nonindustri") }}'
 };
 
 // Pass existing data to JavaScript

@@ -23,6 +23,12 @@
         </p>
     </div>
 
+    @if(session('warning'))
+    <div class="autosave-status info" data-aos="fade-up">
+        <span>{{ session('warning') }}</span>
+    </div>
+    @endif
+
     <!-- Auto-save Status -->
     <div id="autosave-status" class="autosave-status hidden">
         <span id="autosave-text"></span>
@@ -54,12 +60,12 @@
         <!-- Form Actions -->
         <div class="form-actions">
             <div class="flex items-center gap-4">
-                <button type="button" id="back-to-blok2" class="btn btn-secondary">
+                <a href="{{ ($jaringanUnitKegiatan === 'unit_pembantu_penunjang') ? route('survey.sibstr.blok2') : (($kondisiPerusahaan === 'masih_aktif') ? route('survey.sibstr.blok5') : route('survey.sibstr.blok2')) }}" id="back-to-blok5" class="btn btn-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="15,18 9,12 15,6"></polyline>
                     </svg>
-                    Kembali ke Bab 2
-                </button>
+                    {{ ($jaringanUnitKegiatan === 'unit_pembantu_penunjang') ? 'Kembali ke Bab 2' : (($kondisiPerusahaan === 'masih_aktif') ? 'Kembali ke Bab 5' : 'Kembali ke Bab 2') }}
+                </a>
 
                 <button type="button" id="save-draft" class="btn btn-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -72,7 +78,7 @@
 
                 <button type="button" id="finish-survey" class="btn btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20,6 9,17 4,12"></polyline>
+                        <polyline points="9,18 15,12 9,6"></polyline>
                     </svg>
                     Selesaikan Survei
                 </button>
@@ -92,8 +98,15 @@ window.surveyRoutes = {
     autoSave: '{{ route("survey.sibstr.blok6.autosave") }}',
     saveAll: '{{ route("survey.sibstr.blok6.save") }}',
     status: '{{ route("survey.sibstr.blok6.status") }}',
+    backToBlok5: '{{ route("survey.sibstr.blok5") }}',
     backToBlok2: '{{ route("survey.sibstr.blok2") }}',
     finishSurvey: '{{ route("survey.sibstr.blok6.finish") }}'
+};
+
+// Pass kondisi_perusahaan from Blok 2 for conditional back navigation
+window.surveyData = {
+    kondisiPerusahaan: @json($kondisiPerusahaan),
+    jaringanUnitKegiatan: @json($jaringanUnitKegiatan)
 };
 </script>
 <script src="{{ asset('js/survey.js') }}"></script>

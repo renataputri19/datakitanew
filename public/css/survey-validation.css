@@ -115,6 +115,8 @@
 .radio-group-error {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
+    /* Ensure radio group errors align like text field errors (control column) */
+    grid-column: 2;
 }
 
 /* Radio button error styling - Removed for cleaner error display */

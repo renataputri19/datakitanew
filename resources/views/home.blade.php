@@ -380,7 +380,7 @@
                         <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4">
                             Survei Industri Besar dan Sedang Triwulanan untuk pengumpulan data industri sesuai standar BPS
                         </p>
-                        <a href="{{ route('temporary.survey.sibstr') }}" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group-hover:font-medium transition-all duration-300">
+                        <a href="{{ route('survey.sibstr.blok1') }}" class="inline-flex items-center text-blue-600 dark:text-blue-500 hover:underline group-hover:font-medium transition-all duration-300">
                             <span class="group-hover:mr-2 transition-all duration-300">Akses Survei</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all duration-300">
                                 <path d="M5 12h14"></path>

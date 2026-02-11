@@ -32,6 +32,25 @@
       Aplikasi
     </a>
 
+    @php
+      $sibstrCompleted = \App\Models\SurveyResponse::where('user_id', Auth::id())
+        ->where('survey_type', 'sibstr')
+        ->where('survey_section', 'blok6')
+        ->where('is_completed', true)
+        ->exists();
+    @endphp
+    @if($sibstrCompleted)
+      <a href="{{ route('dashboard.surveys.sibstr.results') }}"
+         class="ud-sidebar-item {{ request()->routeIs('dashboard.surveys.sibstr.results') ? 'active' : '' }}"
+         aria-current="{{ request()->routeIs('dashboard.surveys.sibstr.results') ? 'page' : 'false' }}">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9 9 0 1020.945 13H11V3.055z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 8.072A9 9 0 1111 3v9h9.488z"></path>
+        </svg>
+        Hasil Survei SIBSTR
+      </a>
+    @endif
+
     <a href="{{ route('dashboard.profile') }}"
        class="ud-sidebar-item {{ request()->routeIs('dashboard.profile') ? 'active' : '' }}"
        aria-current="{{ request()->routeIs('dashboard.profile') ? 'page' : 'false' }}">

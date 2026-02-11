@@ -17,12 +17,20 @@ class SurveyBlok6Manager {
     }
 
     setupEventListeners() {
-        // Back to Blok 2 button
-        const backButton = document.getElementById('back-to-blok2');
+        // Conditional back navigation: Blok 5 if 'masih_aktif', else Blok 2
+        const backButton = document.getElementById('back-to-blok5');
         if (backButton) {
-            backButton.addEventListener('click', () => {
-                if (window.surveyRoutes?.backToBlok2) {
-                    window.location.href = window.surveyRoutes.backToBlok2;
+            backButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                const kondisi = window.surveyData?.kondisiPerusahaan;
+                const r202 = window.surveyData?.jaringanUnitKegiatan;
+                // If R202 is 'e. Unit pembantu / penunjang', always go back to Blok 2
+                const enforceBackToBlok2 = r202 === 'unit_pembantu_penunjang';
+                // Otherwise, go back to Blok 5 only when kondisi_perusahaan is 'masih_aktif'
+                const cameFromBlok5 = kondisi === 'masih_aktif' && !enforceBackToBlok2;
+                const target = cameFromBlok5 ? window.surveyRoutes?.backToBlok5 : window.surveyRoutes?.backToBlok2;
+                if (target) {
+                    window.location.href = target;
                 }
             });
         }
@@ -40,22 +48,51 @@ class SurveyBlok6Manager {
     }
 
     handleFinishSurvey() {
-        // Save the current data and mark as completed
-        if (window.surveyManager) {
-            // Save all data with completion flag
-            const formData = new FormData(this.form);
-            formData.append('is_completed', 'true');
-            
-            window.surveyManager.saveAll(true).then(() => {
-                // Show success message
-                alert('Survei telah berhasil diselesaikan. Terima kasih atas partisipasi Anda!');
-                
-                // Redirect to survey list or home page
-                window.location.href = '/survei/sibstr';
-            }).catch((error) => {
-                console.error('Error finishing survey:', error);
-                alert('Terjadi kesalahan saat menyelesaikan survei. Silakan coba lagi.');
-            });
+        // Save the current data and mark as completed, following global SurveyManager pattern
+        if (window.surveyManager && typeof window.surveyManager.saveForm === 'function') {
+            window.surveyManager.saveForm(true)
+                .then(() => {
+                    // Redirect to results summary under dashboard
+                    const resultsUrl = '/dashboard/surveys/sibstr/results';
+                    window.location.href = resultsUrl;
+                })
+                .catch((error) => {
+                    console.error('Error finishing survey:', error);
+                    alert('Terjadi kesalahan saat menyelesaikan survei. Silakan coba lagi.');
+                });
+        } else {
+            // Fallback: directly hit finish endpoint if SurveyManager is unavailable
+            const finishUrl = window.surveyRoutes?.finishSurvey;
+            if (finishUrl) {
+                const formData = new FormData(this.form);
+                formData.append('is_completed', 'true');
+
+                // Ensure CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    || this.form.querySelector('input[name="_token"]')?.value;
+
+                fetch(finishUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken || '',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                    .then(async (response) => {
+                        const result = await response.json().catch(() => ({}));
+                        if (response.ok && result.success) {
+                            window.location.href = '/dashboard/surveys/sibstr/results';
+                        } else {
+                            throw new Error(result.message || 'Finish survey failed');
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error finishing survey:', error);
+                        alert('Terjadi kesalahan saat menyelesaikan survei. Silakan coba lagi.');
+                    });
+            }
         }
     }
 }

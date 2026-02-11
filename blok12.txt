@@ -1,0 +1,147 @@
+																															KIP :									
+								 																							IDSBR :									
+																																								
+SURVEI TRIWULANAN PELAKU USAHA																																								
+																																								
+I. KETERANGAN UMUM																																								
+																																								
+101.	Nama Perusahaan 												:																											
+																																								
+102.	Alamat Pabrik 												:																											
+																																								
+																																								
+103.	Kabupaten / Kota 												:																											
+																																								
+104.	Telepon / Fax 												:																											
+																																								
+105.	Penghubung 												:																											
+																																								
+106.	E-mail 												:																											
+106.													:																											
+107.	Homepage/website												:																											
+																																								
+108.	Tahun mulai beroperasi secara komersial												:																											
+																																								
+109.	Nomor Induk Berusaha (NIB)												:																											
+																																								
+110.	Jenis Kawasan												:	a. Kawasan Ekonomi Khusus																										
+																																								
+	 													b. Kawasan Indsutri																										
+																																								
+														c. Di Luar Kawasan																										
+																																								
+111.	Nama Kawasan												:																											
+																																								
+112.	Nama Perusahaan Pengelola Kawasan												:																											
+																																								
+	Jika Lainnya, maka tuliskan												:																											
+																																								
+LEGALISASI PERUSAHAAN																																								
+																																								
+Diketahui oleh yang bertanggung jawab di Perusahaan																																								
+																																								
+112.	Nama 												:																											
+																																								
+113.	Jenis Kelamin												:																											
+																																								
+114.	Jabatan 												:																											
+111.																																								
+115.	NIK												:																											
+II. KETERANGAN PERUSAHAAN																																								
+																																								
+201.	Kondisi perusahaan:												:	a. Masih Aktif 																										
+																																								
+														b. Belum Beroperasi																										
+																																								
+														c. Tutup																										
+																																								
+														d. Pindah																										
+																																								
+														e. Tidak Ditemukan																										
+																																								
+														f. Double/ Ganda/ Duplikat																										
+																																								
+202.	Jaringan atau unit kegiatan perusahaan												:	a. Tunggal				→	(Lanjut ke Pertanyaan 205)																				
+202.																																							
+														b. Pabrik/Unit produksi, Cabang atau Perwakilan													→	(Lanjut ke Pertanyaan 204)											
+																																							
+														c. Pusat ada kegiatan produksi							→	(Lanjut ke Pertanyaan 203)																	
+																																							
+														"d. Kantor pusat / Kantor administrasi
+   / Kantor perwakilan"																→		(Lanjut ke Pertanyaan 203)							
+																																							
+														e. Unit pembantu / penunjang							→	(Lanjut ke Blok VI)																	
+																																							
+203.	Berapa jumlah seluruh kantor cabang dan unit usaha yang berada di bawah kantor pusat?												:																										
+																																							
+204.	Informasi kantor pusat (Diisi jika R202 berkode b)																																						
+				Namz									:																										
+	a.	Nama Kantor Pusat											:							d.	Negara						:												
+		Nama Kantor Pusat											:																										
+	b. 	Alamat Kantor Pusat											:							e.	Provinsi						:												
+	b. 												:																										
+	c. 	Email											:							f.	Kabupaten / Kota						:																																						
+205.	Jumlah bulan perusahaan aktif berproduksi selama tahun 2025												:																											
+																																								
+206.	Rata-rata hari kerja per bulan selama tahun 2025												:																											
+																																								
+207.	a.	Rata-rata jam kerja per hari selama tahun 2025											:																											
+																																								
+	b.	Rata-rata jumlah shift per hari selama tahun 2025																																						
+																																								
+208.	Rata-rata tenaga kerja di perusahaan pada triwulan ini?																																							
+																																								
+	a.	Jumlah pekerja menurut jenis kelamin pekerja (termasuk pekerja asing dan outsourcing)																																						
+																																								
+		-	Pekerja Laki-laki										:																											
+																																								
+		-	Pekerja Perempuan										:																											
+																																								
+	b.	Jumlah pekerja menurut klasifikasi pekerja (termasuk pekerja asing dan outsourcing)																																						
+																																								
+		-	Pekerja produksi (Pekerja produksi adalah pekerja yang mengerjakan pekerjaan teknis (operasional) atau yang berhubungan langsung dengan proses produksi)										:																											
+																																								
+		-	Pekerja lainnya (Pekerja lainnya adalah pekerja yang mengerjakan pekerjaan administrasi atau yang tidak berhubungan langsung dengan proses produksi)										:																											
+																																								
+	c.	Jumlah pekerja berwarganegara asing											:																											
+																																								
+	d.	Jumlah pekerja outsourcing											:																											
+																																								
+208.	Tuliskan kegiatan utama perusahaan beserta KBLI utama																																							
+																																								
+																																								
+	KBLI																																							
+																																								
+																																								
+																																								
+209.	Pilih yang paling sesuai dengan kegiatan utama usaha/perusahaan ini																							1	Ya					2	Tidak									
+																																								
+	Apakah memproduksi barang sendiri?																								Ya						Tidak									
+																																								
+	Apakah menyediakan layanan makan minum?																								Ya						Tidak									
+																																								
+	Apakah melakukan penjualan barang dari pihak lain?																								Ya						Tidak									
+																																								
+	Apakah melakukan aktivitas jasa?																								Ya						Tidak									
+																																								
+210.	Apakah perusahaan ini menggunakan internet dalam menjalankan usaha																								Ya						Tidak		→	(Lanjut ke Pertanyaan 211)						
+																																								
+	a.	Tujuan penggunaan internet											:											1	Ya					2	Tidak									
+																																								
+		a1.	Menerima pesanan barang/jasa																						Ya						Tidak									
+																																								
+		a2.	Produksi barang/jasa																						Ya						Tidak									
+																																								
+		a3.	Distribusi barang/jasa																						Ya						Tidak									
+																																								
+		a4.	Membeli bahan baku online																						Ya						Tidak									
+																																								
+		a5.	Promosi																						Ya						Tidak									
+																																								
+		a6.	Lainnya																						Ya						Tidak									
+																																								
+	b.	Apakah perusahaan ini memanfaatkan teknologi digital Artificial Intellegence (AI), Internet of Things (IoT), big data, printer 3D, blockchain, atau cloud computing																							Ya						Tidak									
+																																								
+211.	a.	Apakah perusahaan ini memproduksi barang/jasa yang ramah lingkungan																							Ya, seluruhnya						Ya, sebagian					Tidak sama sekali				
+																																								
+	b.	Apakah usaha/perusahaan ini menggunakan input untuk tujuan perlindungan lingkungan dan/atau pembelian barang dan jasa yang ramah lingkungan																							Ya						Tidak									

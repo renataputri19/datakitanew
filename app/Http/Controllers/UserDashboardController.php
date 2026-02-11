@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\News;
 use App\Models\Institution;
 use App\Models\Video;
+use App\Models\SurveyResponse;
 
 class UserDashboardController extends Controller
 {
@@ -95,6 +96,38 @@ class UserDashboardController extends Controller
         $user = Auth::user();
         
         return view('user-dashboard.settings', compact('user'));
+    }
+
+    /**
+     * Display SIBSTR survey results summary for the authenticated user.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function sibstrResults()
+    {
+        $user = Auth::user();
+
+        // Fetch all SIBSTR responses for the user, keyed by section for easy access
+        $responses = SurveyResponse::where('user_id', $user->id)
+            ->where('survey_type', 'sibstr')
+            ->get()
+            ->keyBy('survey_section');
+
+        // Determine completion based on Blok 6 is_completed flag
+        $isCompleted = false;
+        $completedAt = null;
+        if ($responses->has('blok6')) {
+            $blok6 = $responses->get('blok6');
+            $isCompleted = (bool) ($blok6->is_completed ?? false);
+            $completedAt = $blok6->last_saved_at;
+        }
+
+        return view('user-dashboard.sibstr-results', [
+            'user' => $user,
+            'responses' => $responses,
+            'isCompleted' => $isCompleted,
+            'completedAt' => $completedAt,
+        ]);
     }
 
     public function updateProfile(Request $request)

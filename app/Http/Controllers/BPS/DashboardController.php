@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\News;
 use App\Models\Video;
+use App\Models\SurveyResponse;
 
 class DashboardController extends Controller
 {
@@ -32,11 +33,13 @@ class DashboardController extends Controller
         // Get counts for dashboard
         $newsCount = News::count();
         $videoCount = Video::count();
+        $sibstrCount = SurveyResponse::where('survey_type', 'sibstr')->count();
+        $sibstrCompletedCount = SurveyResponse::where('survey_type', 'sibstr')->where('is_completed', true)->count();
         
         // Get recent items
         $recentNews = News::orderBy('created_at', 'desc')->take(5)->get();
         $recentVideos = Video::orderBy('created_at', 'desc')->take(5)->get();
         
-        return view('bps.dashboard', compact('user', 'newsCount', 'videoCount', 'recentNews', 'recentVideos'));
+        return view('bps.dashboard', compact('user', 'newsCount', 'videoCount', 'sibstrCount', 'sibstrCompletedCount', 'recentNews', 'recentVideos'));
     }
 }

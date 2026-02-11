@@ -308,35 +308,47 @@ class SurveyManager {
      */
     setupAutoSave() {
         const formInputs = this.form.querySelectorAll('input, textarea, select');
-        
+
         formInputs.forEach(input => {
             // For text inputs, number inputs, textareas, and selects
             if (['text', 'email', 'tel', 'url', 'number', 'textarea', 'select-one'].includes(input.type) || input.tagName === 'TEXTAREA') {
                 input.addEventListener('input', (e) => {
-                    this.scheduleAutoSave(e.target.name, e.target.value);
+                    const nameAttr = e.target.getAttribute('name');
+                    if (nameAttr) {
+                        this.scheduleAutoSave(nameAttr, e.target.value);
+                    }
                 });
-                
+
                 // Fast auto-save when user moves to next field (blur event)
                 input.addEventListener('blur', (e) => {
-                    this.scheduleAutoSave(e.target.name, e.target.value, true); // immediate save
+                    const nameAttr = e.target.getAttribute('name');
+                    if (nameAttr) {
+                        this.scheduleAutoSave(nameAttr, e.target.value, true); // immediate save
+                    }
                 });
-                
+
                 // Fast auto-save on delete/backspace
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Backspace' || e.key === 'Delete') {
-                        // Schedule immediate save after deletion
-                        setTimeout(() => {
-                            this.scheduleAutoSave(e.target.name, e.target.value, true);
-                        }, 50); // Small delay to capture the deleted value
+                        const nameAttr = e.target.getAttribute('name');
+                        if (nameAttr) {
+                            // Schedule immediate save after deletion
+                            setTimeout(() => {
+                                this.scheduleAutoSave(nameAttr, e.target.value, true);
+                            }, 50); // Small delay to capture the deleted value
+                        }
                     }
                 });
             }
-            
+
             // For radio buttons and checkboxes
             if (['radio', 'checkbox'].includes(input.type)) {
                 input.addEventListener('change', (e) => {
                     if (e.target.checked) {
-                        this.scheduleAutoSave(e.target.name, e.target.value, true); // immediate save for selections
+                        const nameAttr = e.target.getAttribute('name');
+                        if (nameAttr) {
+                            this.scheduleAutoSave(nameAttr, e.target.value, true); // immediate save for selections
+                        }
                     }
                 });
             }
@@ -347,6 +359,10 @@ class SurveyManager {
      * Schedule auto-save with debouncing
      */
     scheduleAutoSave(fieldName, fieldValue, immediate = false) {
+        // Guard: skip invalid field names (e.g., display inputs without name)
+        if (typeof fieldName !== 'string' || fieldName.trim() === '') {
+            return;
+        }
         // Clear existing timeout
         if (this.autoSaveTimeout) {
             clearTimeout(this.autoSaveTimeout);
@@ -368,6 +384,10 @@ class SurveyManager {
      * Perform auto-save operation
      */
     async performAutoSave(fieldName, fieldValue) {
+        // Guard against invalid field names
+        if (typeof fieldName !== 'string' || fieldName.trim() === '') {
+            return;
+        }
         const field = this.form.querySelector(`[name="${fieldName}"]`);
         
         try {
@@ -395,12 +415,18 @@ class SurveyManager {
 
             if (response.ok && data.success) {
                 this.showStatus('Tersimpan otomatis', 'success');
-                
+
                 // Only show visual feedback after successful save
-                if (field && fieldValue.trim() !== '') {
+                let valueStr = '';
+                try {
+                    valueStr = String(fieldValue ?? '').trim();
+                } catch (_e) {
+                    valueStr = '';
+                }
+                if (field && valueStr !== '') {
                     field.classList.add('field-valid');
                 }
-                
+
                 console.log('Auto-save successful:', data);
             } else {
                 throw new Error(data.message || 'Auto-save failed');
@@ -411,7 +437,13 @@ class SurveyManager {
             this.showStatus('Gagal menyimpan: ' + error.message, 'error');
             
             // Show error state on field if save failed
-            if (field && fieldValue.trim() !== '') {
+            let valueStr = '';
+            try {
+                valueStr = String(fieldValue ?? '').trim();
+            } catch (_e) {
+                valueStr = '';
+            }
+            if (field && valueStr !== '') {
                 field.classList.add('field-invalid');
             }
         }
@@ -451,40 +483,33 @@ class SurveyManager {
      */
     async saveForm(isCompleted = false) {
         try {
-            // Validate form before saving
-            const validation = this.validateFormBeforeSave();
-            if (!validation.isValid) {
-                const errorMessage = 'Mohon perbaiki kesalahan berikut:\n' + validation.errors.join('\n');
-                this.showStatus(errorMessage, 'error');
-                return;
+            // Validate form before saving only when completing
+            if (isCompleted) {
+                const validation = this.validateFormBeforeSave();
+                if (!validation.isValid) {
+                    // Field-level errors are already displayed by validate* calls
+                    // Provide simple guidance near submit and scroll to first error
+                    this.showSubmissionGuidance('Mohon lengkapi semua field yang wajib diisi dengan benar');
+                    this.scrollToFirstError();
+                    return;
+                }
             }
 
             // Get form data properly including all fields
             const formData = new FormData(this.form);
-            const data = {};
-            
-            // Convert FormData to object, handling multiple values and empty fields
-            for (let [key, value] of formData.entries()) {
-                if (data[key]) {
-                    // Handle multiple values (like radio buttons)
-                    if (Array.isArray(data[key])) {
-                        data[key].push(value);
-                    } else {
-                        data[key] = [data[key], value];
-                    }
-                } else {
-                    data[key] = value;
-                }
-            }
-            
-            // Add completion status
-            data.is_completed = isCompleted;
+            // Preserve nested array names by submitting FormData directly
+            // Append completion flag explicitly as string for backend parsing
+            formData.append('is_completed', isCompleted ? 'true' : 'false');
 
             const statusMessage = isCompleted ? 'Menyimpan dan menyelesaikan...' : 'Menyimpan draft...';
             this.showStatus(statusMessage, 'info', true);
 
-            // Ensure CSRF token is fresh
-            const csrfToken = this.getCSRFToken();
+            // Ensure CSRF token is fresh (fallback to hidden input if meta missing)
+            let csrfToken = this.getCSRFToken();
+            if (!csrfToken) {
+                const tokenField = this.form.querySelector('input[name="_token"]');
+                csrfToken = tokenField ? tokenField.value : null;
+            }
             if (!csrfToken) {
                 throw new Error('CSRF token not found. Please refresh the page.');
             }
@@ -492,12 +517,12 @@ class SurveyManager {
             const response = await fetch(this.options.saveAllUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    // Let the browser set correct multipart/form-data headers
                     'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify(data)
+                body: formData
             });
 
             const result = await response.json();
@@ -519,6 +544,16 @@ class SurveyManager {
                             nextUrl = window.surveyRoutes.blok3a;
                         } else if (result.next_block === 'blok6' && window.surveyRoutes?.blok6) {
                             nextUrl = window.surveyRoutes.blok6;
+                        } else if (result.next_block === 'blok3b_industri' && window.surveyRoutes?.blok3b_industri) {
+                            nextUrl = window.surveyRoutes.blok3b_industri;
+                        } else if (result.next_block === 'blok3b_nonindustri' && window.surveyRoutes?.blok3b_nonindustri) {
+                            nextUrl = window.surveyRoutes.blok3b_nonindustri;
+                        } else if (result.next_block === 'blok4') {
+                            // Map Blok 4 either via explicit route or default nextBlok
+                            nextUrl = (window.surveyRoutes && window.surveyRoutes.blok4) ? window.surveyRoutes.blok4 : (window.surveyRoutes ? window.surveyRoutes.nextBlok : null);
+                        } else if (window.surveyRoutes && window.surveyRoutes[result.next_block]) {
+                            // Generic mapping: if the route key exists, use it
+                            nextUrl = window.surveyRoutes[result.next_block];
                         }
                     } else if (window.surveyRoutes?.nextBlok) {
                         // Fallback to default next block
@@ -539,8 +574,11 @@ class SurveyManager {
             } else {
                 // Handle validation errors specifically
                 if (response.status === 422 && result.errors) {
-                    const errorMessages = Object.values(result.errors).flat();
-                    throw new Error('Validation failed: ' + errorMessages.join(', '));
+                    this.handleServerValidationErrors(result.errors || {});
+                    this.showSubmissionGuidance('Mohon lengkapi semua field yang wajib diisi dengan benar');
+                    this.scrollToFirstError();
+                    this.showStatus('Terdapat kesalahan pada form. Mohon periksa kembali.', 'error');
+                    return;
                 } else {
                     throw new Error(result.message || 'Save failed');
                 }
@@ -554,6 +592,110 @@ class SurveyManager {
             
             this.showStatus(errorMessage, 'error');
         }
+    }
+
+    /**
+     * Show a brief guidance message near the submit button
+     */
+    showSubmissionGuidance(message) {
+        if (!this.form) return;
+
+        // Prefer the complete/save button container
+        const submitBtn = this.form.querySelector('#save-complete') || this.form.querySelector('button[type="submit"]');
+        if (!submitBtn) return;
+
+        const container = submitBtn.parentElement || submitBtn.closest('.form-actions') || this.form;
+        let guidance = container.querySelector('.form-guidance-message');
+        if (!guidance) {
+            guidance = document.createElement('div');
+            guidance.className = 'field-error-message form-guidance-message';
+            // Place guidance just after the button container
+            container.appendChild(guidance);
+        }
+        guidance.textContent = message;
+    }
+
+    /**
+     * Scroll to and focus the first field with an error
+     */
+    scrollToFirstError() {
+        if (!this.form) return;
+
+        // Prefer fields marked with error
+        let firstErrorEl = this.form.querySelector('.field-error');
+
+        // Fallback: if no field has error class, try error messages
+        if (!firstErrorEl) {
+            const firstErrorMsg = this.form.querySelector('.field-error-message');
+            if (firstErrorMsg) {
+                // Try focusing the previous input/textarea/select sibling
+                const candidateField = firstErrorMsg.previousElementSibling;
+                if (candidateField && (candidateField.tagName === 'INPUT' || candidateField.tagName === 'TEXTAREA' || candidateField.tagName === 'SELECT')) {
+                    firstErrorEl = candidateField;
+                } else {
+                    firstErrorEl = firstErrorMsg;
+                }
+            }
+        }
+
+        if (firstErrorEl) {
+            firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (typeof firstErrorEl.focus === 'function') {
+                firstErrorEl.focus();
+            }
+        }
+    }
+
+    /**
+     * Display server-side validation errors inline per field
+     */
+    handleServerValidationErrors(errors) {
+        if (!this.form || !errors) return;
+
+        // Clear any existing errors first
+        const errorFields = this.form.querySelectorAll('.field-error');
+        errorFields.forEach(field => this.clearFieldError(field));
+        const errorMsgs = this.form.querySelectorAll('.field-error-message');
+        errorMsgs.forEach(msg => msg.remove());
+
+        Object.keys(errors).forEach(fieldName => {
+            const field = this.form.querySelector(`[name="${fieldName}"]`);
+            const messages = Array.isArray(errors[fieldName]) ? errors[fieldName] : [errors[fieldName]];
+            if (!field) return;
+
+            // If the field is a radio group, render the error next to the group container
+            if (field.type === 'radio') {
+                const groupName = field.name;
+                const firstRadio = this.form.querySelector(`input[name="${groupName}"]`);
+                const radioGroupContainer = firstRadio ? firstRadio.closest('.radio-group') : null;
+
+                // Prefer using blok2 manager's helper when available
+                if (window.surveyBlok2Manager && typeof window.surveyBlok2Manager.showRadioGroupError === 'function') {
+                    window.surveyBlok2Manager.showRadioGroupError(groupName, messages[0]);
+                    return;
+                }
+
+                // Fallback: inject error element after the radio group container
+                if (radioGroupContainer && radioGroupContainer.parentNode) {
+                    // Clear any existing radio-group error in this subrow
+                    const existing = radioGroupContainer.parentNode.querySelector('.radio-group-error');
+                    if (existing) existing.remove();
+
+                    const errorElement = document.createElement('div');
+                    errorElement.className = 'field-error-message radio-group-error';
+                    errorElement.textContent = messages[0];
+                    radioGroupContainer.parentNode.insertBefore(errorElement, radioGroupContainer.nextSibling);
+                    return;
+                }
+
+                // As a last resort, show inline next to the radio input
+                this.showFieldError(field, messages[0]);
+                return;
+            }
+
+            // Default: show field error next to the input control
+            this.showFieldError(field, messages[0]);
+        });
     }
 
     /**

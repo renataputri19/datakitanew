@@ -191,6 +191,12 @@
     padding: var(--spacing-4) var(--spacing-6);
     margin: calc(-1 * var(--spacing-6)) calc(-1 * var(--spacing-6)) var(--spacing-6);
     border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+    border-left: 4px solid var(--primary-blue);
+    border-top-left-radius: var(--radius-md);
+    border-top-right-radius: var(--radius-md);
 }
 
 .dark .section-header {
@@ -199,13 +205,25 @@
 }
 
 .section-title {
-    font-size: var(--font-size-lg);
-    font-weight: 600;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
     color: var(--gray-900);
     margin: 0;
+    letter-spacing: 0.2px;
 }
 
 .dark .section-title {
+    color: var(--gray-900);
+}
+
+/* Section subtitle under the title */
+.section-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--gray-700);
+    margin: 0;
+}
+
+.dark .section-subtitle {
     color: var(--gray-900);
 }
 
@@ -271,6 +289,13 @@
 }
 
 .form-label.required::after {
+    content: '*';
+    color: var(--error-red);
+    font-weight: 600;
+}
+
+/* Red asterisk for required sublabels */
+.form-sublabel.required::after {
     content: '*';
     color: var(--error-red);
     font-weight: 600;
@@ -491,6 +516,11 @@
     .section-header {
         padding: var(--spacing-3) var(--spacing-4);
         margin: calc(-1 * var(--spacing-4)) calc(-1 * var(--spacing-4)) var(--spacing-4);
+        border-left-width: 3px;
+    }
+    
+    .section-title {
+        font-size: var(--font-size-lg);
     }
     
     .form-row {
@@ -540,6 +570,11 @@
     .section-header {
         padding: var(--spacing-2) var(--spacing-3);
         margin: calc(-1 * var(--spacing-3)) calc(-1 * var(--spacing-3)) var(--spacing-3);
+        border-left-width: 3px;
+    }
+    
+    .section-title {
+        font-size: var(--font-size-base);
     }
 }
 
@@ -547,6 +582,46 @@
 .form-control.field-valid {
     border-color: var(--success-green);
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Responsive Button Navigation Fix for SIBSTR */
+@media (max-width: 768px) {
+  /* Ensure consistent vertical stacking with comfortable spacing */
+  .form-actions {
+    gap: var(--spacing-3);
+  }
+  /* Make buttons full-width and easy to tap */
+  .form-actions .btn,
+  .form-actions a.btn {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-height: 44px; /* touch-friendly size */
+  }
+  /* Keep notes/hints within container width */
+  .form-actions .text-sm {
+    width: 100%;
+  }
+  /* Override nested Tailwind flex wrappers so buttons stack vertically */
+  .form-actions .flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100%;
+    gap: var(--spacing-3);
+  }
+  .form-actions .flex .btn {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  /* Maintain horizontal layout with proper spacing on larger screens */
+  .form-actions {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-4);
+  }
 }
 
 .form-control.field-invalid {
@@ -716,6 +791,24 @@
     }
 }
 
+/* Notes & Hints visibility improvements */
+/* Ensure small/text-muted hints are readable on light and dark themes */
+.form-row small,
+.form-label small,
+.text-muted,
+.form-hint {
+    color: var(--gray-700);
+    opacity: 1;
+}
+
+.dark .form-row small,
+.dark .form-label small,
+.dark .text-muted,
+.dark .form-hint {
+    color: var(--gray-900);
+    opacity: 0.95;
+}
+
 /* High Contrast Mode */
 @media (prefers-contrast: high) {
     .form-control {
@@ -764,4 +857,66 @@
         background: white !important;
         color: black !important;
     }
+}
+/*
+ * Hint layout: balanced left-right split for "Termasuk" and "Tidak termasuk"
+ * Reduces visual weight and keeps text aligned to the left. Responsive on mobile.
+ */
+.form-hint {
+  margin-top: 8px;
+  text-align: left; /* override any global centering */
+}
+/* Reserve left column for errors and keep hints on right */
+.form-row > .form-errors {
+  /* occupies the left grid column by natural flow */
+}
+.form-row > .form-hint {
+  /* stays paired in the right column when .form-errors is present */
+}
+
+.hint-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.hint-col {
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.875rem; /* slightly smaller than body */
+  line-height: 1.45;
+  border-left: 3px solid var(--border-muted, #e5e7eb);
+  padding-left: 10px;
+}
+
+.hint-heading {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+  color: var(--text-secondary, #6b7280);
+}
+
+.hint-list {
+  margin: 0;
+  padding-left: 1rem; /* standard list indent */
+}
+
+.hint-list li {
+  margin: 2px 0;
+}
+
+.hint-note {
+  margin-top: 6px;
+  color: var(--text-muted, #9ca3af);
+  font-size: 0.8rem; /* lighter supporting note */
+}
+
+@media (max-width: 768px) {
+  .hint-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .hint-col {
+    border-left-width: 2px; /* slightly lighter on mobile */
+  }
 }

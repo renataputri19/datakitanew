@@ -1,0 +1,40 @@
+V. KONDISI DAN PROSPEK USAHA																																											
+Pertanyaan mengenai kondisi dan prospek perusahaan ini diharapkan diisi oleh Purchasing Manager atau pejabat lain yang memahami kondisi pembelian/permintaan di perusahaan																																											
+Petunjuk: Beri tanda centang (✓) pada kotak yang tersedia sesuai dengan kondisi perusahaan																																											
+No	Komponen	Kondisi Triwulan I-2025 dibandingkan Triwulan IV-2024 							Kondisi Triwulan II-2025 dibandingkan Triwulan I-2025							Kondisi Triwulan III-2025 dibandingkan Triwulan II-2025							Prospek Triwulan IV-2025 dibandingkan Triwulan III-2025							Kondisi Triwulan IV-2025 dibandingkan Triwulan III-2025							Prospek Triwulan I-2026 dibandingkan Triwulan IV-2025						
+(1)	(2)	(3)							(4)							(5)							(6)							(7)							(8)						
+501	"Pesanan
+Jumlah pesanan barang produksi yang diterima perusahaan baik domestik dan ekspor"																																										
+			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun	
+																																											
+																																											
+502	"Produksi
+Jumlah produksi barang yang dihasilkan oleh perusahaan"																																										
+			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun	
+																																											
+																																											
+503	"Kapasitas Produksi
+Besaran keluaran (output produksi) maksimum yang mampu dihasilkan oleh mesin produksi utama dalam rentang waktu tertentu."																																										
+			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun	
+																																											
+																																											
+504	"Tenaga kerja
+Rata-rata jumlah tenaga kerja"																																										
+			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun	
+																																											
+																																											
+505	"Jam Kerja
+Rata-rata jam kerja per hari "																																										
+			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun	
+																																											
+																																											
+506	"Waktu pengiriman pemasok
+Waktu pengiriman bahan baku dari pemasok"																																										
+		Lebih cepat			Tetap	Lebih lambat			Lebih cepat			Tetap	Lebih lambat			Lebih cepat			Tetap	Lebih lambat			Lebih cepat			Tetap	Lebih lambat			Lebih cepat			Tetap	Lebih lambat			Lebih cepat			Tetap	Lebih lambat		
+																																											
+																																											
+507	"Persediaan bahan baku
+Jumlah persediaan bahan baku yang disimpan perusahaan"																																										
+			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun			Naik		Tetap		Turun	
+																																											
+																																											

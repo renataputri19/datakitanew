@@ -137,10 +137,10 @@ Route::get('/test-registration', function () {
     return view('test-registration');
 });
 
-// Temporary SIBSTR Survey Routes (Public Access)
-Route::get('/survei/sibstr', [TemporarySurveyController::class, 'showSurvey'])->name('temporary.survey.sibstr');
-Route::post('/survei/sibstr', [TemporarySurveyController::class, 'submitSurvey'])->name('temporary.survey.sibstr.submit');
-Route::get('/survei/sibstr/companies/search', [TemporarySurveyController::class, 'searchCompanies'])->name('temporary.survey.sibstr.companies.search');
+// Temporary SIBSTR Survey Routes (Public Access) - disabled to restore protected version
+// Route::get('/survei/sibstr', [TemporarySurveyController::class, 'showSurvey'])->name('temporary.survey.sibstr');
+// Route::post('/survei/sibstr', [TemporarySurveyController::class, 'submitSurvey'])->name('temporary.survey.sibstr.submit');
+// Route::get('/survei/sibstr/companies/search', [TemporarySurveyController::class, 'searchCompanies'])->name('temporary.survey.sibstr.companies.search');
 
 // Dashboard (Protected Routes)
 Route::middleware(['auth'])->group(function () {
@@ -153,6 +153,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/news', [UserDashboardController::class, 'news'])->name('dashboard.news');
     Route::get('/dashboard/videos', [UserDashboardController::class, 'videos'])->name('dashboard.videos');
     Route::get('/dashboard/settings', [UserDashboardController::class, 'settings'])->name('dashboard.settings');
+
+    // Survey Results (SIBSTR) page under dashboard
+    Route::get('/dashboard/surveys/sibstr/results', [UserDashboardController::class, 'sibstrResults'])->name('dashboard.surveys.sibstr.results');
 
     // Legacy user dashboard routes (still available for backward compatibility)
     Route::get('/userdashboard', [UserDashboardController::class, 'index'])->name('userdashboard');
@@ -167,37 +170,62 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/user/profile', [UserController::class, 'profile'])->name('user.profile.show');
     Route::get('/user/password', [UserController::class, 'password'])->name('user.password.edit');
 
-    // Survey Routes (SIBSTR) - TEMPORARILY DISABLED
-    // Route::prefix('survei')->name('survey.')->group(function () {
-    //     Route::prefix('sibstr')->name('sibstr.')->group(function () {
-    //         Route::get('/', [SurveyController::class, 'sibstrBlok1'])->name('blok1');
-    //         Route::get('/blok1', [SurveyController::class, 'sibstrBlok1'])->name('blok1.show');
-    //         Route::get('/blok2', [SurveyController::class, 'sibstrBlok2'])->name('blok2');
-    //         Route::get('/blok3a', [SurveyController::class, 'sibstrBlok3a'])->name('blok3a');
-    //         Route::get('/blok6', [SurveyController::class, 'sibstrBlok6'])->name('blok6');
+    // Survey Routes (SIBSTR) - Protected (requires authentication)
+    Route::prefix('survei')->name('survey.')->group(function () {
+        Route::prefix('sibstr')->name('sibstr.')->group(function () {
+            Route::get('/', [SurveyController::class, 'sibstrBlok1'])->name('blok1');
+            Route::get('/blok1', [SurveyController::class, 'sibstrBlok1'])->name('blok1.show');
+            Route::get('/blok2', [SurveyController::class, 'sibstrBlok2'])->name('blok2');
+            Route::get('/blok3a', [SurveyController::class, 'sibstrBlok3a'])->name('blok3a');
+            // Blok 3B routes
+            Route::get('/blok3b-industri', [SurveyController::class, 'sibstrBlok3bIndustri'])->name('blok3b.industri');
+            Route::get('/blok3b-nonindustri', [SurveyController::class, 'sibstrBlok3bNonIndustri'])->name('blok3b.nonindustri');
+            Route::get('/blok4', [SurveyController::class, 'sibstrBlok4'])->name('blok4');
+            Route::get('/blok5', [SurveyController::class, 'sibstrBlok5'])->name('blok5');
+            Route::get('/blok6', [SurveyController::class, 'sibstrBlok6'])->name('blok6');
 
-    //         // AJAX Routes for auto-save
-    //         Route::post('/auto-save', [SurveyController::class, 'autoSave'])->name('autosave');
-    //         Route::post('/save-all', [SurveyController::class, 'saveAll'])->name('save');
-    //         Route::get('/status', [SurveyController::class, 'getStatus'])->name('status');
+            // AJAX Routes for auto-save
+            Route::post('/auto-save', [SurveyController::class, 'autoSave'])->name('autosave');
+            Route::post('/save-all', [SurveyController::class, 'saveAll'])->name('save');
+            Route::get('/status', [SurveyController::class, 'getStatus'])->name('status');
 
-    //         // Blok 2 specific routes
-    //         Route::post('/blok2/auto-save', [SurveyController::class, 'autoSaveBlok2'])->name('blok2.autosave');
-    //         Route::post('/blok2/save-all', [SurveyController::class, 'saveAllBlok2'])->name('blok2.save');
-    //         Route::get('/blok2/status', [SurveyController::class, 'getStatusBlok2'])->name('blok2.status');
+            // Blok 2 specific routes
+            Route::post('/blok2/auto-save', [SurveyController::class, 'autoSaveBlok2'])->name('blok2.autosave');
+            Route::post('/blok2/save-all', [SurveyController::class, 'saveAllBlok2'])->name('blok2.save');
+            Route::get('/blok2/status', [SurveyController::class, 'getStatusBlok2'])->name('blok2.status');
 
-    //         // Blok IIIA specific routes
-    //         Route::post('/blok3a/auto-save', [SurveyController::class, 'autoSaveBlok3a'])->name('blok3a.autosave');
-    //         Route::post('/blok3a/save-all', [SurveyController::class, 'saveAllBlok3a'])->name('blok3a.save');
-    //         Route::get('/blok3a/status', [SurveyController::class, 'getStatusBlok3a'])->name('blok3a.status');
+            // Blok IIIA specific routes
+            Route::post('/blok3a/auto-save', [SurveyController::class, 'autoSaveBlok3a'])->name('blok3a.autosave');
+            Route::post('/blok3a/save-all', [SurveyController::class, 'saveAllBlok3a'])->name('blok3a.save');
+            Route::get('/blok3a/status', [SurveyController::class, 'getStatusBlok3a'])->name('blok3a.status');
 
-    //         // Blok 6 specific routes
-    //         Route::post('/blok6/auto-save', [SurveyController::class, 'autoSaveBlok6'])->name('blok6.autosave');
-    //         Route::post('/blok6/save-all', [SurveyController::class, 'saveAllBlok6'])->name('blok6.save');
-    //         Route::get('/blok6/status', [SurveyController::class, 'getStatusBlok6'])->name('blok6.status');
-    //         Route::post('/blok6/finish', [SurveyController::class, 'finishSurvey'])->name('blok6.finish');
-    //     });
-    // });
+            // Blok 3B Industri specific routes
+            Route::post('/blok3b-industri/auto-save', [SurveyController::class, 'autoSaveBlok3bIndustri'])->name('blok3b.industri.autosave');
+            Route::post('/blok3b-industri/save-all', [SurveyController::class, 'saveAllBlok3bIndustri'])->name('blok3b.industri.save');
+            Route::get('/blok3b-industri/status', [SurveyController::class, 'getStatusBlok3bIndustri'])->name('blok3b.industri.status');
+
+            // Blok 3B Non-Industri specific routes
+            Route::post('/blok3b-nonindustri/auto-save', [SurveyController::class, 'autoSaveBlok3bNonIndustri'])->name('blok3b.nonindustri.autosave');
+            Route::post('/blok3b-nonindustri/save-all', [SurveyController::class, 'saveAllBlok3bNonIndustri'])->name('blok3b.nonindustri.save');
+            Route::get('/blok3b-nonindustri/status', [SurveyController::class, 'getStatusBlok3bNonIndustri'])->name('blok3b.nonindustri.status');
+
+            // Blok 4 specific routes
+            Route::post('/blok4/auto-save', [SurveyController::class, 'autoSaveBlok4'])->name('blok4.autosave');
+            Route::post('/blok4/save-all', [SurveyController::class, 'saveAllBlok4'])->name('blok4.save');
+            Route::get('/blok4/status', [SurveyController::class, 'getStatusBlok4'])->name('blok4.status');
+
+            // Blok 5 specific routes
+            Route::post('/blok5/auto-save', [SurveyController::class, 'autoSaveBlok5'])->name('blok5.autosave');
+            Route::post('/blok5/save-all', [SurveyController::class, 'saveAllBlok5'])->name('blok5.save');
+            Route::get('/blok5/status', [SurveyController::class, 'getStatusBlok5'])->name('blok5.status');
+
+            // Blok 6 specific routes
+            Route::post('/blok6/auto-save', [SurveyController::class, 'autoSaveBlok6'])->name('blok6.autosave');
+            Route::post('/blok6/save-all', [SurveyController::class, 'saveAllBlok6'])->name('blok6.save');
+            Route::get('/blok6/status', [SurveyController::class, 'getStatusBlok6'])->name('blok6.status');
+            Route::post('/blok6/finish', [SurveyController::class, 'finishSurvey'])->name('blok6.finish');
+        });
+    });
 
 
     // BPS Routes (Protected by BPS middleware)
@@ -210,6 +238,10 @@ Route::middleware(['auth'])->group(function () {
 
         // Video Management
         Route::resource('videos', BPSVideoController::class);
+
+        // SIBSTR Survey Data Management (View Only)
+        Route::get('/sibstr', [App\Http\Controllers\BPS\SibstrController::class, 'index'])->name('sibstr.index');
+        Route::get('/sibstr/{id}', [App\Http\Controllers\BPS\SibstrController::class, 'show'])->name('sibstr.show');
 
         // BPS User Profile Route
         Route::get('/user/profile', [BPSUserController::class, 'profile'])->name('user.profile.show');

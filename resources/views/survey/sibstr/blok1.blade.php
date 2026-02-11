@@ -151,6 +151,34 @@
                 <div class="form-row">
                     <label class="form-label required">
                         <span class="question-number">107.</span>
+                        <span>Homepage/Website:</span>
+                    </label>
+                    <input type="url" name="homepage" id="homepage" value="{{ $surveyResponse->homepage ?? '' }}"
+                           class="form-control" required
+                           placeholder="Masukkan URL website perusahaan (contoh: https://contoh.com)">
+                    @error('homepage')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <!-- Question 108 -->
+                <div class="form-row">
+                    <label class="form-label required">
+                        <span class="question-number">108.</span>
+                        <span>Tahun mulai beroperasi secara komersial:</span>
+                    </label>
+                    <input type="number" name="tahun_mulai_beroperasi" id="tahun_mulai_beroperasi" value="{{ $surveyResponse->tahun_mulai_beroperasi ?? '' }}"
+                           class="form-control" required min="1900" max="2100" step="1"
+                           placeholder="Masukkan tahun mulai beroperasi (4 digit)">
+                    @error('tahun_mulai_beroperasi')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <!-- Question 107 -->
+                <div class="form-row">
+                    <label class="form-label required">
+                        <span class="question-number">107.</span>
                         <span>NIB (Nomor Induk Berusaha):</span>
                     </label>
                     <input type="text" name="nib" id="nib" value="{{ $surveyResponse->nib ?? '' }}"
@@ -215,6 +243,20 @@
                         <div class="error-message">{{ $message }}</div>
                     @enderror
                 </div>
+
+                <!-- Question 112 -->
+                <div class="form-row">
+                    <label class="form-label required">
+                        <span class="question-number">112.</span>
+                        <span>Nama Perusahaan Pengelola Kawasan:</span>
+                    </label>
+                    <input type="text" name="nama_pengelola_kawasan" id="nama_pengelola_kawasan" value="{{ $surveyResponse->nama_pengelola_kawasan ?? '' }}"
+                           class="form-control" required
+                           placeholder="Masukkan nama perusahaan pengelola kawasan">
+                    @error('nama_pengelola_kawasan')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
             </div>
         </div>
 
@@ -247,6 +289,45 @@
                     <input type="text" name="legalisasi_jabatan" id="legalisasi_jabatan" value="{{ $surveyResponse->legalisasi_jabatan ?? '' }}"
                            class="form-control" required
                            placeholder="Masukkan jabatan">
+                </div>
+
+                <!-- Question 113 -->
+                <div class="form-row">
+                    <label class="form-label required">
+                        <span class="question-number">113.</span>
+                        <span>Jenis Kelamin:</span>
+                    </label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" name="legalisasi_jenis_kelamin" id="legalisasi_jk_laki_laki" value="laki_laki"
+                                   {{ ($surveyResponse->legalisasi_jenis_kelamin ?? '') == 'laki_laki' ? 'checked' : '' }}
+                                   class="radio-input" required>
+                            <label for="legalisasi_jk_laki_laki" class="radio-label">Laki-laki</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="legalisasi_jenis_kelamin" id="legalisasi_jk_perempuan" value="perempuan"
+                                   {{ ($surveyResponse->legalisasi_jenis_kelamin ?? '') == 'perempuan' ? 'checked' : '' }}
+                                   class="radio-input" required>
+                            <label for="legalisasi_jk_perempuan" class="radio-label">Perempuan</label>
+                        </div>
+                    </div>
+                    @error('legalisasi_jenis_kelamin')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <!-- Question 115 -->
+                <div class="form-row">
+                    <label class="form-label">
+                        <span class="question-number">115.</span>
+                        <span>NIK:</span>
+                    </label>
+                    <input type="text" name="legalisasi_nik" id="legalisasi_nik" value="{{ $surveyResponse->legalisasi_nik ?? '' }}"
+                           class="form-control" pattern="[0-9]{16}" maxlength="16"
+                           placeholder="Masukkan NIK (16 digit angka)" title="NIK harus berupa 16 digit angka">
+                    @error('legalisasi_nik')
+                        <div class="error-message">{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
         </div>
@@ -372,6 +453,12 @@
         <!-- Form Actions -->
         <div class="form-actions">
             <div class="flex items-center gap-4">
+                <button type="button" id="back-to-dashboard" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15,18 9,12 15,6"></polyline>
+                    </svg>
+                    Kembali ke Dashboard
+                </button>
                 <button type="button" id="save-draft" class="btn btn-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -405,6 +492,16 @@ window.surveyRoutes = {
     status: '{{ route("survey.sibstr.status") }}',
     nextBlok: '{{ route("survey.sibstr.blok2") }}'
 };
+
+// Back to dashboard navigation (consistent button behavior)
+document.addEventListener('DOMContentLoaded', function() {
+    const backBtn = document.getElementById('back-to-dashboard');
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            window.location.href = '{{ route("home") }}';
+        });
+    }
+});
 </script>
 <script src="{{ asset('js/survey.js') }}"></script>
 @endpush
