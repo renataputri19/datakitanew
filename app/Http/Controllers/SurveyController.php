@@ -123,13 +123,13 @@ class SurveyController extends Controller
         // Get or create survey response for Blok 4
         $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok4');
 
-        // Fetch KBLI from Blok 2 to help decide back navigation to 3B variant
-        $blok2Response = SurveyResponse::where('user_id', $user->id)
+        // Fetch KBLI from latest response to help decide back navigation to 3B variant
+        $latestResponseBlok = SurveyResponse::where('user_id', $user->id)
             ->where('survey_type', 'sibstr')
-            ->where('survey_section', 'blok2')
+            ->orderBy('updated_at', 'desc')
             ->first();
 
-        $kbli = $blok2Response?->kbli_utama;
+        $kbli = $latestResponseBlok?->kbli_utama;
         $kbliPrefix = null;
         if ($kbli && preg_match('/^(\d{2})/', $kbli, $m)) {
             $kbliPrefix = (int) $m[1];
@@ -160,13 +160,13 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
-        // Ensure Blok 3A is accessible and completed before entering Blok 3B (optional constraint)
-        $blok2Response = SurveyResponse::where('user_id', $user->id)
+        // Ensure perusahaan masih aktif menggunakan latest response
+        $latestResponse3b = SurveyResponse::where('user_id', $user->id)
             ->where('survey_type', 'sibstr')
-            ->where('survey_section', 'blok2')
+            ->orderBy('updated_at', 'desc')
             ->first();
 
-        if (!$blok2Response || $blok2Response->kondisi_perusahaan !== 'masih_aktif') {
+        if (!$latestResponse3b || $latestResponse3b->kondisi_perusahaan !== 'masih_aktif') {
             return redirect()->route('survey.sibstr.blok6')->with('warning', 'Blok IIIB hanya dapat diakses jika perusahaan masih aktif.');
         }
 
@@ -184,6 +184,16 @@ class SurveyController extends Controller
     public function sibstrBlok3bNonIndustri()
     {
         $user = Auth::user();
+        // Pastikan perusahaan masih aktif menggunakan latest response
+        $latestResponse3bNon = SurveyResponse::where('user_id', $user->id)
+            ->where('survey_type', 'sibstr')
+            ->orderBy('updated_at', 'desc')
+            ->first();
+
+        if (!$latestResponse3bNon || $latestResponse3bNon->kondisi_perusahaan !== 'masih_aktif') {
+            return redirect()->route('survey.sibstr.blok6')->with('warning', 'Blok IIIB hanya dapat diakses jika perusahaan masih aktif.');
+        }
+
         $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok3b_nonindustri');
         return view('survey.sibstr.blok3b-nonindustri', compact('surveyResponse'));
     }
@@ -1230,12 +1240,12 @@ class SurveyController extends Controller
             $user = Auth::user();
 
             // Check conditional access
-            $blok2Response = SurveyResponse::where('user_id', $user->id)
+            $latestResponse3a = SurveyResponse::where('user_id', $user->id)
                 ->where('survey_type', 'sibstr')
-                ->where('survey_section', 'blok2')
+                ->orderBy('updated_at', 'desc')
                 ->first();
 
-            if (!$blok2Response || $blok2Response->kondisi_perusahaan !== 'masih_aktif') {
+            if (!$latestResponse3a || $latestResponse3a->kondisi_perusahaan !== 'masih_aktif') {
                 return response()->json([
                     'success' => false,
                     'message' => 'Blok IIIA hanya dapat diakses jika kondisi perusahaan adalah "Masih Aktif".'
@@ -1257,7 +1267,7 @@ class SurveyController extends Controller
 
             // Determine next block based on KBLI (first two digits)
             $nextBlock = 'blok3b_nonindustri';
-            $kbli = $blok2Response->kbli_utama;
+            $kbli = $latestResponse3a?->kbli_utama;
             if ($kbli && preg_match('/^(\d{2})/', $kbli, $m)) {
                 $prefix = (int) $m[1];
                 if ($prefix >= 10 && $prefix <= 33) {
@@ -1373,6 +1383,19 @@ class SurveyController extends Controller
         try {
             $user = Auth::user();
             $isCompleted = $request->boolean('is_completed', false);
+
+            // Guard: only allow if perusahaan masih aktif (use latest response)
+            $latestResponse3bI = SurveyResponse::where('user_id', $user->id)
+                ->where('survey_type', 'sibstr')
+                ->orderBy('updated_at', 'desc')
+                ->first();
+
+            if (!$latestResponse3bI || $latestResponse3bI->kondisi_perusahaan !== 'masih_aktif') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Blok IIIB hanya dapat diakses jika perusahaan masih aktif.'
+                ], 403);
+            }
 
             // Sanitize incoming nested data: treat empty strings as null
             $incoming = $request->input('blok3b_industri', []);
@@ -1643,6 +1666,19 @@ class SurveyController extends Controller
     {
         try {
             $user = Auth::user();
+
+            // Guard: only allow if perusahaan masih aktif (use latest response)
+            $latestResponse3bN = SurveyResponse::where('user_id', $user->id)
+                ->where('survey_type', 'sibstr')
+                ->orderBy('updated_at', 'desc')
+                ->first();
+
+            if (!$latestResponse3bN || $latestResponse3bN->kondisi_perusahaan !== 'masih_aktif') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Blok IIIB hanya dapat diakses jika perusahaan masih aktif.'
+                ], 403);
+            }
 
             // Sanitize incoming nested data: treat empty strings as null
             $incoming = $request->input('blok3b_nonindustri', []);
