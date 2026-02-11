@@ -550,8 +550,9 @@ class SurveyBlok3aManager {
         // Update row numbers (1., 2., etc) and delete buttons - visual only
         this.updateRowNumbers();
 
-        // Auto-add new row if this is the last row and has data
-        this.checkAutoAddRow();
+        // Do NOT auto-add here to avoid creating a duplicate row when user
+        // clicks the "Tambah Produk" button. Auto-add will be handled when
+        // the last row receives input in its jenis barang field.
     }
 
     createProductRowGroup(rowNumber, product, productIndex) {
@@ -691,15 +692,10 @@ class SurveyBlok3aManager {
             return;
         }
 
-        // Find associated sub-rows
-        const rowsToRemove = [mainRow];
-        let nextSibling = mainRow.nextElementSibling;
-
-        // Collect associated rows (nilai-row and harga-row) which are siblings
-        while (nextSibling && !nextSibling.classList.contains('product-row')) {
-            rowsToRemove.push(nextSibling);
-            nextSibling = nextSibling.nextElementSibling;
-        }
+        // Also select all sub-rows by explicit parentIndex linkage to guarantee
+        // complete deletion even if DOM order has changed.
+        const subRows = Array.from(this.productsTbody.querySelectorAll(`tr.sub-row[data-parent-index="${productIndex}"]`));
+        const rowsToRemove = [mainRow, ...subRows];
 
         if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
             rowsToRemove.forEach(row => row.remove());
@@ -754,6 +750,9 @@ class SurveyBlok3aManager {
                 this.calculateTotals();
             }, 100);
         }
+
+        // Disable auto-add behavior when typing in "Jenis barang" fields.
+        // Users will add rows explicitly using the "Tambah Produk" button.
     }
 
     setupAutoCalculation() {
