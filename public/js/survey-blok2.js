@@ -15,7 +15,7 @@ class SurveyBlok2Manager {
         this.setupEventListeners();
         this.setupValidation();
         this.setupNavigation();
-        
+
         // Initialize conditional logic on page load
         this.initializeConditionalLogic();
     }
@@ -68,7 +68,7 @@ class SurveyBlok2Manager {
             const q203Input = document.querySelector('input[name="jumlah_cabang_dan_unit_usaha"]');
             const q203Row = q203Input ? q203Input.closest('.form-row') : null;
             const q204Row = document.getElementById('informasi_kantor_pusat_row');
-            const rows205to211 = this.getFormRowsByQuestionNumbers(['205','206','207','208','209','210','210a','210b','211']);
+            const rows205to211 = this.getFormRowsByQuestionNumbers(['205', '206', '207', '208', '209', '210', '210a', '210b', '211']);
             this.setRowVisible(q202Row, false);
             this.setRowVisible(q203Row, false);
             this.setRowVisible(q204Row, false);
@@ -127,7 +127,7 @@ class SurveyBlok2Manager {
         const q203Input = document.querySelector('input[name="jumlah_cabang_dan_unit_usaha"]');
         const q203Row = q203Input ? q203Input.closest('.form-row') : null;
         const q204Row = document.getElementById('informasi_kantor_pusat_row');
-        const rows205to211 = this.getFormRowsByQuestionNumbers(['205','206','207','208','209','210','210a','210b','211']);
+        const rows205to211 = this.getFormRowsByQuestionNumbers(['205', '206', '207', '208', '209', '210', '210a', '210b', '211']);
 
         // Toggle rows based on kondisi perusahaan
         this.setRowVisible(q202Row, isActive, { autoSaveNames: ['jaringan_unit_kegiatan'] });
@@ -149,7 +149,7 @@ class SurveyBlok2Manager {
     updateNavigationButtons(kondisiValue) {
         const saveCompleteButton = document.getElementById('save-complete');
         const blok6Button = document.getElementById('go-to-blok6');
-        
+
         if (kondisiValue === 'masih_aktif') {
             // For "Masih Aktif", show save button, hide Blok 6 button
             if (saveCompleteButton) {
@@ -219,7 +219,7 @@ class SurveyBlok2Manager {
         const q203Row = q203Input ? q203Input.closest('.form-row') : null;
         const q204Row = document.getElementById('informasi_kantor_pusat_row');
 
-        const rows205to211 = this.getFormRowsByQuestionNumbers(['205','206','207','208','209','210','210a','210b','211']);
+        const rows205to211 = this.getFormRowsByQuestionNumbers(['205', '206', '207', '208', '209', '210', '210a', '210b', '211']);
 
         const saveCompleteButton = document.getElementById('save-complete');
         const blok6Button = document.getElementById('go-to-blok6');
@@ -452,7 +452,7 @@ class SurveyBlok2Manager {
                     value = value.substring(0, 5);
                 }
                 e.target.value = value;
-                
+
                 // Validate in real-time
                 this.validateKBLI(e.target);
             });
@@ -594,11 +594,11 @@ class SurveyBlok2Manager {
             const radioGroup = document.querySelectorAll(`input[name="${field.name}"]`);
             return Array.from(radioGroup).some(radio => radio.checked);
         }
-        
+
         if (field.type === 'checkbox') {
             return field.checked;
         }
-        
+
         return field.value.trim() !== '';
     }
 
@@ -721,7 +721,7 @@ class SurveyBlok2Manager {
         // Validate form first - if invalid, stop here
         if (!this.validateForm()) {
             console.log('Form validation failed, cannot save');
-            
+
             // Show friendly guidance near the submit button
             this.showSubmissionGuidance('Mohon lengkapi semua field yang wajib diisi dengan benar');
 
@@ -746,7 +746,7 @@ class SurveyBlok2Manager {
                     firstErrorField.focus();
                 }
             }
-            
+
             return;
         }
 
@@ -754,6 +754,11 @@ class SurveyBlok2Manager {
 
         // Use the existing survey manager's save functionality
         if (window.surveyManager && typeof window.surveyManager.saveForm === 'function') {
+            // Ensure fallback next route points to Blok 3A when perusahaan masih aktif
+            const kondisi = document.querySelector('input[name="kondisi_perusahaan"]:checked');
+            if (kondisi && kondisi.value === 'masih_aktif' && window.surveyRoutes && window.surveyRoutes.blok3a) {
+                window.surveyRoutes.nextBlok = window.surveyRoutes.blok3a;
+            }
             window.surveyManager.saveForm(true); // true for completed
         } else {
             console.error('SurveyManager not available or saveForm method not found');
@@ -786,7 +791,7 @@ class SurveyBlok2Manager {
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Only initialize if we're on the Blok 2 page
     if (document.getElementById('survey-form') && window.location.pathname.includes('blok2')) {
         window.surveyBlok2Manager = new SurveyBlok2Manager();

@@ -75,12 +75,12 @@ class SurveyManager {
     validateEmail(field) {
         const value = field.value.trim();
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        
+
         if (value && !emailRegex.test(value)) {
             this.showFieldError(field, 'Format email tidak valid');
             return false;
         }
-        
+
         this.clearFieldError(field);
         return true;
     }
@@ -91,17 +91,17 @@ class SurveyManager {
     handleNibInput(event) {
         const field = event.target;
         let value = field.value;
-        
+
         // Remove any non-numeric characters
         value = value.replace(/[^0-9]/g, '');
-        
+
         // Limit to 13 characters
         if (value.length > 13) {
             value = value.substring(0, 13);
         }
-        
+
         field.value = value;
-        
+
         // Clear error if user is typing
         this.clearFieldError(field);
     }
@@ -112,17 +112,17 @@ class SurveyManager {
     validateNib(field) {
         const value = field.value.trim();
         const nibRegex = /^[0-9]{13}$/;
-        
+
         if (value && !nibRegex.test(value)) {
             this.showFieldError(field, 'NIB harus berupa 13 digit angka');
             return false;
         }
-        
+
         if (field.hasAttribute('required') && !value) {
             this.showFieldError(field, 'NIB (Nomor Induk Berusaha) wajib diisi');
             return false;
         }
-        
+
         this.clearFieldError(field);
         return true;
     }
@@ -133,13 +133,13 @@ class SurveyManager {
     validateField(field) {
         const value = field.value.trim();
         const maxLength = field.getAttribute('maxlength');
-        
+
         // Check max length
         if (maxLength && value.length > parseInt(maxLength)) {
             this.showFieldError(field, `Maksimal ${maxLength} karakter`);
             return false;
         }
-        
+
         this.clearFieldError(field);
         return true;
     }
@@ -149,12 +149,12 @@ class SurveyManager {
      */
     validateRequired(field) {
         const value = field.value.trim();
-        
+
         if (field.hasAttribute('required') && !value) {
             this.showFieldError(field, 'Field ini wajib diisi');
             return false;
         }
-        
+
         this.clearFieldError(field);
         return true;
     }
@@ -165,15 +165,15 @@ class SurveyManager {
     showFieldError(field, message) {
         // Remove existing error
         this.clearFieldError(field);
-        
+
         // Add error class to field
         field.classList.add('field-error');
-        
+
         // Create error message element
         const errorElement = document.createElement('div');
         errorElement.className = 'field-error-message';
         errorElement.textContent = message;
-        
+
         // Insert error message after the field
         field.parentNode.insertBefore(errorElement, field.nextSibling);
     }
@@ -184,7 +184,7 @@ class SurveyManager {
     clearFieldError(field) {
         // Remove error class
         field.classList.remove('field-error');
-        
+
         // Remove error message
         const errorElement = field.parentNode.querySelector('.field-error-message');
         if (errorElement) {
@@ -299,7 +299,7 @@ class SurveyManager {
         formElements.forEach(element => {
             element.disabled = true;
         });
-        
+
         this.form.classList.add('form-disabled');
     }
 
@@ -389,10 +389,10 @@ class SurveyManager {
             return;
         }
         const field = this.form.querySelector(`[name="${fieldName}"]`);
-        
+
         try {
             this.showStatus('Menyimpan...', 'info', true);
-            
+
             // Remove any existing validation classes while saving
             if (field) {
                 field.classList.remove('field-valid', 'field-invalid');
@@ -435,7 +435,7 @@ class SurveyManager {
         } catch (error) {
             console.error('Auto-save error:', error);
             this.showStatus('Gagal menyimpan: ' + error.message, 'error');
-            
+
             // Show error state on field if save failed
             let valueStr = '';
             try {
@@ -528,10 +528,10 @@ class SurveyManager {
             const result = await response.json();
 
             if (response.ok && result.success) {
-                const successMessage = isCompleted ? 
-                    'Survei berhasil diselesaikan dan disimpan' : 
+                const successMessage = isCompleted ?
+                    'Survei berhasil diselesaikan dan disimpan' :
                     'Draft berhasil disimpan';
-                
+
                 this.showStatus(successMessage, 'success');
 
                 if (isCompleted) {
@@ -569,7 +569,7 @@ class SurveyManager {
                         this.disableForm();
                     }
                 }
-                
+
                 console.log('Form save successful:', result);
             } else {
                 // Handle validation errors specifically
@@ -586,10 +586,10 @@ class SurveyManager {
 
         } catch (error) {
             console.error('Form save error:', error);
-            const errorMessage = isCompleted ? 
-                'Gagal menyelesaikan survei: ' + error.message : 
+            const errorMessage = isCompleted ?
+                'Gagal menyelesaikan survei: ' + error.message :
                 'Gagal menyimpan draft: ' + error.message;
-            
+
             this.showStatus(errorMessage, 'error');
         }
     }
@@ -703,7 +703,7 @@ class SurveyManager {
      */
     setupFormValidation() {
         const formInputs = this.form.querySelectorAll('input, textarea, select');
-        
+
         formInputs.forEach(input => {
             // Remove automatic validation on input - let auto-save handle it
             input.addEventListener('blur', (e) => {
@@ -720,15 +720,15 @@ class SurveyManager {
      */
     validateField(field) {
         const isValid = field.checkValidity();
-        
+
         // Remove existing validation classes
         field.classList.remove('field-valid', 'field-invalid');
-        
+
         // Add appropriate class
         if (field.value.trim() !== '') {
             field.classList.add(isValid ? 'field-valid' : 'field-invalid');
         }
-        
+
         return isValid;
     }
 
@@ -740,10 +740,10 @@ class SurveyManager {
 
         // Clear existing classes
         this.statusDiv.className = 'autosave-status';
-        
+
         // Add type-specific class
         this.statusDiv.classList.add(type);
-        
+
         // Set message with optional spinner
         if (showSpinner) {
             this.statusText.innerHTML = `
@@ -753,10 +753,10 @@ class SurveyManager {
         } else {
             this.statusText.textContent = message;
         }
-        
+
         // Show status
         this.statusDiv.classList.remove('hidden');
-        
+
         // Auto-hide success messages
         if (type === 'success') {
             setTimeout(() => {
@@ -790,7 +790,7 @@ class SurveyManager {
         formElements.forEach(element => {
             element.disabled = false;
         });
-        
+
         this.form.classList.remove('form-disabled');
     }
 
@@ -828,21 +828,21 @@ class SurveyManager {
         if (this.autoSaveTimeout) {
             clearTimeout(this.autoSaveTimeout);
         }
-        
+
         this.isInitialized = false;
         console.log('Survey manager destroyed');
     }
 }
 
 // Auto-initialize when script loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Check if we're on a survey page
     if (document.querySelector('#survey-form')) {
         // Get routes from global variables or data attributes
         const autoSaveUrl = window.surveyRoutes?.autoSave || '/survei/sibstr/auto-save';
         const saveAllUrl = window.surveyRoutes?.saveAll || '/survei/sibstr/save-all';
         const statusUrl = window.surveyRoutes?.status || '/survei/sibstr/status';
-        
+
         // Initialize survey manager
         window.surveyManager = new SurveyManager({
             autoSaveUrl,

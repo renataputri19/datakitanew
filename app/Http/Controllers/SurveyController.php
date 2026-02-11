@@ -74,12 +74,14 @@ class SurveyController extends Controller
         $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok3a');
 
         // Check if user should access this block (kondisi_perusahaan must be 'masih_aktif')
-        $blok2Response = SurveyResponse::where('user_id', $user->id)
+        // Use the latest survey response regardless of section, since getOrCreateForUser
+        // updates the single row's survey_section as the user navigates.
+        $latestResponse = SurveyResponse::where('user_id', $user->id)
             ->where('survey_type', 'sibstr')
-            ->where('survey_section', 'blok2')
+            ->orderBy('updated_at', 'desc')
             ->first();
 
-        if (!$blok2Response || $blok2Response->kondisi_perusahaan !== 'masih_aktif') {
+        if (!$latestResponse || $latestResponse->kondisi_perusahaan !== 'masih_aktif') {
             return redirect()->route('survey.sibstr.blok6')->with('warning', 'Blok IIIA hanya dapat diakses jika kondisi perusahaan adalah "Masih Aktif".');
         }
 
@@ -98,15 +100,15 @@ class SurveyController extends Controller
         // Get or create survey response for this user
         $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok6');
 
-        // Fetch kondisi_perusahaan from Blok 2 to enable conditional back navigation
-        $blok2Response = SurveyResponse::where('user_id', $user->id)
+        // Fetch latest response values to control conditional navigation and hints
+        $latestResponse = SurveyResponse::where('user_id', $user->id)
             ->where('survey_type', 'sibstr')
-            ->where('survey_section', 'blok2')
+            ->orderBy('updated_at', 'desc')
             ->first();
 
-        $kondisiPerusahaan = $blok2Response?->kondisi_perusahaan;
+        $kondisiPerusahaan = $latestResponse?->kondisi_perusahaan;
         // Also fetch R202 (jaringan_unit_kegiatan) to control back navigation when option 'e' is selected
-        $jaringanUnitKegiatan = $blok2Response?->jaringan_unit_kegiatan;
+        $jaringanUnitKegiatan = $latestResponse?->jaringan_unit_kegiatan;
 
         return view('survey.sibstr.blok6', compact('surveyResponse', 'kondisiPerusahaan', 'jaringanUnitKegiatan'));
     }
@@ -593,20 +595,11 @@ class SurveyController extends Controller
 
             $surveyResponse->updateWithAutoSave($updateData);
 
-            // Determine next block based on kondisi_perusahaan and KBLI classification
-            // Industri: KBLI prefix (first two digits) 10-33 -> go to Blok 3A
-            // Non-Industri: all other prefixes -> skip to Blok 3B Non-Industri
+            // Determine next block strictly by kondisi_perusahaan per BLOK3A_IMPLEMENTATION.md
+            // If perusahaan masih aktif → proceed to Blok 3A
+            // Otherwise → skip to Blok 6
             if ($isMasihAktif) {
-                $kbli = $request->input('kbli_utama');
-                $nextBlock = 'blok3a'; // default for safety if KBLI is missing
-                if ($kbli && preg_match('/^(\d{2})/', $kbli, $m)) {
-                    $prefix = (int) $m[1];
-                    if ($prefix < 10 || $prefix > 33) {
-                        $nextBlock = 'blok3b_nonindustri';
-                    } else {
-                        $nextBlock = 'blok3a';
-                    }
-                }
+                $nextBlock = 'blok3a';
             } else {
                 $nextBlock = 'blok6';
             }
