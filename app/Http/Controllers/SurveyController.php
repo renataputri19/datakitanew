@@ -605,11 +605,25 @@ class SurveyController extends Controller
 
             $surveyResponse->updateWithAutoSave($updateData);
 
-            // Determine next block strictly by kondisi_perusahaan per BLOK3A_IMPLEMENTATION.md
-            // If perusahaan masih aktif → proceed to Blok 3A
-            // Otherwise → skip to Blok 6
+            // Determine next block by kondisi_perusahaan and KBLI
+            // Masih aktif:
+            // - KBLI prefix 10-33 (industri) → Blok 3A
+            // - KBLI prefix outside 10-33 (non-industri) → Blok 3B Non-Industri
+            // Tidak aktif → Blok 6
             if ($isMasihAktif) {
-                $nextBlock = 'blok3a';
+                $kbli = $request->input('kbli_utama');
+                if (!$kbli) {
+                    // fallback to saved value if not present in request
+                    $kbli = $surveyResponse->kbli_utama ?? null;
+                }
+
+                $nextBlock = 'blok3b_nonindustri';
+                if ($kbli && preg_match('/^(\d{2})/', $kbli, $m)) {
+                    $prefix = (int) $m[1];
+                    if ($prefix >= 10 && $prefix <= 33) {
+                        $nextBlock = 'blok3a';
+                    }
+                }
             } else {
                 $nextBlock = 'blok6';
             }
@@ -714,12 +728,11 @@ class SurveyController extends Controller
             // Get or create survey response
             $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, $surveyType, $surveySection);
 
-            // Update the specific field
-            $updateData = [
-                $fieldName => $fieldValue,
-            ];
+            // Update the JSON field
+            $current = $surveyResponse->blok6_data ?? [];
+            $current[$fieldName] = $fieldValue;
 
-            $surveyResponse->updateWithAutoSave($updateData);
+            $surveyResponse->updateWithAutoSave(['blok6_data' => $current]);
 
             return response()->json([
                 'success' => true,
@@ -1796,8 +1809,18 @@ class SurveyController extends Controller
             // Get the survey response for Blok 6
             $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok6');
 
-            // Save any final data and mark as completed
-            $updateData = $request->except(['_token']);
+            // Handle fields in request (e.g. catatan)
+            $incoming = $request->except(['_token', 'is_completed']);
+            
+            if (!empty($incoming)) {
+                $current = $surveyResponse->blok6_data ?? [];
+                foreach ($incoming as $key => $val) {
+                    $current[$key] = $val;
+                }
+                $updateData['blok6_data'] = $current;
+            }
+
+            // Save and mark as completed
             $updateData['is_completed'] = true;
 
             $surveyResponse->updateWithAutoSave($updateData);

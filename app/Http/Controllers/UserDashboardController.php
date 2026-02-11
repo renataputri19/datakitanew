@@ -107,24 +107,19 @@ class UserDashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Fetch all SIBSTR responses for the user, keyed by section for easy access
-        $responses = SurveyResponse::where('user_id', $user->id)
+        // Fetch the unified SIBSTR response for the user
+        $response = SurveyResponse::where('user_id', $user->id)
             ->where('survey_type', 'sibstr')
-            ->get()
-            ->keyBy('survey_section');
+            ->orderBy('updated_at', 'desc')
+            ->first();
 
-        // Determine completion based on Blok 6 is_completed flag
-        $isCompleted = false;
-        $completedAt = null;
-        if ($responses->has('blok6')) {
-            $blok6 = $responses->get('blok6');
-            $isCompleted = (bool) ($blok6->is_completed ?? false);
-            $completedAt = $blok6->last_saved_at;
-        }
+        // Determine completion
+        $isCompleted = (bool) ($response->is_completed ?? false);
+        $completedAt = $response->last_saved_at ?? null;
 
         return view('user-dashboard.sibstr-results', [
             'user' => $user,
-            'responses' => $responses,
+            'response' => $response,
             'isCompleted' => $isCompleted,
             'completedAt' => $completedAt,
         ]);

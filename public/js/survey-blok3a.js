@@ -241,8 +241,17 @@ class SurveyBlok3aManager {
 
         // Months header (row 3)
         if (monthsRow) {
-            // Remove all existing month header cells
-            monthsRow.querySelectorAll('.month-col').forEach(el => el.remove());
+            // Remove all existing month header cells (exclude sticky columns)
+            Array.from(monthsRow.children).forEach(child => {
+                // If it's a generated month header or doesn't have a sticky class
+                if (child.classList.contains('month-col') ||
+                    (!child.classList.contains('col-no') &&
+                        !child.classList.contains('col-jenis') &&
+                        !child.classList.contains('col-uraian'))) {
+                    child.remove();
+                }
+            });
+
             // Append visible months headers
             visibleMonths.forEach(month => {
                 const th = document.createElement('th');
@@ -473,6 +482,12 @@ class SurveyBlok3aManager {
     }
 
     loadExistingData() {
+        // Clear existing rows to prevent duplication with server-rendered rows
+        if (this.productsTbody) {
+            this.productsTbody.innerHTML = '';
+        }
+        this.productCount = 0;
+
         const existingProducts = window.surveyData?.products || [];
 
         if (existingProducts && existingProducts.length > 0) {
@@ -482,9 +497,12 @@ class SurveyBlok3aManager {
             });
         } else {
             // Add 2 default empty product rows when no existing data
-            this.addProductRow(null, 0);
-            this.addProductRow(null, 1);
+            this.addProductRow(null);
+            this.addProductRow(null);
         }
+
+        // Update visual row numbers
+        this.updateRowNumbers();
 
         // Calculate totals after loading data
         setTimeout(() => {
@@ -493,7 +511,11 @@ class SurveyBlok3aManager {
     }
 
     addProductRow(productData = null, index = null) {
+        // Use provided index or generate new unique index
+        // If index is null (new row), use productCount as unique ID
         const productIndex = index !== null ? index : this.productCount;
+
+        // Ensure productCount tracks the highest index to avoid collisions
         this.productCount = Math.max(this.productCount, productIndex + 1);
 
         const product = productData || {
@@ -506,12 +528,12 @@ class SurveyBlok3aManager {
         };
 
         // Create product row group (3 sub-rows)
-        const productRowGroup = this.createProductRowGroup(productIndex + 1, product);
+        const productRowGroup = this.createProductRowGroup(productIndex + 1, product, productIndex);
 
         // Append rows to the dedicated tbody to ensure proper DOM structure and serialization
         this.productsTbody.appendChild(productRowGroup);
 
-        // Add animation class to the main product row (DocumentFragment cannot have classList)
+        // Add animation class to the main product row
         const lastMainRow = this.productsTbody.querySelector('tr.product-row:last-of-type');
         if (lastMainRow) {
             lastMainRow.classList.add('new-row');
@@ -525,30 +547,27 @@ class SurveyBlok3aManager {
         // Apply current quarter rendering for newly added rows
         this.applyQuarterVisibility();
 
+        // Update row numbers (1., 2., etc) and delete buttons - visual only
+        this.updateRowNumbers();
+
         // Auto-add new row if this is the last row and has data
         this.checkAutoAddRow();
     }
 
-    createProductRowGroup(rowNumber, product) {
+    createProductRowGroup(rowNumber, product, productIndex) {
         const fragment = document.createDocumentFragment();
-        const productIndex = rowNumber - 1;
 
         // Main product info row (Banyaknya)
         const mainRow = document.createElement('tr');
         mainRow.className = 'product-row';
         mainRow.dataset.productIndex = productIndex;
 
-        // Only show delete button for rows after the first one (productIndex > 0)
-        const deleteButtonHtml = productIndex > 0 ?
-            `<button type="button" class="remove-product-btn" data-product-index="${productIndex}" title="Hapus produk">×</button>` :
-            '';
-
         const visibleMonths = this.getVisibleMonths();
 
         mainRow.innerHTML = `
             <td rowspan="3" class="row-number sticky-col col-no">
                 ${rowNumber}.
-                ${deleteButtonHtml}
+                <!-- Delete button will be managed by updateRowNumbers -->
             </td>
             <td rowspan="3" class="product-info sticky-col col-jenis">
                 <input type="text" name="blok3a_products[${productIndex}][jenis_barang]"
@@ -574,6 +593,7 @@ class SurveyBlok3aManager {
         // Nilai (value) row
         const nilaiRow = document.createElement('tr');
         nilaiRow.className = 'sub-row nilai-row';
+        nilaiRow.dataset.parentIndex = productIndex; // Link to parent
         nilaiRow.innerHTML = `
             <td class="sub-row-label sticky-col col-uraian">Nilai</td>
             ${visibleMonths.map(month => `
@@ -595,6 +615,7 @@ class SurveyBlok3aManager {
         // Harga/Satuan row
         const hargaRow = document.createElement('tr');
         hargaRow.className = 'sub-row harga-row';
+        hargaRow.dataset.parentIndex = productIndex; // Link to parent
         hargaRow.innerHTML = `
             <td class="sub-row-label sticky-col col-uraian">Harga/Satuan</td>
             ${visibleMonths.map(month => `
@@ -615,39 +636,82 @@ class SurveyBlok3aManager {
         fragment.appendChild(nilaiRow);
         fragment.appendChild(hargaRow);
 
-        // Add remove button functionality (only if button exists)
-        const removeBtn = mainRow.querySelector('.remove-product-btn');
-        if (removeBtn) {
-            removeBtn.addEventListener('click', () => {
-                this.removeProductRow(productIndex);
-            });
-        }
-
         return fragment;
     }
 
-    removeProductRow(productIndex) {
-        // Find all rows for this product (main row + 2 sub-rows)
-        const allRows = this.productsTable.querySelectorAll('tr');
-        const rowsToRemove = [];
+    updateRowNumbers() {
+        const mainRows = this.productsTbody.querySelectorAll('tr.product-row');
+        mainRows.forEach((row, index) => {
+            const numberCell = row.querySelector('.row-number');
+            if (numberCell) {
+                // Update text content for number (1., 2., etc)
+                // Use a span for the number to safely manipulate text without affecting children (like buttons)
+                // But simpler: just clear and rebuild.
 
-        allRows.forEach(row => {
-            if (row.dataset.productIndex === productIndex.toString() ||
-                row.querySelector(`[data-product-index="${productIndex}"]`)) {
-                rowsToRemove.push(row);
+                // Keep the productIndex from the row dataset
+                const productIndex = row.dataset.productIndex;
+
+                // Clear content
+                numberCell.innerHTML = '';
+
+                // Add number
+                const numSpan = document.createElement('span');
+                numSpan.textContent = `${index + 1}.`;
+                numberCell.appendChild(numSpan);
+
+                // Add delete button if it's not the first row (or always if requirement changed)
+                // Requirement: "ensure row numbers are sequential"
+                // Let's assume user wants to be able to delete any row except maybe the very first one if list is empty?
+                // Or just > 0.
+                if (index > 0) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'remove-product-btn';
+                    btn.dataset.productIndex = productIndex;
+                    btn.title = 'Hapus produk';
+                    btn.innerHTML = '×';
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent bubbling
+                        this.removeProductRow(productIndex);
+                    });
+                    numberCell.appendChild(btn);
+                }
             }
         });
+    }
 
-        if (rowsToRemove.length > 0) {
-            // Confirm deletion
-            if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-                rowsToRemove.forEach(row => row.remove());
-                this.calculateTotals();
+    removeProductRow(productIndexInput) {
+        const productIndex = productIndexInput.toString();
 
-                // Auto-save the removal
-                if (window.surveyManager) {
-                    window.surveyManager.scheduleAutoSave(`blok3a_products[${productIndex}]`, null, true);
-                }
+        // Find main row with specific index
+        const mainRow = this.productsTbody.querySelector(`tr.product-row[data-product-index="${productIndex}"]`);
+
+        if (!mainRow) {
+            console.warn(`Product row with index ${productIndex} not found`);
+            return;
+        }
+
+        // Find associated sub-rows
+        const rowsToRemove = [mainRow];
+        let nextSibling = mainRow.nextElementSibling;
+
+        // Collect associated rows (nilai-row and harga-row) which are siblings
+        while (nextSibling && !nextSibling.classList.contains('product-row')) {
+            rowsToRemove.push(nextSibling);
+            nextSibling = nextSibling.nextElementSibling;
+        }
+
+        if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+            rowsToRemove.forEach(row => row.remove());
+
+            // Re-index visual numbers
+            this.updateRowNumbers();
+
+            this.calculateTotals();
+
+            // Auto-save the removal
+            if (window.surveyManager) {
+                window.surveyManager.scheduleAutoSave(`blok3a_products[${productIndex}]`, null, true);
             }
         }
     }

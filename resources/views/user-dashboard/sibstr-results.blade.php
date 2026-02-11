@@ -81,26 +81,23 @@
           <h3 class="ud-card-title">Ringkasan Perusahaan (Blok I)</h3>
           <div class="ud-card-subtitle">Informasi identitas perusahaan</div>
         </div>
-        @php
-          $blok1 = $responses->get('blok1');
-          $blok2 = $responses->get('blok2');
-        @endphp
+
         <dl class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <dt class="text-sm text-gray-600 dark:text-gray-400">Nama Perusahaan</dt>
-            <dd class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $blok1->nama_perusahaan ?? '-' }}</dd>
+            <dd class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $response->nama_perusahaan ?? '-' }}</dd>
           </div>
           <div>
             <dt class="text-sm text-gray-600 dark:text-gray-400">Alamat Pabrik</dt>
-            <dd class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $blok1->alamat_pabrik ?? '-' }}</dd>
+            <dd class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $response->alamat_pabrik ?? '-' }}</dd>
           </div>
           <div>
             <dt class="text-sm text-gray-600 dark:text-gray-400">Email</dt>
-            <dd class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $blok1->email ?? '-' }}</dd>
+            <dd class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $response->email ?? '-' }}</dd>
           </div>
           <div>
             <dt class="text-sm text-gray-600 dark:text-gray-400">KBLI Utama</dt>
-            <dd class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $blok2->kbli_utama ?? '-' }}</dd>
+            <dd class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $response->kbli_utama ?? '-' }}</dd>
           </div>
         </dl>
       </div>
@@ -112,7 +109,7 @@
         <h3 class="ud-card-title">Catatan (Blok VI)</h3>
         <div class="ud-card-subtitle">Keterangan tambahan dari responden</div>
       </div>
-      <p class="mt-2 text-sm text-gray-900 dark:text-gray-100">{{ $responses->get('blok6')->catatan ?? '-' }}</p>
+      <p class="mt-2 text-sm text-gray-900 dark:text-gray-100">{{ $response->catatan ?? '-' }}</p>
     </div>
   @endif
 @endsection

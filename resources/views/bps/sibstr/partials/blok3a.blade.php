@@ -12,7 +12,8 @@
                 $products = $surveyResponse->blok3a_products ?? [];
                 $lainnya = $surveyResponse->blok3a_lainnya ?? [];
                 $totals = $surveyResponse->blok3a_totals ?? [];
-                $months = ['dec_2024', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+                // Match keys used in survey-blok3a.js
+                $months = ['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'];
                 $monthLabels = ['Des 2024', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
             @endphp
 
@@ -32,7 +33,8 @@
                     <tbody>
                         @foreach($products as $index => $product)
                         @php
-                            $productName = $product['name'] ?? 'Produk ' . ($index + 1);
+                            // Check for 'jenis_barang' (JS name) or 'name' (potential old name)
+                            $productName = $product['jenis_barang'] ?? ($product['name'] ?? 'Produk ' . ($index + 1));
                         @endphp
                         {{-- Quantity row --}}
                         <tr>
@@ -41,7 +43,8 @@
                             <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: center; font-size: 0.8125rem;">Qty</td>
                             @foreach($months as $m)
                             <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: right; font-size: 0.875rem;">
-                                {{ isset($product['qty'][$m]) && $product['qty'][$m] !== null ? number_format($product['qty'][$m], 0, ',', '.') : '-' }}
+                                {{-- Access 'banyaknya' instead of 'qty' --}}
+                                {{ isset($product['banyaknya'][$m]) && $product['banyaknya'][$m] !== null ? number_format((float)$product['banyaknya'][$m], 0, ',', '.') : '-' }}
                             </td>
                             @endforeach
                         </tr>
@@ -50,7 +53,8 @@
                             <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: center; font-size: 0.8125rem;">Nilai</td>
                             @foreach($months as $m)
                             <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: right; font-size: 0.875rem;">
-                                {{ isset($product['value'][$m]) && $product['value'][$m] !== null ? number_format($product['value'][$m], 0, ',', '.') : '-' }}
+                                {{-- Access 'nilai' instead of 'value' --}}
+                                {{ isset($product['nilai'][$m]) && $product['nilai'][$m] !== null ? number_format((float)$product['nilai'][$m], 0, ',', '.') : '-' }}
                             </td>
                             @endforeach
                         </tr>
@@ -64,7 +68,10 @@
                             <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: center; font-size: 0.8125rem;">Nilai</td>
                             @foreach($months as $m)
                             <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: right; font-size: 0.875rem;">
-                                {{ isset($lainnya[$m]) && $lainnya[$m] !== null ? number_format($lainnya[$m], 0, ',', '.') : '-' }}
+                                {{-- Check 'nilai' key within lainnya, or direct access depending on structure.
+                                   JS: name="blok3a_lainnya[nilai][${month}]" -> structure: lainnya: { nilai: { month: val } }
+                                --}}
+                                {{ isset($lainnya['nilai'][$m]) && $lainnya['nilai'][$m] !== null ? number_format((float)$lainnya['nilai'][$m], 0, ',', '.') : '-' }}
                             </td>
                             @endforeach
                         </tr>
@@ -78,7 +85,7 @@
                             <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: center; font-size: 0.8125rem;">Nilai</td>
                             @foreach($months as $m)
                             <td style="border: 1px solid #e5e7eb; padding: 8px; text-align: right; font-size: 0.875rem;">
-                                {{ isset($totals[$m]) && $totals[$m] !== null ? number_format($totals[$m], 0, ',', '.') : '-' }}
+                                {{ isset($totals[$m]) && $totals[$m] !== null ? number_format((float)$totals[$m], 0, ',', '.') : '-' }}
                             </td>
                             @endforeach
                         </tr>

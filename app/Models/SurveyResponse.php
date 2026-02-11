@@ -81,7 +81,8 @@ class SurveyResponse extends Model
         'produksi_ramah_lingkungan',
         'penggunaan_input_ramah_lingkungan',
         // Blok VI fields
-        'catatan',
+        'blok6_data',
+        'blok6_completed',
         // Blok IIIA fields
         'blok3a_products',
         'blok3a_lainnya',
@@ -136,6 +137,8 @@ class SurveyResponse extends Model
         'blok4_completed' => 'boolean',
         'blok5_data' => 'array',
         'blok5_completed' => 'boolean',
+        'blok6_data' => 'array',
+        'blok6_completed' => 'boolean',
     ];
 
     /**
@@ -377,5 +380,13 @@ class SurveyResponse extends Model
         }
 
         return $totals;
+    }
+
+    /**
+     * Get the catatan from blok6_data.
+     */
+    public function getCatatanAttribute()
+    {
+        return $this->blok6_data['catatan'] ?? null;
     }
 }
