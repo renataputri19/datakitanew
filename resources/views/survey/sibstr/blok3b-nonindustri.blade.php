@@ -722,7 +722,10 @@
 @push('scripts')
 <script>
 // Set up survey routes for the JavaScript module
-window.surveyRoutes = @json($editRoutes ?? null) || {
+@if(isset($editRoutes) && !empty($editRoutes))
+window.surveyRoutes = @json($editRoutes);
+@else
+window.surveyRoutes = {
     autoSave: '{{ route("survey.sibstr.blok3b.nonindustri.autosave") }}',
     saveAll: '{{ route("survey.sibstr.blok3b.nonindustri.save") }}',
     status: '{{ route("survey.sibstr.blok3b.nonindustri.status") }}',
@@ -730,6 +733,7 @@ window.surveyRoutes = @json($editRoutes ?? null) || {
     nextBlok: '{{ route("survey.sibstr.blok4") }}',
     blok3b_nonindustri: '{{ route("survey.sibstr.blok3b.nonindustri") }}'
 };
+@endif
 
 // Back navigation click handler (align with Industri block)
 document.addEventListener('DOMContentLoaded', function() {

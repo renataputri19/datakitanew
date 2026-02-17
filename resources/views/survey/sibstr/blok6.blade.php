@@ -98,7 +98,10 @@
 @push('scripts')
 <script>
 // Set up survey routes for the JavaScript module
-window.surveyRoutes = @json($editRoutes ?? null) || {
+@if(isset($editRoutes) && !empty($editRoutes))
+window.surveyRoutes = @json($editRoutes);
+@else
+window.surveyRoutes = {
     autoSave: '{{ route("survey.sibstr.blok6.autosave") }}',
     saveAll: '{{ route("survey.sibstr.blok6.save") }}',
     status: '{{ route("survey.sibstr.blok6.status") }}',
@@ -106,6 +109,7 @@ window.surveyRoutes = @json($editRoutes ?? null) || {
     backToBlok2: '{{ route("survey.sibstr.blok2") }}',
     finishSurvey: '{{ route("survey.sibstr.blok6.finish") }}'
 };
+@endif
 
 // Pass kondisi_perusahaan from Blok 2 for conditional back navigation
 window.surveyData = {

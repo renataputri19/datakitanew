@@ -22,9 +22,9 @@
                 @php
                     $sibstrCompleted = false;
                     if (Auth::check()) {
+                        // Consider SIBSTR completed for header if any SIBSTR survey for the user is marked completed
                         $sibstrCompleted = \App\Models\SurveyResponse::where('user_id', Auth::id())
                             ->where('survey_type', 'sibstr')
-                            ->where('survey_section', 'blok6')
                             ->where('is_completed', true)
                             ->exists();
                     }
@@ -90,7 +90,6 @@
                 </svg>
                 <span class="sr-only">Toggle theme</span>
             </button>
-            @if(!(Auth::check() && Auth::user()->is_superadmin))
             <button type="button" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300 h-9 w-9 p-0 lg:hidden" id="mobile-menu-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
                     <line x1="4" x2="20" y1="12" y2="12"></line>
@@ -99,7 +98,6 @@
                 </svg>
                 <span class="sr-only">Toggle menu</span>
             </button>
-            @endif
         </div>
     </div>
 

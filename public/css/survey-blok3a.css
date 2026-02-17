@@ -414,7 +414,20 @@
 }
 
 /* Helper Utilities */
-.hidden {
+
+/* Note: Do NOT redefine the global Tailwind `.hidden` utility here.
+   Tailwind's responsive classes (e.g., `lg:flex`) rely on overriding
+   `display: none` at larger breakpoints. A global `.hidden { display: none !important; }`
+   would force elements like the main header nav to remain hidden on all viewports.
+   If a local hidden helper is needed, use a scoped class (e.g., `.is-hidden`). */
+
+.is-hidden {
+    display: none;
+}
+
+/* Quarter section visibility control: ensure hidden quarter blocks override grid display */
+.quarter-section.hidden,
+.quarter-section.is-hidden {
     display: none !important;
 }
 

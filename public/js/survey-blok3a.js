@@ -67,6 +67,7 @@ class SurveyBlok3aManager {
     setupAutoCalculation() {
         try {
             this.calculateTotals();
+            this.recalcHargaSatuanForAllCards(true);
         } catch (e) {
             console.warn('setupAutoCalculation noop:', e);
         }
@@ -173,6 +174,7 @@ class SurveyBlok3aManager {
         const index = this.products.length; // Simple array index for now
         const productData = data || {
             jenis_barang: '',
+            satuan: '',
             banyaknya: {},
             nilai: {},
             harga_satuan: {}
@@ -182,18 +184,7 @@ class SurveyBlok3aManager {
         const cardHTML = this.createProductCardHTML(index, productData);
         this.container.insertAdjacentHTML('beforeend', cardHTML);
 
-        // If it's a user action (data is null), scroll to new card
-        if (!data) {
-            const newCard = this.container.lastElementChild;
-            // New cards should be expanded so user can fill them
-            newCard.classList.remove('collapsed');
-            const toggleBtn = newCard.querySelector('.card-toggle');
-            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
-
-            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // Focus on title
-            newCard.querySelector('.jenis-barang-input').focus();
-        }
+        // New rows should remain collapsed by default; no auto-expand on add
 
         // Set default quarter for this card and show
         this.cardActiveQuarters[index] = 'dec2024';
@@ -273,7 +264,7 @@ class SurveyBlok3aManager {
     createProductCardHTML(index, data) {
         // We generate HTML for ALL quarters, hidden/shown via CSS classes
         return `
-        <div class="product-card collapsed" id="product-card-${index}">
+        <div class="product-card ${index === 0 ? '' : 'collapsed'}" id="product-card-${index}">
             <div class="card-header">
                 <div class="product-title">
                     <span class="product-counter">${index + 1}</span>
@@ -281,7 +272,7 @@ class SurveyBlok3aManager {
                     Jenis Barang yang dihasilkan/diproduksi
                 </div>
                 <div class="card-header-actions">
-                    <button type="button" class="card-toggle" aria-expanded="false" title="Tutup/Buka isian produk">
+                    <button type="button" class="card-toggle" aria-expanded="${index === 0 ? 'true' : 'false'}" title="Tutup/Buka isian produk">
                         <svg class="toggle-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
@@ -301,6 +292,14 @@ class SurveyBlok3aManager {
                            value="${data.jenis_barang || ''}" 
                            class="form-control jenis-barang-input" 
                            placeholder="Contoh: Minyak Kelapa Sawit, Pakaian Jadi, dll">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Satuan/Unit untuk Banyaknya</label>
+                    <input type="text" name="blok3a_products[${index}][satuan]"
+                           value="${data.satuan || ''}"
+                           class="form-control unit-input"
+                           placeholder="Contoh: kg, ton, pcs">
                 </div>
                 
                 <div class="form-group">
@@ -346,7 +345,7 @@ class SurveyBlok3aManager {
                     <input type="number" step="0.01" 
                            name="blok3a_products[${index}][banyaknya][${m}]"
                            value="${val}"
-                           class="form-control" placeholder="0">
+                           class="form-control banyaknya-input" data-month="${m}" placeholder="0">
                 </div>`;
             });
 
@@ -366,7 +365,7 @@ class SurveyBlok3aManager {
                 </div>`;
             });
 
-            // Row 3: Harga/Satuan
+            // Row 3: Harga/Satuan (auto-calculated, read-only)
             html += `<div class="grid-label section-title">Harga Satuan</div>`;
             months.forEach(m => {
                 const val = data.harga_satuan?.[m] || '';
@@ -376,7 +375,7 @@ class SurveyBlok3aManager {
                     <input type="number" step="0.01" 
                            name="blok3a_products[${index}][harga_satuan][${m}]"
                            value="${val}"
-                           class="form-control" placeholder="0">
+                           class="form-control readonly harga-satuan-input" data-month="${m}" readonly placeholder="0">
                 </div>`;
             });
 
@@ -568,10 +567,19 @@ class SurveyBlok3aManager {
     // Logic: Input Handling & Autosave
     handleInput(e, shouldAutoSave = true) {
         const input = e.target;
+        const card = input.closest('.product-card');
+        const month = input.dataset ? input.dataset.month : null;
 
         // 1. Calculate Totals if needed
         if (input.classList.contains('nilai-input') || input.classList.contains('lainnya-nilai-input')) {
             this.calculateTotals(input.dataset.month);
+            // Update price for the affected product/month
+            if (card) this.recalcHargaSatuanForCard(card, month);
+        }
+
+        // Update price when quantity changes
+        if (input.classList.contains('banyaknya-input')) {
+            if (card) this.recalcHargaSatuanForCard(card, month);
         }
 
         // 2. Autosave
@@ -592,45 +600,67 @@ class SurveyBlok3aManager {
         this.renderPreviewTable();
     }
 
+    // Compute Harga/Satuan = Nilai / Banyaknya in the given card
+    recalcHargaSatuanForCard(cardElem, specificMonth = null, skipAutoSave = false) {
+        if (!cardElem) return;
+        const months = ['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'];
+        const targetMonths = specificMonth ? [specificMonth] : months;
+
+        targetMonths.forEach(m => {
+            const nilaiInp = cardElem.querySelector(`.nilai-input[data-month="${m}"]`);
+            const qtyInp = cardElem.querySelector(`.banyaknya-input[data-month="${m}"]`);
+            const priceInp = cardElem.querySelector(`.harga-satuan-input[data-month="${m}"]`);
+
+            if (!priceInp) return;
+            const nilai = nilaiInp ? parseFloat(nilaiInp.value) || 0 : 0;
+            const qty = qtyInp ? parseFloat(qtyInp.value) || 0 : 0;
+            const price = qty > 0 ? (nilai / qty) : '';
+
+            priceInp.value = price;
+            priceInp.readOnly = true;
+            priceInp.classList.add('readonly');
+            priceInp.setAttribute('aria-readonly', 'true');
+
+            // Auto-save computed price for persistence (unless skipped)
+            if (!skipAutoSave && window.surveyManager && priceInp.name) {
+                window.surveyManager.scheduleAutoSave(priceInp.name, priceInp.value);
+            }
+        });
+
+        // Refresh preview to reflect new price
+        this.renderPreviewTable();
+    }
+
+    // Compute prices for all product cards (used on initial load)
+    recalcHargaSatuanForAllCards(skipAutoSave = true) {
+        const cards = Array.from(this.container.querySelectorAll('.product-card'));
+        cards.forEach(card => this.recalcHargaSatuanForCard(card, null, skipAutoSave));
+    }
+
     calculateTotals(specificMonth = null) {
-        // If specific month is given, only calc that one? No, safer to calc all visible.
-        // Actually, calc all months for robustness, or just active quarter.
+        // Robust totals: compute for the requested month or for all months
+        const allMonths = Object.values(this.quarterConf).flatMap(q => q.months);
+        const monthsToCalc = specificMonth ? [specificMonth] : allMonths;
 
-        // Let's calc all months because user might change something that affects totals, 
-        // though usually user changes one field at a time.
-        // Iterating all inputs might be heavy if lots of products (e.g. 50 products * 13 months).
-        // Optimization: Only calc for the visible months of Active Quarter + specificMonth if it's outside (unlikely).
-
-        const qConf = this.quarterConf[this.activeQuarter];
-        if (!qConf) return;
-
-        qConf.months.forEach(month => {
+        monthsToCalc.forEach(month => {
             let sum = 0;
 
-            // Sum Products
+            // Sum Products (Nilai per bulan)
             const productInputs = document.querySelectorAll(`.nilai-input[data-month="${month}"]`);
             productInputs.forEach(inp => {
                 sum += parseFloat(inp.value) || 0;
             });
 
-            // Add Lainnya
+            // Add Lainnya (Nilai per bulan)
             const lainnyaInput = document.querySelector(`.lainnya-nilai-input[data-month="${month}"]`);
             if (lainnyaInput) {
                 sum += parseFloat(lainnyaInput.value) || 0;
             }
 
-            // Update Total
+            // Update Total (readonly inputs)
             const totalInput = document.querySelector(`.total-input[data-month="${month}"]`);
             if (totalInput) {
                 totalInput.value = sum;
-                // We typically don't autosave the total itself as it's computed, 
-                // but if backend expects it we should. The `window.surveyRoutes.autoSave` usually handles key-value pairs.
-                // Assuming backend calculates total or accepts it. Let's fire autosave for total too to be safe.
-                /* 
-                if (window.surveyManager) {
-                     window.surveyManager.scheduleAutoSave(totalInput.name, totalInput.value);
-                }
-                */
             }
         });
 
@@ -676,23 +706,32 @@ class SurveyBlok3aManager {
                 const inp = card.querySelector(sel);
                 return inp ? (parseFloat(inp.value) || 0) : 0;
             };
+            const getUnit = () => {
+                const inp = card.querySelector('.unit-input');
+                return inp ? (inp.value || '') : '';
+            };
 
             // Row 1: Banyaknya
             html += `<tr>`;
             html += `<td class="sticky-col" rowspan="3"><div class="code">${code}</div><div class="name">${this.escapeHtml(name)}</div></td>`;
             html += `<td>Banyaknya</td>`;
-            months.forEach(m => html += `<td class="num">${this.formatNumber(getBanyaknya(m))}</td>`);
+            months.forEach(m => {
+                const qty = getBanyaknya(m);
+                const unit = getUnit();
+                const unitText = unit ? ` ${this.escapeHtml(unit)}` : '';
+                html += `<td class="num">${this.formatNumber(qty)}${unitText}</td>`;
+            });
             html += `</tr>`;
 
             // Row 2: Nilai
             html += `<tr>`;
-            html += `<td>Nilai (Jutaan Rp)</td>`;
+            html += `<td>Nilai</td>`;
             months.forEach(m => html += `<td class="num">${this.formatNumber(getNilai(m))}</td>`);
             html += `</tr>`;
 
             // Row 3: Harga/Satuan
             html += `<tr>`;
-            html += `<td>Harga/Satuan (Ribu Rp)</td>`;
+            html += `<td>Harga/Satuan</td>`;
             months.forEach(m => html += `<td class="num">${this.formatNumber(getHarga(m))}</td>`);
             html += `</tr>`;
         });

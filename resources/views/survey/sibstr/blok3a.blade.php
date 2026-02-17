@@ -135,13 +135,18 @@
                                     </td>
                                     <td style="border:1px solid #e5e7eb;">Banyaknya</td>
                                     @foreach($months as $m)
+                                        @php
+                                            $qty = $p['banyaknya'][$m] ?? null;
+                                            $unit = $p['satuan'] ?? '';
+                                            $qtyText = ($qty !== null) ? number_format((float)$qty, 0, ',', '.') : null;
+                                        @endphp
                                         <td class="num" style="text-align:right; border:1px solid #e5e7eb;">
-                                            {{ isset($p['banyaknya'][$m]) && $p['banyaknya'][$m] !== null ? number_format((float)$p['banyaknya'][$m], 0, ',', '.') : '-' }}
+                                            {{ $qtyText !== null ? ($qtyText . ($unit ? ' ' . e($unit) : '')) : '-' }}
                                         </td>
                                     @endforeach
                                 </tr>
                                 <tr>
-                                    <td style="border:1px solid #e5e7eb;">Nilai (Jutaan Rp)</td>
+                                    <td style="border:1px solid #e5e7eb;">Nilai</td>
                                     @foreach($months as $m)
                                         <td class="num" style="text-align:right; border:1px solid #e5e7eb;">
                                             {{ isset($p['nilai'][$m]) && $p['nilai'][$m] !== null ? number_format((float)$p['nilai'][$m], 0, ',', '.') : '-' }}
@@ -149,10 +154,16 @@
                                     @endforeach
                                 </tr>
                                 <tr>
-                                    <td style="border:1px solid #e5e7eb;">Harga/Satuan (Ribu Rp)</td>
+                                    <td style="border:1px solid #e5e7eb;">Harga/Satuan</td>
                                     @foreach($months as $m)
+                                        @php
+                                            $qty = $p['banyaknya'][$m] ?? null;
+                                            $nilai = $p['nilai'][$m] ?? null;
+                                            $computed = ($qty !== null && (float)$qty > 0 && $nilai !== null) ? ((float)$nilai / (float)$qty) : null;
+                                            $price = $computed ?? ($p['harga_satuan'][$m] ?? null);
+                                        @endphp
                                         <td class="num" style="text-align:right; border:1px solid #e5e7eb;">
-                                            {{ isset($p['harga_satuan'][$m]) && $p['harga_satuan'][$m] !== null ? number_format((float)$p['harga_satuan'][$m], 0, ',', '.') : '-' }}
+                                            {{ $price !== null ? number_format((float)$price, 2, ',', '.') : '-' }}
                                         </td>
                                     @endforeach
                                 </tr>
@@ -235,7 +246,10 @@
 <!-- Scripts -->
 @push('scripts')
 <script>
-window.surveyRoutes = @json($editRoutes ?? null) || {
+@if(isset($editRoutes) && !empty($editRoutes))
+window.surveyRoutes = @json($editRoutes);
+@else
+window.surveyRoutes = {
     autoSave: '{{ route("survey.sibstr.blok3a.autosave") }}',
     saveAll: '{{ route("survey.sibstr.blok3a.save") }}',
     status: '{{ route("survey.sibstr.blok3a.status") }}',
@@ -251,6 +265,7 @@ window.surveyRoutes = @json($editRoutes ?? null) || {
     blok3b_industri: '{{ route("survey.sibstr.blok3b.industri") }}',
     blok3b_nonindustri: '{{ route("survey.sibstr.blok3b.nonindustri") }}'
 };
+@endif
 
 window.surveyData = {
     products: @json($surveyResponse->blok3a_products ?? []),

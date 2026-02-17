@@ -670,7 +670,10 @@
 @push('scripts')
 <script>
 // Set up survey routes for the JavaScript module
-window.surveyRoutes = @json($editRoutes ?? null) || {
+@if(isset($editRoutes) && !empty($editRoutes))
+window.surveyRoutes = @json($editRoutes);
+@else
+window.surveyRoutes = {
     autoSave: '{{ route("survey.sibstr.blok2.autosave") }}',
     saveAll: '{{ route("survey.sibstr.blok2.save") }}',
     status: '{{ route("survey.sibstr.blok2.status") }}',
@@ -681,6 +684,7 @@ window.surveyRoutes = @json($editRoutes ?? null) || {
     blok3b_industri: '{{ route("survey.sibstr.blok3b.industri") }}',
     blok3b_nonindustri: '{{ route("survey.sibstr.blok3b.nonindustri") }}'
 };
+@endif
 </script>
 <script src="{{ asset('js/survey.js') }}"></script>
 <script src="{{ asset('js/survey-blok2.js') }}"></script>

@@ -271,9 +271,19 @@ class SurveyResponse extends Model
      */
     public function updateWithAutoSave(array $data)
     {
-        $data['last_saved_at'] = now();
-        
-        return $this->update($data);
+        // Fill incoming changes without saving yet
+        $this->fill($data);
+        $this->last_saved_at = now();
+
+        // If Blok IIIA data changes, recompute totals server-side to ensure accuracy
+        $keys = array_keys($data);
+        $shouldRecalcTotals = array_intersect($keys, ['blok3a_products', 'blok3a_lainnya', 'blok3a_totals']);
+        if (!empty($shouldRecalcTotals)) {
+            $this->blok3a_totals = $this->calculateBlok3aTotals();
+        }
+
+        $this->save();
+        return $this;
     }
 
     /**

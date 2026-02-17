@@ -389,8 +389,10 @@ class SurveyController extends Controller
             $updateData = $request->except(['_token']);
 
             // Mark as completed if requested
+            // Mark as completed if requested
             if ($request->has('is_completed')) {
-                $updateData['is_completed'] = $request->boolean('is_completed');
+                // For Blok 1, we restrict completion unless it was ALREADY completed (Edit Mode)
+                $updateData['is_completed'] = $surveyResponse->is_completed ? true : false;
             }
 
             $surveyResponse->updateWithAutoSave($updateData);
@@ -657,8 +659,10 @@ class SurveyController extends Controller
             $updateData = $request->except(['_token']);
 
             // Mark as completed if requested
+            // Mark as completed if requested
             if ($request->has('is_completed')) {
-                $updateData['is_completed'] = $request->boolean('is_completed');
+                // For Blok 2, we restrict completion unless it was ALREADY completed (Edit Mode)
+                $updateData['is_completed'] = $surveyResponse->is_completed ? true : false;
             }
 
             $surveyResponse->updateWithAutoSave($updateData);
@@ -1330,8 +1334,10 @@ class SurveyController extends Controller
             $updateData = $request->except(['_token']);
 
             // Mark as completed if requested
+            // Mark as completed if requested
             if ($request->has('is_completed')) {
-                $updateData['is_completed'] = $request->boolean('is_completed');
+                // For Blok 3A, we restrict completion unless it was ALREADY completed (Edit Mode)
+                $updateData['is_completed'] = $surveyResponse->is_completed ? true : false;
             }
 
             $surveyResponse->updateWithAutoSave($updateData);
