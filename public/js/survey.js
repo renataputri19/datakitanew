@@ -55,6 +55,13 @@ class SurveyManager {
             nibField.addEventListener('blur', () => this.validateNib(nibField));
         }
 
+        // Validation for LEGALISASI NAMA (only letters and spaces)
+        const legalisasiNamaField = this.form.querySelector('input[name="legalisasi_nama"]');
+        if (legalisasiNamaField) {
+            legalisasiNamaField.addEventListener('input', (e) => this.handleLegalisasiNamaInput(e));
+            legalisasiNamaField.addEventListener('blur', () => this.validateLegalisasiNama(legalisasiNamaField));
+        }
+
         // Validation for text fields with length limits
         const textFields = this.form.querySelectorAll('input[type="text"], textarea');
         textFields.forEach(field => {
@@ -120,6 +127,49 @@ class SurveyManager {
 
         if (field.hasAttribute('required') && !value) {
             this.showFieldError(field, 'NIB (Nomor Induk Berusaha) wajib diisi');
+            return false;
+        }
+
+        this.clearFieldError(field);
+        return true;
+    }
+
+    /**
+     * Handle Legalisasi Nama input - allow only alphabetic characters and spaces
+     */
+    handleLegalisasiNamaInput(event) {
+        const field = event.target;
+        const originalValue = field.value;
+
+        // Keep only letters (A-Z, a-z) and spaces
+        const sanitizedValue = originalValue.replace(/[^A-Za-z\s]/g, '');
+
+        // If we removed invalid characters, update the field and show error
+        if (sanitizedValue !== originalValue) {
+            field.value = sanitizedValue;
+            this.showFieldError(field, 'Nama hanya boleh berisi huruf dan spasi');
+        } else {
+            // Clear error if current content is valid so far
+            this.clearFieldError(field);
+        }
+    }
+
+    /**
+     * Validate Legalisasi Nama field - must contain only letters and spaces
+     */
+    validateLegalisasiNama(field) {
+        const value = field.value.trim();
+        const nameRegex = /^[A-Za-z\s]+$/;
+
+        // Required check if applicable
+        if (field.hasAttribute('required') && !value) {
+            this.showFieldError(field, 'Nama penanggung jawab wajib diisi');
+            return false;
+        }
+
+        // Pattern check
+        if (value && !nameRegex.test(value)) {
+            this.showFieldError(field, 'Nama hanya boleh berisi huruf dan spasi');
             return false;
         }
 
@@ -213,6 +263,13 @@ class SurveyManager {
         if (nibField && !this.validateNib(nibField)) {
             isValid = false;
             errors.push(`${this.getFieldLabel(nibField)}: NIB harus berupa 13 digit angka`);
+        }
+
+        // Validate Legalisasi Nama (Question 110)
+        const legalisasiNamaField = this.form.querySelector('input[name="legalisasi_nama"]');
+        if (legalisasiNamaField && !this.validateLegalisasiNama(legalisasiNamaField)) {
+            isValid = false;
+            errors.push(`${this.getFieldLabel(legalisasiNamaField)}: Nama hanya boleh berisi huruf dan spasi`);
         }
 
         // Validate all required fields

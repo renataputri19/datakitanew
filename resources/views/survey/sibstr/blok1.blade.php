@@ -10,6 +10,10 @@
 
 @section('content')
 <div class="survey-container">
+    @if(!empty($isEditMode))
+    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
+    @endif
+
     <!-- Survey Header -->
     <div class="survey-header" data-aos="fade-up">
         <h1 class="survey-title">
@@ -323,8 +327,8 @@
                         <span>NIK:</span>
                     </label>
                     <input type="text" name="legalisasi_nik" id="legalisasi_nik" value="{{ $surveyResponse->legalisasi_nik ?? '' }}"
-                           class="form-control" pattern="[0-9]{16}" maxlength="16"
-                           placeholder="Masukkan NIK (16 digit angka)" title="NIK harus berupa 16 digit angka">
+                           class="form-control"
+                           placeholder="Masukkan NIK (16 digit angka)">
                     @error('legalisasi_nik')
                         <div class="error-message">{{ $message }}</div>
                     @enderror
@@ -486,7 +490,7 @@
 @push('scripts')
 <script>
 // Set up survey routes for the JavaScript module
-window.surveyRoutes = {
+window.surveyRoutes = @json($editRoutes ?? null) || {
     autoSave: '{{ route("survey.sibstr.autosave") }}',
     saveAll: '{{ route("survey.sibstr.save") }}',
     status: '{{ route("survey.sibstr.status") }}',

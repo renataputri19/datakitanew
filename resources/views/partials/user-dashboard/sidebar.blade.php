@@ -35,7 +35,6 @@
     @php
       $sibstrCompleted = \App\Models\SurveyResponse::where('user_id', Auth::id())
         ->where('survey_type', 'sibstr')
-        ->where('survey_section', 'blok6')
         ->where('is_completed', true)
         ->exists();
     @endphp

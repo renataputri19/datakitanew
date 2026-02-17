@@ -8,18 +8,20 @@
 @endpush
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-        <div class="survey-container">
+<div class="survey-container">
+    @if(!empty($isEditMode))
+    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
+    @endif
+
     <!-- Survey Header -->
-    <div class="p-6 border-b border-gray-200 dark:border-gray-700" data-aos="fade-up">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+    <div class="survey-header" data-aos="fade-up">
+        <h1 class="survey-title">
             SURVEI INDUSTRI BESAR DAN SEDANG TRIWULANAN (SIBSTR)
         </h1>
-        <h2 class="mt-1 text-lg font-semibold text-gray-800 dark:text-gray-200">
+        <h2 class="survey-subtitle">
             BLOK IIIB. INDUSTRI
         </h2>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <p class="survey-description">
             Pendapatan, persediaan, dan pengeluaran perusahaan satu triwulan yang lalu
         </p>
     </div>
@@ -30,7 +32,6 @@
     </div>
 
     <!-- Survey Form -->
-    <div class="p-6">
     <form id="survey-form" class="survey-form" data-aos="fade-up" data-aos-delay="200">
         @csrf
 
@@ -256,12 +257,12 @@
                     <div class="form-subgrid">
                         <div class="form-subrow">
                             <label class="form-sublabel required" for="q309_awal_display">a. Satu triwulan yang lalu - Persediaan Awal Periode (jumlah 307.a + 308.a + 309.a)</label>
-                            <input type="text" id="q309_awal_display" class="form-control currency-display readonly" placeholder="0" readonly>
+                            <input type="text" id="q309_awal_display" class="form-control currency-display readonly" placeholder="0" readonly disabled style="background-color:#e9ecef">
                             <input type="hidden" name="blok3b_industri[q309_awal]" id="q309_awal" value="{{ $surveyResponse->blok3b_industri_data['q309_awal'] ?? '' }}" required>
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel required" for="q309_akhir_display">b. Satu triwulan yang lalu - Persediaan Akhir Periode (jumlah 307.b + 308.b + 309.b)</label>
-                            <input type="text" id="q309_akhir_display" class="form-control currency-display readonly" placeholder="0" readonly>
+                            <input type="text" id="q309_akhir_display" class="form-control currency-display readonly" placeholder="0" readonly disabled style="background-color:#e9ecef">
                             <input type="hidden" name="blok3b_industri[q309_akhir]" id="q309_akhir" value="{{ $surveyResponse->blok3b_industri_data['q309_akhir'] ?? '' }}" required>
                         </div>
                         <div class="form-subrow">
@@ -614,14 +615,12 @@
             </div>
         </div>
     </form>
-    </div>
-    </div>
 </div>
 
 @push('scripts')
 <script>
 // Set up survey routes for the JavaScript module
-window.surveyRoutes = {
+window.surveyRoutes = @json($editRoutes ?? null) || {
     autoSave: '{{ route("survey.sibstr.blok3b.industri.autosave") }}',
     saveAll: '{{ route("survey.sibstr.blok3b.industri.save") }}',
     status: '{{ route("survey.sibstr.blok3b.industri.status") }}',

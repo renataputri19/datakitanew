@@ -20,6 +20,27 @@ class SurveyController extends Controller
     }
 
     /**
+     * Check if SIBSTR survey is completed and restrict access unless in edit mode.
+     * 
+     * @param \App\Models\User $user
+     * @return \Illuminate\Http\RedirectResponse|null
+     */
+    private function checkSibstrCompletion($user)
+    {
+        // Check if survey is completed — redirect to results page
+        $isCompleted = SurveyResponse::where('user_id', $user->id)
+            ->where('survey_type', 'sibstr')
+            ->where('is_completed', true)
+            ->exists();
+
+        if ($isCompleted) {
+            return redirect()->route('dashboard.surveys.sibstr.results');
+        }
+
+        return null;
+    }
+
+    /**
      * Display the SIBSTR survey form (Block 1).
      *
      * @return \Illuminate\View\View
@@ -27,6 +48,10 @@ class SurveyController extends Controller
     public function sibstrBlok1()
     {
         $user = Auth::user();
+
+        if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
         
         // Get or create survey response for this user
         $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok1');
@@ -55,6 +80,10 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
+        if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
+
         // Get or create survey response for this user
         $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok2');
 
@@ -69,6 +98,10 @@ class SurveyController extends Controller
     public function sibstrBlok3a()
     {
         $user = Auth::user();
+
+        if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
 
         // Get or create survey response for this user
         $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok3a');
@@ -85,7 +118,13 @@ class SurveyController extends Controller
             return redirect()->route('survey.sibstr.blok6')->with('warning', 'Blok IIIA hanya dapat diakses jika kondisi perusahaan adalah "Masih Aktif".');
         }
 
-        return view('survey.sibstr.blok3a', compact('surveyResponse'));
+        // Determine KBLI prefix to help the view set a sensible fallback next block
+        $kbliPrefix = null;
+        if ($latestResponse?->kbli_utama && preg_match('/^(\d{2})/', $latestResponse->kbli_utama, $m)) {
+            $kbliPrefix = (int) $m[1];
+        }
+
+        return view('survey.sibstr.blok3a', compact('surveyResponse', 'kbliPrefix'));
     }
 
     /**
@@ -96,6 +135,10 @@ class SurveyController extends Controller
     public function sibstrBlok6()
     {
         $user = Auth::user();
+
+        if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
 
         // Get or create survey response for this user
         $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok6');
@@ -119,6 +162,10 @@ class SurveyController extends Controller
     public function sibstrBlok4()
     {
         $user = Auth::user();
+
+        if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
 
         // Get or create survey response for Blok 4
         $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok4');
@@ -145,6 +192,10 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
+        if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
+
         // Get or create survey response for Blok 5
         $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok5');
 
@@ -159,6 +210,10 @@ class SurveyController extends Controller
     public function sibstrBlok3bIndustri()
     {
         $user = Auth::user();
+
+        if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
 
         // Ensure perusahaan masih aktif menggunakan latest response
         $latestResponse3b = SurveyResponse::where('user_id', $user->id)
@@ -184,6 +239,10 @@ class SurveyController extends Controller
     public function sibstrBlok3bNonIndustri()
     {
         $user = Auth::user();
+
+        if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
         // Pastikan perusahaan masih aktif menggunakan latest response
         $latestResponse3bNon = SurveyResponse::where('user_id', $user->id)
             ->where('survey_type', 'sibstr')
@@ -283,8 +342,8 @@ class SurveyController extends Controller
                 // Required fields in LEGALISASI PERUSAHAAN section
                 'legalisasi_nama' => 'required|string|max:255',
                 'legalisasi_jabatan' => 'required|string|max:255',
-                // Optional NIK: validate only if provided (16 digits numeric)
-                'legalisasi_nik' => 'nullable|string|regex:/^[0-9]{16}$/|size:16',
+                // Optional NIK: allow any input without restrictions
+                'legalisasi_nik' => 'nullable|string',
                 // BPS Provinsi fields commented out - no longer validated
                 // 'bps_provinsi_penghubung' => 'nullable|string|max:255',
                 // 'bps_provinsi_telepon' => 'nullable|string|max:255',
@@ -308,8 +367,7 @@ class SurveyController extends Controller
                 'nama_pengelola_kawasan.required' => 'Nama perusahaan pengelola kawasan wajib diisi.',
                 'legalisasi_nama.required' => 'Nama penanggung jawab wajib diisi.',
                 'legalisasi_jabatan.required' => 'Jabatan penanggung jawab wajib diisi.',
-                'legalisasi_nik.regex' => 'NIK harus berupa 16 digit angka.',
-                'legalisasi_nik.size' => 'NIK harus berupa 16 digit angka.',
+                // No validation messages for NIK since it accepts any input
             ]);
 
             if ($validator->fails()) {

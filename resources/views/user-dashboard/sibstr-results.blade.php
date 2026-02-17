@@ -32,25 +32,74 @@
       Ringkasan Hasil SIBSTR
     </h2>
     @if($isCompleted)
-      <a href="{{ route('survey.sibstr.blok1') }}" class="ud-btn ud-btn-primary">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"></path>
-        </svg>
-        Edit Survei
+      <a href="{{ route('survey.sibstr.edit.blok1') }}" class="ud-btn ud-btn-primary">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"></path>
+          </svg>
+          Edit Survei
       </a>
     @endif
   </div>
 
   @if(!$isCompleted)
-    <div class="ud-alert ud-alert-warning">
-      <svg class="ud-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <div>
-        <div class="ud-empty-title">Survei belum selesai</div>
-        <div class="ud-empty-description">Silakan mulai atau lanjutkan survei untuk melihat ringkasan hasil.</div>
-        <div class="mt-4">
-          <a href="{{ route('survey.sibstr.blok1') }}" class="ud-btn ud-btn-primary">Mulai / Lanjutkan Survei</a>
+    <div class="ud-card">
+      <div class="flex flex-col md:flex-row items-start gap-6">
+        <!-- Illustration / Icon -->
+        <div class="hidden md:flex">
+          <div class="w-16 h-16 rounded-xl flex items-center justify-center bg-yellow-100 text-yellow-600 shadow-sm dark:bg-yellow-900/30 dark:text-yellow-400">
+            <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M4.93 4.93a10 10 0 1114.14 14.14A10 10 0 014.93 4.93z" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="ud-card-title">Survei belum selesai</h3>
+              <p class="ud-card-subtitle">Selesaikan survei untuk membuka ringkasan hasil dan insight penting.</p>
+            </div>
+          </div>
+
+          <!-- Value props to encourage completion -->
+          <ul class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+            <li class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Ringkasan indikator utama</span>
+            </li>
+            <li class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Status kelengkapan per blok</span>
+            </li>
+            <li class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Insight dan rekomendasi awal</span>
+            </li>
+            <li class="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Bisa disimpan dan dilanjutkan kapan saja</span>
+            </li>
+          </ul>
+
+          <!-- Primary CTA -->
+          <div class="mt-6 flex items-center flex-wrap gap-4">
+            <a href="{{ route('survey.sibstr.blok1') }}" class="ud-btn ud-btn-primary">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+              Mulai / Lanjutkan Survei
+            </a>
+            <span class="text-xs text-gray-500 dark:text-gray-400">Perkiraan waktu ± 10–15 menit</span>
+          </div>
         </div>
       </div>
     </div>

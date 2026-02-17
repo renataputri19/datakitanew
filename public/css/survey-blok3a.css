@@ -1,566 +1,113 @@
 /**
  * SIBSTR Survey Blok IIIA Specific Styles
- * Excel-like table layout for products and monthly data
+ * Card-based layout for products and monthly data
  */
 
-/* Column width variables for sticky positioning (default desktop) */
-:root {
-    --col-no-width: 60px;
-    --col-jenis-width: 200px;
-    --col-uraian-width: 150px;
-}
+/* Container & Layout */
 
-/* Products Table Container */
-.products-table-container {
-    margin: 2rem 0;
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--gray-200);
-}
-
-.dark .products-table-container {
-    background: var(--gray-100);
-    border-color: var(--gray-300);
-}
-
-.table-responsive {
-    overflow-x: auto;
-    margin-bottom: 1rem;
-}
-
-/* Quarter/Month Tabs */
-.months-tabs {
+.products-container {
     display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 
-.month-tab {
-    padding: 0.4rem 0.75rem;
-    border-radius: 999px;
-    border: 1px solid var(--gray-300);
-    background: var(--gray-50);
-    color: var(--gray-900);
-    font-size: 0.85rem;
-    cursor: pointer;
-}
-
-.month-tab.active {
-    background: var(--primary-blue);
-    border-color: var(--primary-blue);
-    color: white;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-}
-
-/* Products Table */
-.products-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
-    background: white;
-    border-radius: 8px;
+/* Quarter Accordion */
+.quarters-accordion {
+    margin-bottom: 1rem;
+    border-radius: 12px;
     overflow: hidden;
+    border: 1px solid var(--gray-200);
+    background: white;
     box-shadow: var(--shadow-sm);
-    table-layout: fixed;
-    /* ensure consistent column widths across header/body */
 }
 
-.dark .products-table {
-    background: var(--gray-100);
+.dark .quarters-accordion {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
 }
 
-.products-table th,
-.products-table td {
-    border: 1px solid var(--gray-200);
-    padding: 0.5rem;
-    text-align: center;
-    vertical-align: middle;
-    background: white;
-    color: var(--gray-900);
-}
-
-.dark .products-table th,
-.dark .products-table td {
-    border-color: var(--gray-300);
-    background: var(--gray-100);
-    color: var(--gray-900);
-}
-
-.products-table th {
-    background: var(--primary-blue);
-    color: white;
-    font-weight: 600;
-    font-size: 0.8rem;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-/* Header Row Styles */
-.header-row-1 th {
-    background: var(--primary-blue);
-    color: white;
-    font-weight: 700;
-    font-size: 0.85rem;
-}
-
-.header-row-2 th {
-    background: var(--primary-blue-light);
-    color: white;
-    font-weight: 600;
-    font-size: 0.8rem;
-}
-
-.header-row-3 th {
-    background: var(--primary-blue);
-    color: white;
-    font-weight: 500;
-    font-size: 0.75rem;
-}
-
-/* Quarter Headers */
-.quarter-header {
-    background: var(--primary-blue-light) !important;
-    color: white !important;
-    font-weight: 600;
-    border-left: 2px solid var(--primary-blue) !important;
-    border-right: 2px solid var(--primary-blue) !important;
-}
-
-/* Column Numbers Row - FIX VISIBILITY ISSUE */
-.column-numbers-row td {
-    background: var(--gray-100) !important;
-    color: var(--gray-700) !important;
-    font-weight: 600;
-    font-size: 0.75rem;
-    padding: 0.375rem;
-    font-style: normal;
-    border: 1px solid var(--gray-300) !important;
-}
-
-.dark .column-numbers-row td {
-    background: var(--gray-200) !important;
-    color: var(--gray-800) !important;
-}
-
-.col-number {
-    background: var(--gray-100) !important;
-    color: var(--gray-700) !important;
-    font-weight: 600 !important;
-}
-
-.dark .col-number {
-    background: var(--gray-200) !important;
-    color: var(--gray-800) !important;
-}
-
-/* Column Widths */
-.col-no {
-    width: var(--col-no-width);
-    min-width: var(--col-no-width);
-}
-
-.col-jenis {
-    width: var(--col-jenis-width);
-    min-width: var(--col-jenis-width);
-    text-align: left !important;
-    font-weight: 700 !important;
-    background: var(--primary-blue) !important;
-    color: white !important;
-    font-size: 0.9rem !important;
-}
-
-.col-uraian {
-    width: var(--col-uraian-width);
-    min-width: var(--col-uraian-width);
-}
-
-/* Satuan column removed */
-
-/* .col-2024 and .col-2025 widths are controlled by <col> elements */
-
-/* Month Headers */
-.month-header {
-    /* width controlled by <col> element */
-    font-size: 0.8rem;
-}
-
-/* Body month columns - widths controlled by <col> elements */
-
-/* Hide non-active months */
-.month-col.is-hidden {
-    display: none;
-}
-
-/* Product Row Styles */
-.product-row {
-    background: white;
-}
-
-.dark .product-row {
-    background: var(--gray-100);
-}
-
-.product-row:nth-child(odd) {
-    background: var(--gray-50);
-}
-
-.dark .product-row:nth-child(odd) {
-    background: var(--gray-200);
-}
-
-.product-row:hover {
-    background: var(--gray-100);
-}
-
-.dark .product-row:hover {
-    background: var(--gray-300);
-}
-
-.row-number {
-    font-weight: 600;
-    color: var(--primary-blue);
-    background: var(--info-blue-light) !important;
-}
-
-.dark .row-number {
-    background: rgba(59, 130, 246, 0.2) !important;
-}
-
-.product-info {
-    text-align: left;
-    padding: 0.75rem 0.5rem;
-    vertical-align: middle;
-}
-
-.product-info input {
-    width: 100%;
-    margin-bottom: 0.25rem;
-}
-
-/* Specific styling for jenis barang input to match 3-row height */
-.jenis-barang-input {
-    height: 4rem !important;
-    /* Increased height to match 3-row span */
-    padding: 0.75rem 0.5rem !important;
-    resize: vertical;
-    line-height: 1.4 !important;
-    vertical-align: top;
-}
-
-.product-info .product-label {
-    font-weight: 600;
-    color: var(--gray-900);
-    margin-bottom: 0.5rem;
-    display: block;
-}
-
-.dark .product-info .product-label {
-    color: var(--gray-900);
-}
-
-/* Sub-row Styles */
-.sub-row {
-    background: white;
-}
-
-.dark .sub-row {
-    background: var(--gray-100);
-}
-
-.sub-row.banyaknya-row {
-    background: var(--gray-50);
-}
-
-.dark .sub-row.banyaknya-row {
-    background: var(--gray-200);
-}
-
-.sub-row.nilai-row {
-    background: var(--warning-yellow-light);
-}
-
-.dark .sub-row.nilai-row {
-    background: rgba(245, 158, 11, 0.1);
-}
-
-.sub-row.harga-row {
-    background: var(--info-blue-light);
-}
-
-.dark .sub-row.harga-row {
-    background: rgba(59, 130, 246, 0.1);
-}
-
-.sub-row-label {
-    background-color: var(--gray-100);
-    font-weight: 600;
-    text-align: center;
-    vertical-align: middle;
-    padding: 8px 4px;
-    font-size: 0.85em;
-    color: var(--gray-700);
-    border: 1px solid var(--gray-200);
-}
-
-.dark .sub-row-label {
-    background-color: var(--gray-200);
-    color: var(--gray-800);
-    border-color: var(--gray-300);
-}
-
-.sub-row-unit {
-    background-color: var(--gray-50);
-    font-weight: 500;
-    text-align: center;
-    vertical-align: middle;
-    padding: 8px 4px;
-    font-size: 0.8em;
-    color: var(--gray-600);
-    border: 1px solid var(--gray-200);
-    font-style: italic;
-}
-
-.dark .sub-row-unit {
-    background-color: var(--gray-100);
-    color: var(--gray-700);
-    border-color: var(--gray-300);
-}
-
-/* Special Rows */
-.lainnya-row {
-    background: var(--info-blue-light) !important;
-    border-top: 2px solid var(--primary-blue);
-}
-
-.lainnya-row td {
-    background: var(--info-blue-light) !important;
-}
-
-.dark .lainnya-row,
-.dark .lainnya-row td {
-    background: rgba(59, 130, 246, 0.1) !important;
-}
-
-.lainnya-note {
-    margin-top: 0.5rem;
-    padding: 0.5rem;
-    background: rgba(255, 255, 255, 0.7);
-    border-radius: 4px;
-    border-left: 3px solid var(--warning-yellow);
-}
-
-.dark .lainnya-note {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.lainnya-note small {
-    color: var(--gray-600);
-    font-size: 0.7rem;
-    line-height: 1.3;
-}
-
-.dark .lainnya-note small {
-    color: var(--gray-700);
-}
-
-.total-row {
-    background: var(--success-green-light) !important;
-    border-top: 2px solid var(--success-green);
-    font-weight: 600;
-}
-
-.total-row td {
-    background: var(--success-green-light) !important;
-    color: var(--success-green);
-}
-
-.dark .total-row,
-.dark .total-row td {
-    background: rgba(16, 185, 129, 0.1) !important;
-}
-
-/* Form Controls in Table */
-.products-table .form-control {
-    border: 1px solid var(--gray-200);
-    border-radius: 4px;
-    padding: 0.5rem 0.6rem;
-    font-size: 0.9rem;
-    background: white;
-    color: var(--gray-900);
-    width: 100%;
-    min-width: 60px;
-}
-
-.dark .products-table .form-control {
-    border-color: var(--gray-300);
-    background: var(--gray-100);
-    color: var(--gray-900);
-}
-
-.products-table .form-control:focus {
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-    outline: none;
-}
-
-.products-table .form-control-sm {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.9rem;
-    height: 36px;
-}
-
-.products-table .month-input {
-    font-size: 0.95rem;
-    padding: 0.45rem 0.6rem;
-}
-
-/* Input Types */
-.nilai-input {
-    background: var(--warning-yellow-light);
-    border-color: var(--warning-yellow);
-}
-
-.dark .nilai-input {
-    background: rgba(245, 158, 11, 0.1);
-}
-
-.nilai-input:focus {
-    border-color: var(--warning-yellow);
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
-}
-
-.total-input {
-    background: var(--success-green-light);
-    border-color: var(--success-green);
-    font-weight: 600;
-    color: var(--success-green);
-    cursor: not-allowed;
-}
-
-.dark .total-input {
-    background: rgba(16, 185, 129, 0.1);
-}
-
-/* Add Product Button */
-.add-product-container {
-    text-align: center;
-    margin-top: 1rem;
-    padding-top: 1rem;
+.accordion-item+.accordion-item {
     border-top: 1px solid var(--gray-200);
 }
 
-.dark .add-product-container {
-    border-top-color: var(--gray-300);
+.dark .accordion-item+.accordion-item {
+    border-color: var(--gray-700);
 }
 
-.add-product-container .btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-}
-
-/* Remove Product Button */
-.remove-product-btn {
-    background: var(--error-red);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.remove-product-btn:hover {
-    background: #dc2626;
-    transform: scale(1.05);
-}
-
-/* Footer Note Styles */
-.footer-note {
-    margin-top: 1rem;
-    padding: 1rem;
+.accordion-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
     background: var(--gray-50);
-    border-radius: 8px;
-    border-left: 4px solid var(--primary-blue);
-}
-
-.dark .footer-note {
-    background: var(--gray-200);
-}
-
-.footer-note p {
-    margin: 0;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    color: var(--gray-900);
-}
-
-.dark .footer-note p {
-    color: var(--gray-900);
-}
-
-.footer-note strong {
+    color: var(--gray-800);
     font-weight: 600;
+    border: 0;
+    cursor: pointer;
+    transition: background 0.2s ease;
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
-    .products-table {
-        font-size: 0.8rem;
-    }
-
-    .month-header {
-        font-size: 0.75rem;
-    }
-
-    .products-table .form-control {
-        font-size: 0.85rem;
-        padding: 0.4rem 0.5rem;
-    }
-
-    /* Keep column widths consistent at tablet sizes */
-    :root {
-        --col-no-width: 60px;
-        --col-jenis-width: 200px;
-        --col-uraian-width: 150px;
-    }
+.dark .accordion-header {
+    background: var(--gray-750);
+    color: var(--gray-200);
 }
 
-@media (max-width: 768px) {
-    .products-table-container {
-        padding: 1rem;
-        margin: 1rem 0;
-    }
-
-    .products-table {
-        font-size: 0.75rem;
-    }
-
-    /* Mobile adjustments: bump uraian width to 160px, jenis stays 200px */
-    :root {
-        --col-no-width: 60px;
-        --col-jenis-width: 200px;
-        --col-uraian-width: 160px;
-    }
-
-    .month-header {
-        font-size: 0.7rem;
-    }
-
-    .lainnya-note small {
-        font-size: 0.65rem;
-    }
+.accordion-header:hover {
+    background: var(--gray-100);
 }
 
-/* Animation for new rows */
-@keyframes slideInRow {
+.accordion-header.active {
+    background: var(--primary-blue);
+    color: white;
+}
+
+.accordion-title {
+    display: inline-flex;
+    align-items: center;
+}
+
+.accordion-icon {
+    font-size: 1rem;
+}
+
+.current-quarter-banner {
+    margin: 0.5rem 0 1rem;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+}
+
+.dark .current-quarter-banner {
+    background: var(--gray-750);
+    color: var(--gray-200);
+    border-color: var(--gray-700);
+}
+
+/* Product Card */
+.product-card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    animation: slideIn 0.3s ease-out;
+}
+
+.dark .product-card {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+}
+
+@keyframes slideIn {
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(20px);
     }
 
     to {
@@ -569,171 +116,439 @@
     }
 }
 
-.product-row.new-row {
-    animation: slideInRow 0.3s ease-out;
+/* Card Header */
+.card-header {
+    background: var(--gray-50);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
 }
 
-/* Loading state for calculations */
-.calculating {
-    background: var(--warning-yellow-light);
-    color: var(--warning-yellow);
-    font-style: italic;
+.card-header:hover {
+    background: var(--gray-100);
 }
 
-.dark .calculating {
-    background: rgba(245, 158, 11, 0.1);
+.dark .card-header {
+    background: var(--gray-750);
+    border-color: var(--gray-700);
 }
 
-.calculating::after {
-    content: "...";
-    animation: dots 1.5s infinite;
+.dark .card-header:hover {
+    background: var(--gray-700);
 }
 
-@keyframes dots {
-
-    0%,
-    20% {
-        content: "...";
-    }
-
-    40% {
-        content: "..";
-    }
-
-    60% {
-        content: ".";
-    }
-
-    80%,
-    100% {
-        content: "";
-    }
+.product-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-/* ===== Column Resize Handles ===== */
-
-/* Make month header cells position:relative so resize handles can be positioned */
-.products-table th.month-header {
-    position: relative;
-    overflow: visible;
+.dark .product-title {
+    color: white;
 }
 
-/* The resize handle: a thin bar on the right edge of each resizable header */
-.col-resize-handle {
-    position: absolute;
-    top: 0;
-    right: -3px;
-    width: 6px;
-    height: 100%;
-    cursor: col-resize;
-    z-index: 20;
-    background: transparent;
-    transition: background 0.15s ease;
-    /* Make sure it's easy to grab */
-    touch-action: none;
-}
-
-.col-resize-handle:hover,
-.col-resize-handle.active {
-    background: rgba(59, 130, 246, 0.6);
-}
-
-/* Visual line indicator that appears during active resizing */
-.col-resize-guide {
-    position: absolute;
-    top: 0;
-    width: 2px;
-    background: var(--primary-blue);
-    opacity: 0.5;
-    z-index: 100;
-    pointer-events: none;
-    transition: opacity 0.1s ease;
-}
-
-/* While resizing, prevent text selection and change cursor globally */
-body.col-resizing {
-    cursor: col-resize !important;
-    user-select: none !important;
-    -webkit-user-select: none !important;
-    -moz-user-select: none !important;
-    -ms-user-select: none !important;
-}
-
-body.col-resizing * {
-    cursor: col-resize !important;
-}
-
-/* Disable pointer events on inputs during resize to avoid focus issues */
-body.col-resizing .products-table input {
-    pointer-events: none;
-}
-
-/* Year header in row-1 also needs relative positioning for resize indicator */
-.products-table th.year-col {
-    position: relative;
-}
-
-/* Tooltip showing the current width during resize */
-.col-resize-tooltip {
-    position: fixed;
-    background: rgba(30, 41, 59, 0.9);
-    color: #fff;
-    font-size: 0.7rem;
-    padding: 2px 8px;
-    border-radius: 4px;
-    pointer-events: none;
-    z-index: 200;
-    white-space: nowrap;
-    transform: translateX(-50%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Reset column button that appears on double-click */
-.col-resize-reset-hint {
-    position: absolute;
-    bottom: -20px;
-    right: -30px;
+.product-counter {
     background: var(--primary-blue);
     color: white;
-    font-size: 0.6rem;
-    padding: 2px 6px;
-    border-radius: 3px;
-    pointer-events: none;
-    z-index: 25;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.card-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-toggle {
+    border: none;
+    background: transparent;
+    color: var(--gray-500);
+    padding: 0.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.card-toggle:hover {
+    background: var(--gray-200);
+    color: var(--primary-blue);
+}
+
+.dark .card-toggle {
+    color: var(--gray-400);
+}
+
+.dark .card-toggle:hover {
+    background: var(--gray-700);
+    color: var(--primary-blue);
+}
+
+.toggle-icon-svg {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-card.collapsed .toggle-icon-svg {
+    transform: rotate(-180deg);
+}
+
+.product-card.collapsed .card-body {
+    display: none;
+}
+
+.product-card.collapsed {
+    border-bottom-width: 1px;
+}
+
+/* Card Body */
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--gray-800);
+    font-size: 0.95rem;
+}
+
+.dark .form-label {
+    color: var(--gray-200);
+}
+
+/* Data Grid (Instead of Table) */
+.data-grid {
+    display: grid;
+    /* Grid template columns will be set by JS or media queries */
+    gap: 1rem;
+    background: var(--gray-50);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--gray-200);
+}
+
+.dark .data-grid {
+    background: var(--gray-900);
+    border-color: var(--gray-700);
+}
+
+.grid-header {
+    font-weight: 600;
+    color: var(--gray-700);
+    text-align: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--gray-200);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.dark .grid-header {
+    color: var(--gray-300);
+    border-color: var(--gray-700);
+}
+
+.grid-row {
+    display: contents;
+}
+
+.grid-label {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    color: var(--gray-700);
+    font-size: 0.9rem;
+}
+
+.dark .grid-label {
+    color: var(--gray-300);
+}
+
+.grid-label.section-title {
+    margin-top: 0.25rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--gray-200);
+}
+
+.dark .grid-label.section-title {
+    border-color: var(--gray-700);
+}
+
+/* Input Styles */
+.form-control {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--gray-300);
+    background: white;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.dark .form-control {
+    background: var(--gray-700);
+    border-color: var(--gray-600);
+    color: white;
+}
+
+.form-control:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    outline: none;
+}
+
+.form-control.highlighted {
+    background-color: var(--warning-yellow-light);
+}
+
+.dark .form-control.highlighted {
+    background-color: rgba(245, 158, 11, 0.1);
+    border-color: var(--warning-yellow);
+}
+
+.form-control.readonly {
+    background-color: var(--gray-100);
+    cursor: default;
+}
+
+.dark .form-control.readonly {
+    background-color: var(--gray-800);
+}
+
+/* Buttons */
+.btn-delete {
+    color: var(--error-red);
+    background: transparent;
+    border: 1px solid var(--error-red);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.btn-delete:hover {
+    background: var(--error-red);
+    color: white;
+}
+
+.add-product-container {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.btn-add {
+    background: var(--primary-blue);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+}
+
+.btn-add:hover {
+    background: var(--primary-blue-hover);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.4);
+}
+
+/* Lainnya & Total Sections */
+.special-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-sm);
+}
+
+.dark .special-section {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+}
+
+.special-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dark .special-title {
+    color: white;
+}
+
+/* Helper Utilities */
+.hidden {
+    display: none !important;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+/* Grid Layout for Quarters */
+.quarter-grid {
+    display: grid;
+    grid-template-columns: 120px repeat(3, 1fr);
+    /* Label + 3 Months */
+    gap: 1rem;
+    align-items: center;
+}
+
+.grid-input {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Per-card Quarter Tabs */
+.quarter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.quarter-tab {
+    appearance: none;
+    border: 1px solid var(--gray-300);
+    background: white;
+    color: var(--gray-700);
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.quarter-tab:hover {
+    background: var(--gray-100);
+}
+
+.quarter-tab.active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: white;
+}
+
+/* Read-only Preview Table */
+.preview-table {
+    overflow-x: auto;
+}
+
+.preview-table-el {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 980px;
+}
+
+.preview-table-el th,
+.preview-table-el td {
+    border: 1px solid var(--gray-200);
+    padding: 0.5rem 0.6rem;
     white-space: nowrap;
-    opacity: 0;
-    transition: opacity 0.2s ease;
+    background: white;
 }
 
-.col-resize-handle:hover .col-resize-reset-hint {
-    opacity: 1;
+.preview-table-el thead th {
+    background: var(--gray-50);
+    color: var(--gray-800);
+    font-weight: 600;
+    text-align: center;
 }
 
-/* Sticky columns for product info */
-.products-table th.sticky-col,
-.products-table td.sticky-col {
+.preview-table-el .sticky-col {
     position: sticky;
-    background: inherit;
-    z-index: 3;
-    /* Prevent background bleed beyond cell width on overlap edge */
-    background-clip: padding-box;
-    /* Visual separator to avoid perceived overlap against next column */
-    box-shadow: 2px 0 0 0 var(--gray-200);
-}
-
-.products-table .col-no {
     left: 0;
-    z-index: 4;
+    background: white;
+    z-index: 1;
+    min-width: 220px;
 }
 
-.products-table .col-jenis {
-    left: var(--col-no-width);
-    z-index: 4;
+.preview-table-el .num {
+    text-align: right;
+    color: var(--gray-800);
 }
 
-.products-table .col-uraian {
-    left: calc(var(--col-no-width) + var(--col-jenis-width));
-    z-index: 3;
+.preview-table-el .bold {
+    font-weight: 700;
 }
 
-/* Satuan sticky positioning removed */
+.preview-table-el .total-row td {
+    background: #f0fdf4;
+}
+
+.mobile-month-label {
+    display: none;
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-bottom: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .quarter-grid {
+        grid-template-columns: 1fr;
+        /* Stack on mobile */
+        gap: 0.5rem;
+    }
+
+    .grid-header {
+        display: none;
+        /* Hide headers on mobile stack */
+    }
+
+    .grid-row {
+        display: flex;
+        flex-direction: column;
+        border-bottom: 1px solid var(--gray-200);
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .mobile-month-label {
+        display: inline-block;
+    }
+}

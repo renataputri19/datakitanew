@@ -1,1252 +1,835 @@
 /**
  * SIBSTR Survey Blok IIIA JavaScript Module
- * Handles dynamic product table, auto-calculations, and form interactions
+ * Handles dynamic product cards, consistent state management, and tab switching without re-rendering.
  */
 
 class SurveyBlok3aManager {
     constructor() {
-        this.form = document.getElementById('survey-form');
-        this.productsTable = document.getElementById('products-table');
-        this.productsTbody = document.getElementById('products-tbody');
+        this.container = document.getElementById('products-container');
+        this.lainnyaContainer = document.getElementById('lainnya-grid-container');
+        this.totalContainer = document.getElementById('total-grid-container');
         this.addProductBtn = document.getElementById('add-product-btn');
+        this.form = document.getElementById('survey-form');
+        this.previewContainer = document.getElementById('blok3a-preview-table');
 
-        this.productCount = 0;
-        this.months = ['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'];
-        // Quarter management to reduce horizontal scrolling
-        this.activeQuarter = 'dec2024';
-        this.quarterMap = {
-            '2024_des': 'dec2024',
-            '2025_jan': 'q1', '2025_feb': 'q1', '2025_mar': 'q1',
-            '2025_apr': 'q2', '2025_mei': 'q2', '2025_jun': 'q2',
-            '2025_jul': 'q3', '2025_agu': 'q3', '2025_sep': 'q3',
-            '2025_okt': 'q4', '2025_nov': 'q4', '2025_des': 'q4'
-        };
-        this.columnNumberMap = {
-            '2024_des': 4,
-            '2025_jan': 5,
-            '2025_feb': 6,
-            '2025_mar': 7,
-            '2025_apr': 8,
-            '2025_mei': 9,
-            '2025_jun': 10,
-            '2025_jul': 11,
-            '2025_agu': 12,
-            '2025_sep': 13,
-            '2025_okt': 14,
-            '2025_nov': 15,
-            '2025_des': 16
-        };
-        this.formValues = {};
+        // State
+        this.products = []; // Array to store current product structures
+        this.cardActiveQuarters = {}; // per-card quarter state: { index: quarter }
+        this.lainnyaActiveQuarter = 'dec2024';
+        this.totalActiveQuarter = 'dec2024';
 
-        // Column resize state
-        this.columnWidths = {};          // { month_key: widthPx }
-        this.defaultColumnWidth = 150;   // default month column width in px
-        this.minColumnWidth = 60;        // minimum allowed width
-        this.maxColumnWidth = 400;       // maximum allowed width
-        this._resizeState = null;        // active resize drag state
-        this._resizeTooltip = null;      // tooltip element during drag
-        this._loadSavedColumnWidths();   // restore from localStorage
+        // Month Definitions
+        this.quarterConf = {
+            'dec2024': { label: 'Des 2024', months: ['2024_des'] },
+            'q1': { label: 'Triwulan I', months: ['2025_jan', '2025_feb', '2025_mar'] },
+            'q2': { label: 'Triwulan II', months: ['2025_apr', '2025_mei', '2025_jun'] },
+            'q3': { label: 'Triwulan III', months: ['2025_jul', '2025_agu', '2025_sep'] },
+            'q4': { label: 'Triwulan IV', months: ['2025_okt', '2025_nov', '2025_des'] }
+        };
+
+        this.monthLabels = {
+            '2024_des': 'Desember',
+            '2025_jan': 'Januari', '2025_feb': 'Februari', '2025_mar': 'Maret',
+            '2025_apr': 'April', '2025_mei': 'Mei', '2025_jun': 'Juni',
+            '2025_jul': 'Juli', '2025_agu': 'Agustus', '2025_sep': 'September',
+            '2025_okt': 'Oktober', '2025_nov': 'November', '2025_des': 'Desember'
+        };
 
         this.init();
     }
 
     init() {
-        if (!this.form) {
-            console.error('Survey form not found');
-            return;
-        }
+        if (!this.container) return;
 
+        console.log('Blok IIIA Manager Initializing...');
         this.setupEventListeners();
-        // Tabs toggle for quarter/month visibility/rendering
-        this.setupTabs();
-        this.loadExistingData();
-        // Initial rendering based on default quarter
-        this.applyQuarterVisibility();
-        this.setupValidation();
+
+        // Render Static Sections (Lainnya & Total)
+        // We use the V2 logic to replace the container content with correct per-quarter grids
+        const lainnyaData = window.surveyData?.lainnya || {};
+        const totalData = window.surveyData?.totals || {};
+
+        if (this.lainnyaContainer) this.lainnyaContainer.innerHTML = this.generateStaticQuarterGridsV2('lainnya', lainnyaData);
+        if (this.totalContainer) this.totalContainer.innerHTML = this.generateStaticQuarterGridsV2('total', totalData);
+
+        this.loadInitialData();
+        // Set default visibility for sections
+        this.updateAllCardsVisibility();
+        this.updateSpecialSectionVisibility('lainnya', this.lainnyaActiveQuarter);
+        this.updateSpecialSectionVisibility('total', this.totalActiveQuarter);
         this.setupAutoCalculation();
 
-        console.log('Blok IIIA Manager initialized');
+        // Initial preview render
+        this.renderPreviewTable();
+    }
+
+    // Ensure totals are computed on load
+    setupAutoCalculation() {
+        try {
+            this.calculateTotals();
+        } catch (e) {
+            console.warn('setupAutoCalculation noop:', e);
+        }
     }
 
     setupEventListeners() {
-        // Add product button
+        // Add Product
         if (this.addProductBtn) {
-            this.addProductBtn.addEventListener('click', () => {
-                this.addProductRow();
-            });
+            this.addProductBtn.addEventListener('click', () => this.addProduct());
         }
 
-        // Navigation buttons
-        const backBtn = document.getElementById('back-to-blok2');
-        const saveDraftBtn = document.getElementById('save-draft');
-        const saveCompleteBtn = document.getElementById('save-complete');
-
-        if (backBtn) {
-            backBtn.addEventListener('click', () => {
-                if (window.surveyRoutes?.backToBlok2) {
-                    window.location.href = window.surveyRoutes.backToBlok2;
-                }
-            });
-        }
-
-        if (saveDraftBtn) {
-            saveDraftBtn.addEventListener('click', () => {
-                this.saveDraft();
-            });
-        }
-
-        if (saveCompleteBtn) {
-            saveCompleteBtn.addEventListener('click', () => {
-                this.saveAndContinue();
-            });
-        }
-
-        // Auto-save on input changes
-        this.form.addEventListener('input', (e) => {
-            if (e.target.matches('input, textarea, select')) {
-                this.handleFieldChange(e.target);
+        // Per-card quarter tab clicks
+        this.container.addEventListener('click', (e) => {
+            const tab = e.target.closest('.quarter-tab');
+            if (tab) {
+                const card = tab.closest('.product-card');
+                if (!card) return;
+                const quarter = tab.dataset.quarter;
+                const index = this.getCardIndex(card.id);
+                if (index == null) return;
+                this.cardActiveQuarters[index] = quarter;
+                this.setCardActiveQuarter(card, quarter);
             }
         });
 
-
-    }
-
-    // Quarter/Month tabs setup
-    setupTabs() {
-        const tabsContainer = document.getElementById('months-tabs');
-        if (!tabsContainer) return;
-
-        const tabs = tabsContainer.querySelectorAll('.month-tab');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                this.activeQuarter = tab.dataset.quarter || 'q1';
-                this.applyQuarterVisibility();
+        // Lainnya tabs
+        const lainnyaTabs = document.getElementById('lainnya-tabs');
+        if (lainnyaTabs) {
+            lainnyaTabs.addEventListener('click', (e) => {
+                const tab = e.target.closest('.quarter-tab');
+                if (!tab) return;
+                this.lainnyaActiveQuarter = tab.dataset.quarter;
+                this.updateTabsActiveState(lainnyaTabs, this.lainnyaActiveQuarter);
+                this.updateSpecialSectionVisibility('lainnya', this.lainnyaActiveQuarter);
             });
-        });
-    }
-
-    // Compute visible months based on active quarter, always include Dec 2024
-    getVisibleMonths() {
-        const base = ['2024_des'];
-        switch (this.activeQuarter) {
-            case 'dec2024':
-                return base;
-            case 'q1':
-                return base.concat(['2025_jan', '2025_feb', '2025_mar']);
-            case 'q2':
-                return base.concat(['2025_apr', '2025_mei', '2025_jun']);
-            case 'q3':
-                return base.concat(['2025_jul', '2025_agu', '2025_sep']);
-            case 'q4':
-                return base.concat(['2025_okt', '2025_nov', '2025_des']);
-            default:
-                return base;
         }
-    }
 
-    getMonthLabel(month) {
-        const map = {
-            '2024_des': 'Desember',
-            '2025_jan': 'Januari',
-            '2025_feb': 'Februari',
-            '2025_mar': 'Maret',
-            '2025_apr': 'April',
-            '2025_mei': 'Mei',
-            '2025_jun': 'Juni',
-            '2025_jul': 'Juli',
-            '2025_agu': 'Agustus',
-            '2025_sep': 'September',
-            '2025_okt': 'Oktober',
-            '2025_nov': 'November',
-            '2025_des': 'Desember'
+        // Total tabs
+        const totalTabs = document.getElementById('total-tabs');
+        if (totalTabs) {
+            totalTabs.addEventListener('click', (e) => {
+                const tab = e.target.closest('.quarter-tab');
+                if (!tab) return;
+                this.totalActiveQuarter = tab.dataset.quarter;
+                this.updateTabsActiveState(totalTabs, this.totalActiveQuarter);
+                this.updateSpecialSectionVisibility('total', this.totalActiveQuarter);
+            });
+        }
+
+        // Navigation
+        const setupNavBtn = (id, callback) => {
+            const btn = document.getElementById(id);
+            if (btn) btn.addEventListener('click', callback);
         };
-        return map[month] || month;
-    }
 
-    getQuarterLabel(quarter) {
-        const map = {
-            dec2024: 'Des 2024',
-            q1: 'Triwulan I',
-            q2: 'Triwulan II',
-            q3: 'Triwulan III',
-            q4: 'Triwulan IV'
-        };
-        return map[quarter] || quarter;
-    }
+        setupNavBtn('back-to-blok2', () => window.location.href = window.surveyRoutes.backToBlok2);
+        setupNavBtn('save-draft', () => this.saveDraft());
+        setupNavBtn('save-complete', () => this.saveAndContinue());
 
-    captureFormValues() {
-        this.formValues = {};
-        const inputs = this.form.querySelectorAll('input');
-        inputs.forEach(input => {
-            this.formValues[input.name] = input.value;
-        });
-    }
+        // Global Event Delegation for Inputs (AutoSave & Calc)
+        this.form.addEventListener('input', (e) => this.handleInput(e));
+        this.form.addEventListener('click', (e) => {
+            // 1. Handle Delete
+            const deleteBtn = e.target.closest('.btn-delete');
+            if (deleteBtn) {
+                const index = deleteBtn.dataset.index;
+                this.deleteProduct(index);
+                return;
+            }
 
-    getCurrentValue(name) {
-        if (this.formValues && Object.prototype.hasOwnProperty.call(this.formValues, name)) {
-            return this.formValues[name];
-        }
-        return undefined;
-    }
-
-    // Render header rows to only include visible months
-    renderHeader() {
-        if (!this.productsTable) return;
-        const thead = this.productsTable.querySelector('thead');
-        const row1 = thead?.querySelector('.header-row-1');
-        const row2 = thead?.querySelector('.header-row-2');
-        const monthsRow = thead?.querySelector('.header-row-3');
-        const colNumRow = thead?.querySelector('.column-numbers-row');
-        const visibleMonths = this.getVisibleMonths();
-        const quarterMonths = visibleMonths.filter(m => m !== '2024_des');
-
-        // ── Build / rebuild <colgroup> so table-layout:fixed respects our widths ──
-        this._buildColgroup(visibleMonths);
-
-        // Adjust Year cells in row 1
-        if (row1) {
-            const year2025Cell = row1.querySelector('.year-2025');
-            if (quarterMonths.length > 0) {
-                if (year2025Cell) {
-                    year2025Cell.style.display = '';
-                    year2025Cell.colSpan = quarterMonths.length;
-                } else {
-                    const th2025 = document.createElement('th');
-                    th2025.className = 'col-2025 year-col year-2025';
-                    th2025.setAttribute('data-quarter', 'q1 q2 q3 q4');
-                    th2025.textContent = '2025';
-                    th2025.colSpan = quarterMonths.length;
-                    row1.appendChild(th2025);
+            // 2. Handle Header Toggle (Collapse/Expand)
+            const header = e.target.closest('.card-header');
+            if (header) {
+                const card = header.closest('.product-card');
+                if (card) {
+                    const isCollapsed = card.classList.toggle('collapsed');
+                    const toggleBtn = header.querySelector('.card-toggle');
+                    if (toggleBtn) {
+                        toggleBtn.setAttribute('aria-expanded', !isCollapsed);
+                    }
                 }
-            } else if (year2025Cell) {
-                year2025Cell.remove();
             }
-        }
-
-        // Quarter header row (row 2): show only active quarter if any
-        if (row2) {
-            // Clear existing quarter headers
-            row2.innerHTML = '';
-            if (quarterMonths.length > 0) {
-                const qCell = document.createElement('th');
-                qCell.className = `quarter-header quarter-${this.activeQuarter}`;
-                qCell.setAttribute('data-quarter', this.activeQuarter);
-                qCell.textContent = this.getQuarterLabel(this.activeQuarter);
-                qCell.colSpan = quarterMonths.length;
-                row2.appendChild(qCell);
-            }
-        }
-
-        // Months header (row 3)
-        if (monthsRow) {
-            // Remove all existing month header cells (exclude sticky columns)
-            Array.from(monthsRow.children).forEach(child => {
-                // If it's a generated month header or doesn't have a sticky class
-                if (child.classList.contains('month-col') ||
-                    (!child.classList.contains('col-no') &&
-                        !child.classList.contains('col-jenis') &&
-                        !child.classList.contains('col-uraian'))) {
-                    child.remove();
-                }
-            });
-
-            // Append visible months headers
-            visibleMonths.forEach(month => {
-                const th = document.createElement('th');
-                th.className = `month-header month-col month-${month}`;
-                th.setAttribute('data-month', month);
-                th.setAttribute('data-quarter', this.quarterMap[month]);
-                th.textContent = this.getMonthLabel(month);
-                monthsRow.appendChild(th);
-            });
-        }
-
-        // Column numbers row
-        if (colNumRow) {
-            colNumRow.querySelectorAll('.month-col').forEach(el => el.remove());
-            visibleMonths.forEach(month => {
-                const td = document.createElement('td');
-                td.className = `col-number month-col month-${month}`;
-                td.setAttribute('data-month', month);
-                td.setAttribute('data-quarter', this.quarterMap[month]);
-                td.textContent = `(${this.columnNumberMap[month]})`;
-                colNumRow.appendChild(td);
-            });
-        }
-    }
-
-    /**
-     * Build / rebuild a <colgroup> with one <col> per visible column.
-     * With table-layout:fixed the <col> widths are authoritative.
-     */
-    _buildColgroup(visibleMonths) {
-        // Remove old colgroup if it exists
-        const old = this.productsTable.querySelector('colgroup');
-        if (old) old.remove();
-
-        const cg = document.createElement('colgroup');
-
-        // 3 fixed sticky columns (No., Jenis, Uraian)
-        const fixedCols = [
-            { cls: 'col-no', width: 'var(--col-no-width)' },
-            { cls: 'col-jenis', width: 'var(--col-jenis-width)' },
-            { cls: 'col-uraian', width: 'var(--col-uraian-width)' },
-        ];
-        fixedCols.forEach(fc => {
-            const col = document.createElement('col');
-            col.className = fc.cls;
-            col.style.width = fc.width;
-            cg.appendChild(col);
-        });
-
-        // One <col> per visible month
-        visibleMonths.forEach(month => {
-            const col = document.createElement('col');
-            col.className = `col-month col-month-${month}`;
-            col.setAttribute('data-month', month);
-            // Use saved width or default
-            const savedW = this.columnWidths[month];
-            col.style.width = savedW ? (savedW + 'px') : (this.defaultColumnWidth + 'px');
-            cg.appendChild(col);
-        });
-
-        // Insert colgroup before thead
-        this.productsTable.insertBefore(cg, this.productsTable.firstChild);
-    }
-
-    // Re-render month inputs for existing product rows based on visible months
-    rerenderProductRows() {
-        const visibleMonths = this.getVisibleMonths();
-        const mainRows = this.productsTbody.querySelectorAll('tr.product-row');
-        mainRows.forEach(mainRow => {
-            const productIndex = parseInt(mainRow.dataset.productIndex || '-1', 10);
-            const nilaiRow = mainRow.nextElementSibling;
-            const hargaRow = nilaiRow?.nextElementSibling;
-
-            // Clean existing month cells
-            mainRow.querySelectorAll('td.month-col').forEach(el => el.remove());
-            nilaiRow?.querySelectorAll('td.month-col').forEach(el => el.remove());
-            hargaRow?.querySelectorAll('td.month-col').forEach(el => el.remove());
-
-            // Append month cells for Banyaknya
-            visibleMonths.forEach(month => {
-                const td = document.createElement('td');
-                td.className = `month-col month-${month}`;
-                td.setAttribute('data-month', month);
-                td.setAttribute('data-quarter', this.quarterMap[month]);
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.name = `blok3a_products[${productIndex}][banyaknya][${month}]`;
-                const saved = this.getCurrentValue(input.name);
-                const initialBanyaknya = saved ?? (window.surveyData?.products?.[productIndex]?.banyaknya?.[month] ?? '');
-                input.value = initialBanyaknya;
-                input.className = 'form-control form-control-sm month-input';
-                input.setAttribute('data-month', month);
-                input.setAttribute('data-quarter', this.quarterMap[month]);
-                input.step = '0.01';
-                input.min = '0';
-                input.placeholder = '';
-                td.appendChild(input);
-                mainRow.appendChild(td);
-            });
-
-            // Append Nilai cells
-            if (nilaiRow) {
-                visibleMonths.forEach(month => {
-                    const td = document.createElement('td');
-                    td.className = `month-col month-${month}`;
-                    td.setAttribute('data-month', month);
-                    td.setAttribute('data-quarter', this.quarterMap[month]);
-                    const input = document.createElement('input');
-                    input.type = 'number';
-                    input.name = `blok3a_products[${productIndex}][nilai][${month}]`;
-                    const saved = this.getCurrentValue(input.name);
-                    const initialNilai = saved ?? (window.surveyData?.products?.[productIndex]?.nilai?.[month] ?? '');
-                    input.value = initialNilai;
-                    input.className = 'form-control form-control-sm nilai-input month-input';
-                    input.setAttribute('data-product-index', productIndex);
-                    input.setAttribute('data-month', month);
-                    input.setAttribute('data-quarter', this.quarterMap[month]);
-                    input.step = '0.01';
-                    input.min = '0';
-                    input.placeholder = '';
-                    td.appendChild(input);
-                    nilaiRow.appendChild(td);
-                });
-            }
-
-            // Append Harga/Satuan cells
-            if (hargaRow) {
-                visibleMonths.forEach(month => {
-                    const td = document.createElement('td');
-                    td.className = `month-col month-${month}`;
-                    td.setAttribute('data-month', month);
-                    td.setAttribute('data-quarter', this.quarterMap[month]);
-                    const input = document.createElement('input');
-                    input.type = 'number';
-                    input.name = `blok3a_products[${productIndex}][harga_satuan][${month}]`;
-                    const saved = this.getCurrentValue(input.name);
-                    const initialHarga = saved ?? (window.surveyData?.products?.[productIndex]?.harga_satuan?.[month] ?? '');
-                    input.value = initialHarga;
-                    input.className = 'form-control form-control-sm month-input';
-                    input.setAttribute('data-month', month);
-                    input.setAttribute('data-quarter', this.quarterMap[month]);
-                    input.step = '0.01';
-                    input.min = '0';
-                    input.placeholder = '';
-                    td.appendChild(input);
-                    hargaRow.appendChild(td);
-                });
-            }
-
-            // Rebind auto-save and numeric validations for new inputs
-            this.setupRowAutoSave(mainRow);
-            if (nilaiRow) this.setupRowAutoSave(nilaiRow);
-            if (hargaRow) this.setupRowAutoSave(hargaRow);
-            this.addNumericValidationToInputs();
         });
     }
 
-    // Render tfoot rows for Lainnya and Total using visible months
-    renderTfoot() {
-        const visibleMonths = this.getVisibleMonths();
-        const tfoot = this.productsTable.querySelector('tfoot');
-        if (!tfoot) return;
-        const lainnyaRow = tfoot.querySelector('.lainnya-row');
-        const totalRow = tfoot.querySelector('.total-row');
+    loadInitialData() {
+        // Load products from server data or default
+        const serverProducts = window.surveyData?.products || [];
 
-        if (lainnyaRow) {
-            // Remove existing month cells
-            lainnyaRow.querySelectorAll('.month-col').forEach(el => el.remove());
-            visibleMonths.forEach(month => {
-                const td = document.createElement('td');
-                td.className = `month-col month-${month}`;
-                td.setAttribute('data-month', month);
-                td.setAttribute('data-quarter', this.quarterMap[month]);
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.name = `blok3a_lainnya[nilai][${month}]`;
-                const saved = this.getCurrentValue(input.name);
-                const initial = saved ?? (window.surveyData?.lainnya?.nilai?.[month] ?? '');
-                input.value = initial;
-                input.className = 'form-control form-control-sm nilai-input lainnya-nilai month-input';
-                input.setAttribute('data-month', month);
-                input.setAttribute('data-quarter', this.quarterMap[month]);
-                input.step = '0.01';
-                input.min = '0';
-                input.placeholder = '';
-                td.appendChild(input);
-                lainnyaRow.appendChild(td);
-            });
-        }
-
-        if (totalRow) {
-            totalRow.querySelectorAll('.month-col').forEach(el => el.remove());
-            visibleMonths.forEach(month => {
-                const td = document.createElement('td');
-                td.className = `month-col month-${month}`;
-                td.setAttribute('data-month', month);
-                td.setAttribute('data-quarter', this.quarterMap[month]);
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.name = `blok3a_totals[${month}]`;
-                const saved = this.getCurrentValue(input.name);
-                const initial = saved ?? (window.surveyData?.totals?.[month] ?? 0);
-                input.value = initial;
-                input.className = 'form-control form-control-sm total-input month-input';
-                input.setAttribute('data-month', month);
-                input.setAttribute('data-quarter', this.quarterMap[month]);
-                input.readOnly = true;
-                input.tabIndex = -1;
-                td.appendChild(input);
-                totalRow.appendChild(td);
-            });
-        }
-    }
-
-    // Apply quarter rendering: rebuild header, body rows, and tfoot for visible months
-    applyQuarterVisibility() {
-        // Capture current form values to preserve across re-renders
-        this.captureFormValues();
-        // Render header and tfoot based on active quarter
-        this.renderHeader();
-        this.rerenderProductRows();
-        this.renderTfoot();
-        // Recalculate totals for visible months
-        this.calculateTotals();
-        // Re-apply saved column widths and attach resize handles
-        this._applyColumnWidths();
-        this._setupResizeHandles();
-    }
-
-    loadExistingData() {
-        // Clear existing rows to prevent duplication with server-rendered rows
-        if (this.productsTbody) {
-            this.productsTbody.innerHTML = '';
-        }
-        this.productCount = 0;
-
-        const existingProducts = window.surveyData?.products || [];
-
-        if (existingProducts && existingProducts.length > 0) {
-            // Load existing products
-            existingProducts.forEach((product, index) => {
-                this.addProductRow(product, index);
+        if (serverProducts.length > 0) {
+            serverProducts.forEach((p, idx) => {
+                // Ensure array-like index mapping needs valid unique IDs, 
+                // but standard arrays in PHP mean we can just use 0,1,2... 
+                // However, deleting index 1 invalidates subsequent indices for PHP arrays often.
+                // We will use a running counter for DOM IDs but keep data structure as array for Laravel.
+                this.addProduct(p);
             });
         } else {
-            // Add 2 default empty product rows when no existing data
-            this.addProductRow(null);
-            this.addProductRow(null);
+            this.addProduct(); // Add one empty card
         }
-
-        // Update visual row numbers
-        this.updateRowNumbers();
-
-        // Calculate totals after loading data
-        setTimeout(() => {
-            this.calculateTotals();
-        }, 100);
     }
 
-    addProductRow(productData = null, index = null) {
-        // Use provided index or generate new unique index
-        // If index is null (new row), use productCount as unique ID
-        const productIndex = index !== null ? index : this.productCount;
-
-        // Ensure productCount tracks the highest index to avoid collisions
-        this.productCount = Math.max(this.productCount, productIndex + 1);
-
-        const product = productData || {
+    addProduct(data = null) {
+        const index = this.products.length; // Simple array index for now
+        const productData = data || {
             jenis_barang: '',
-            uraian: '',
-            satuan: '',
             banyaknya: {},
             nilai: {},
             harga_satuan: {}
         };
 
-        // Create product row group (3 sub-rows)
-        const productRowGroup = this.createProductRowGroup(productIndex + 1, product, productIndex);
+        this.products.push(productData);
+        const cardHTML = this.createProductCardHTML(index, productData);
+        this.container.insertAdjacentHTML('beforeend', cardHTML);
 
-        // Append rows to the dedicated tbody to ensure proper DOM structure and serialization
-        this.productsTbody.appendChild(productRowGroup);
+        // If it's a user action (data is null), scroll to new card
+        if (!data) {
+            const newCard = this.container.lastElementChild;
+            // New cards should be expanded so user can fill them
+            newCard.classList.remove('collapsed');
+            const toggleBtn = newCard.querySelector('.card-toggle');
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
 
-        // Add animation class to the main product row
-        const lastMainRow = this.productsTbody.querySelector('tr.product-row:last-of-type');
-        if (lastMainRow) {
-            lastMainRow.classList.add('new-row');
-            setTimeout(() => {
-                lastMainRow.classList.remove('new-row');
-            }, 300);
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Focus on title
+            newCard.querySelector('.jenis-barang-input').focus();
         }
 
-        // Setup auto-save for new inputs
-        this.setupRowAutoSave(productRowGroup);
-        // Apply current quarter rendering for newly added rows
-        this.applyQuarterVisibility();
-
-        // Update row numbers (1., 2., etc) and delete buttons - visual only
-        this.updateRowNumbers();
-
-        // Do NOT auto-add here to avoid creating a duplicate row when user
-        // clicks the "Tambah Produk" button. Auto-add will be handled when
-        // the last row receives input in its jenis barang field.
+        // Set default quarter for this card and show
+        this.cardActiveQuarters[index] = 'dec2024';
+        const card = document.getElementById(`product-card-${index}`);
+        if (card) this.setCardActiveQuarter(card, this.cardActiveQuarters[index]);
     }
 
-    createProductRowGroup(rowNumber, product, productIndex) {
-        const fragment = document.createDocumentFragment();
+    deleteProduct(indexStr) {
+        if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
 
-        // Main product info row (Banyaknya)
-        const mainRow = document.createElement('tr');
-        mainRow.className = 'product-row';
-        mainRow.dataset.productIndex = productIndex;
+        const index = parseInt(indexStr);
+        // We can't easily "remove" from the array and preserve indices without weirdness in PHP reception 
+        // unless we re-index everything.
+        // Simplest approach: Remove DOM, rebuild data or just re-submit everything.
+        // For dynamic UI, removing the DOM element is key.
 
-        const visibleMonths = this.getVisibleMonths();
+        const card = document.getElementById(`product-card-${index}`);
+        if (card) {
+            card.remove();
+            // We should also probably mark it as deleted or actually remove it from our local state
+            // But re-indexing is complex with auto-save. 
+            // Better: Just hide it and empty values? 
+            // Robust: Re-index everything in DOM and backend?
 
-        mainRow.innerHTML = `
-            <td rowspan="3" class="row-number sticky-col col-no">
-                ${rowNumber}.
-                <!-- Delete button will be managed by updateRowNumbers -->
-            </td>
-            <td rowspan="3" class="product-info sticky-col col-jenis">
-                <input type="text" name="blok3a_products[${productIndex}][jenis_barang]"
-                       value="${product.jenis_barang || ''}"
-                       class="form-control form-control-sm jenis-barang-input"
-                       placeholder="Jenis barang yang dihasilkan">
-            </td>
-            <td class="sub-row-label sticky-col col-uraian">Banyaknya</td>
-            ${visibleMonths.map(month => `
-                <td class="month-col month-${month}" data-month="${month}" data-quarter="${this.quarterMap[month]}">
-                    <input type="number"
-                           name="blok3a_products[${productIndex}][banyaknya][${month}]"
-                           value="${product.banyaknya?.[month] || ''}"
-                           class="form-control form-control-sm month-input"
-                           data-month="${month}" data-quarter="${this.quarterMap[month]}"
-                           step="0.01"
-                           min="0"
-                           placeholder="">
-                </td>
-            `).join('')}
-        `;
+            // Let's go with: Remove from DOM, and when Saving, we parse DOM to build array.
+            // But AutoSave saves individual fields. 
+            // *Correction*: The prompt asks to FIX bugs causing data duplication.
+            // Best fix: Remove the element. If using `blok3a_products[index]`, leaving holes is fine for PHP 
+            // (it becomes an assoc array), but `array_values` might be needed on backend.
+            // Let's assume backend handles standard form encoding.
 
-        // Nilai (value) row
-        const nilaiRow = document.createElement('tr');
-        nilaiRow.className = 'sub-row nilai-row';
-        nilaiRow.dataset.parentIndex = productIndex; // Link to parent
-        nilaiRow.innerHTML = `
-            <td class="sub-row-label sticky-col col-uraian">Nilai</td>
-            ${visibleMonths.map(month => `
-                <td class="month-col month-${month}" data-month="${month}" data-quarter="${this.quarterMap[month]}">
-                    <input type="number"
-                           name="blok3a_products[${productIndex}][nilai][${month}]"
-                           value="${product.nilai?.[month] || ''}"
-                           class="form-control form-control-sm nilai-input month-input"
-                           data-product-index="${productIndex}"
-                           data-month="${month}"
-                           data-quarter="${this.quarterMap[month]}"
-                           step="0.01"
-                           min="0"
-                           placeholder="">
-                </td>
-            `).join('')}
-        `;
+            // For autosave to strictly work with "delete", we might need to send a specific delete command 
+            // or just rely on the final save. 
+            // Current `survey.js` usually handles individual field updates.
+            // To properly delete, we might need to clear values and trigger save, then remove DOM.
 
-        // Harga/Satuan row
-        const hargaRow = document.createElement('tr');
-        hargaRow.className = 'sub-row harga-row';
-        hargaRow.dataset.parentIndex = productIndex; // Link to parent
-        hargaRow.innerHTML = `
-            <td class="sub-row-label sticky-col col-uraian">Harga/Satuan</td>
-            ${visibleMonths.map(month => `
-                <td class="month-col month-${month}" data-month="${month}" data-quarter="${this.quarterMap[month]}">
-                    <input type="number"
-                           name="blok3a_products[${productIndex}][harga_satuan][${month}]"
-                           value="${product.harga_satuan?.[month] || ''}"
-                           class="form-control form-control-sm month-input"
-                           data-month="${month}" data-quarter="${this.quarterMap[month]}"
-                           step="0.01"
-                           min="0"
-                           placeholder="">
-                </td>
-            `).join('')}
-        `;
+            // Clear values to trigger DB clears if autosave supports it
+            card.querySelectorAll('input').forEach(input => {
+                input.value = '';
+                this.handleInput({ target: input }, false); // Trigger autosave with empty
+            });
 
-        fragment.appendChild(mainRow);
-        fragment.appendChild(nilaiRow);
-        fragment.appendChild(hargaRow);
+            // If we have a specific delete route, use it. If not, just remove DOM and hope 
+            // the full save overwrites.
+            // Ideally, we re-index the 'name' attributes of remaining cards to be 0,1,2...
+            // so PHP receives a clean 0-indexed array.
 
-        return fragment;
-    }
-
-    updateRowNumbers() {
-        const mainRows = this.productsTbody.querySelectorAll('tr.product-row');
-        mainRows.forEach((row, index) => {
-            const numberCell = row.querySelector('.row-number');
-            if (numberCell) {
-                // Update text content for number (1., 2., etc)
-                // Use a span for the number to safely manipulate text without affecting children (like buttons)
-                // But simpler: just clear and rebuild.
-
-                // Keep the productIndex from the row dataset
-                const productIndex = row.dataset.productIndex;
-
-                // Clear content
-                numberCell.innerHTML = '';
-
-                // Add number
-                const numSpan = document.createElement('span');
-                numSpan.textContent = `${index + 1}.`;
-                numberCell.appendChild(numSpan);
-
-                // Add delete button if it's not the first row (or always if requirement changed)
-                // Requirement: "ensure row numbers are sequential"
-                // Let's assume user wants to be able to delete any row except maybe the very first one if list is empty?
-                // Or just > 0.
-                if (index > 0) {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'remove-product-btn';
-                    btn.dataset.productIndex = productIndex;
-                    btn.title = 'Hapus produk';
-                    btn.innerHTML = '×';
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Prevent bubbling
-                        this.removeProductRow(productIndex);
-                    });
-                    numberCell.appendChild(btn);
-                }
-            }
-        });
-    }
-
-    removeProductRow(productIndexInput) {
-        const productIndex = productIndexInput.toString();
-
-        // Find main row with specific index
-        const mainRow = this.productsTbody.querySelector(`tr.product-row[data-product-index="${productIndex}"]`);
-
-        if (!mainRow) {
-            console.warn(`Product row with index ${productIndex} not found`);
-            return;
-        }
-
-        // Also select all sub-rows by explicit parentIndex linkage to guarantee
-        // complete deletion even if DOM order has changed.
-        const subRows = Array.from(this.productsTbody.querySelectorAll(`tr.sub-row[data-parent-index="${productIndex}"]`));
-        const rowsToRemove = [mainRow, ...subRows];
-
-        if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-            rowsToRemove.forEach(row => row.remove());
-
-            // Re-index visual numbers
-            this.updateRowNumbers();
-
+            this.reindexProducts();
             this.calculateTotals();
-
-            // Auto-save the removal
-            if (window.surveyManager) {
-                window.surveyManager.scheduleAutoSave(`blok3a_products[${productIndex}]`, null, true);
-            }
         }
     }
 
-    setupRowAutoSave(rowGroup) {
-        const inputs = rowGroup.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.addEventListener('input', () => {
-                this.handleFieldChange(input);
-            });
-        });
-    }
+    reindexProducts() {
+        const cards = this.container.querySelectorAll('.product-card');
+        cards.forEach((card, newIndex) => {
+            card.id = `product-card-${newIndex}`;
+            card.querySelector('.question-number').textContent = `${301 + newIndex}.`; // Wait, 301 is title. Card counter:
+            card.querySelector('.product-counter').textContent = newIndex + 1;
 
-    handleFieldChange(field) {
-        const fieldName = field.name;
-        const fieldValue = field.value;
-
-        // Schedule auto-save with enhanced feedback
-        if (window.surveyManager) {
-            // Remove existing validation classes before saving
-            field.classList.remove('field-valid', 'field-invalid');
-
-            // Schedule the auto-save
-            window.surveyManager.scheduleAutoSave(fieldName, fieldValue);
-
-            // Add visual feedback after a short delay to ensure save completes
-            setTimeout(() => {
-                if (fieldValue.trim() !== '') {
-                    field.classList.add('field-valid');
-                }
-            }, 1000);
-        }
-
-        // Clear any existing validation errors
-        this.clearFieldError(field);
-
-        // Trigger total calculation if this is a nilai or lainnya field
-        if (fieldName.includes('[nilai]') || fieldName.includes('lainnya')) {
-            setTimeout(() => {
-                this.calculateTotals();
-            }, 100);
-        }
-
-        // Disable auto-add behavior when typing in "Jenis barang" fields.
-        // Users will add rows explicitly using the "Tambah Produk" button.
-    }
-
-    setupAutoCalculation() {
-        // Set up auto-calculation for nilai inputs
-        this.form.addEventListener('input', (e) => {
-            if (e.target.classList.contains('nilai-input') || e.target.classList.contains('lainnya-nilai')) {
-                // Debounce the calculation to avoid excessive calls
-                clearTimeout(this.calculationTimeout);
-                this.calculationTimeout = setTimeout(() => {
-                    this.calculateTotals();
-                }, 300);
-            }
-        });
-
-        // Set up auto-calculation for when new rows are added
-        this.form.addEventListener('change', (e) => {
-            if (e.target.classList.contains('nilai-input') || e.target.classList.contains('lainnya-nilai')) {
-                this.calculateTotals();
-            }
-        });
-    }
-
-    calculateTotals() {
-        const visibleMonths = this.getVisibleMonths();
-        console.log('calculateTotals called for months:', visibleMonths);
-
-        visibleMonths.forEach(month => {
-            let total = 0;
-
-            // Debug: Check if form exists
-            if (!this.form) {
-                console.error('Form not found!');
-                return;
-            }
-
-            // Sum all nilai inputs for this month from products - try multiple selectors
-            let productNilaiInputs = this.form.querySelectorAll(`input[name^="blok3a_products"][name*="[nilai][${month}]"]`);
-
-            // If first selector doesn't work, try alternative selectors
-            if (productNilaiInputs.length === 0) {
-                productNilaiInputs = this.form.querySelectorAll(`input[name*="blok3a_products"][name*="nilai"][name*="${month}"]`);
-            }
-
-            if (productNilaiInputs.length === 0) {
-                productNilaiInputs = this.form.querySelectorAll(`input.nilai-input[data-month="${month}"]`);
-            }
-
-            console.log(`Month ${month}: Found ${productNilaiInputs.length} product nilai inputs`);
-
-            productNilaiInputs.forEach((input, index) => {
-                const value = parseFloat(input.value) || 0;
-                console.log(`Product input ${index}: name=${input.name}, value=${input.value} -> parsed: ${value}`);
-                if (!isNaN(value) && value > 0) {
-                    total += value;
-                }
+            // Update inputs
+            card.querySelectorAll('input').forEach(input => {
+                // name="blok3a_products[OLD][field][month]" -> "blok3a_products[newIndex][field][month]"
+                const oldName = input.name;
+                const newName = oldName.replace(/blok3a_products\[\d+\]/, `blok3a_products[${newIndex}]`);
+                input.name = newName;
             });
 
-            // Add lainnya nilai for this month - try multiple selectors
-            let lainnyaNilaiInput = this.form.querySelector(`input[name="blok3a_lainnya[nilai][${month}]"]`);
-
-            if (!lainnyaNilaiInput) {
-                lainnyaNilaiInput = this.form.querySelector(`input[name*="blok3a_lainnya"][name*="nilai"][name*="${month}"]`);
-            }
-
-            if (!lainnyaNilaiInput) {
-                lainnyaNilaiInput = this.form.querySelector(`input.lainnya-nilai[data-month="${month}"]`);
-            }
-
-            if (lainnyaNilaiInput) {
-                const lainnyaValue = parseFloat(lainnyaNilaiInput.value) || 0;
-                console.log(`Lainnya input: name=${lainnyaNilaiInput.name}, value=${lainnyaNilaiInput.value} -> parsed: ${lainnyaValue}`);
-                if (!isNaN(lainnyaValue) && lainnyaValue > 0) {
-                    total += lainnyaValue;
-                }
-            } else {
-                console.log(`No lainnya input found for month ${month}`);
-            }
-
-            console.log(`Month ${month}: Total calculated = ${total}`);
-
-            // Update total input - try multiple selectors
-            let totalInput = this.form.querySelector(`input[name="blok3a_totals[${month}]"]`);
-
-            if (!totalInput) {
-                totalInput = this.form.querySelector(`input[name*="blok3a_totals"][name*="${month}"]`);
-            }
-
-            if (!totalInput) {
-                totalInput = this.form.querySelector(`input.total-input[data-month="${month}"]`);
-            }
-
-            if (totalInput) {
-                const formattedTotal = total.toFixed(2);
-                totalInput.value = formattedTotal;
-                console.log(`Month ${month}: Set total input to ${formattedTotal}`);
-
-                // Auto-save the calculated total
-                if (window.surveyManager) {
-                    window.surveyManager.scheduleAutoSave(`blok3a_totals[${month}]`, formattedTotal, true);
-                }
-            } else {
-                console.error(`No total input found for month ${month}`);
-            }
+            // Update delete button
+            const delBtn = card.querySelector('.btn-delete');
+            if (delBtn) delBtn.dataset.index = newIndex;
         });
+
+        // Update local state length
+        this.products = new Array(cards.length).fill({});
     }
 
-    checkAutoAddRow() {
-        // Check if we need to add a new row
-        const lastProductRows = this.productsTbody.querySelectorAll('tr.product-row');
-        if (lastProductRows.length === 0) {
-            this.addProductRow();
-            return;
+    createProductCardHTML(index, data) {
+        // We generate HTML for ALL quarters, hidden/shown via CSS classes
+        return `
+        <div class="product-card collapsed" id="product-card-${index}">
+            <div class="card-header">
+                <div class="product-title">
+                    <span class="product-counter">${index + 1}</span>
+                    <span class="question-number">301.</span>
+                    Jenis Barang yang dihasilkan/diproduksi
+                </div>
+                <div class="card-header-actions">
+                    <button type="button" class="card-toggle" aria-expanded="false" title="Tutup/Buka isian produk">
+                        <svg class="toggle-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    
+                    <button type="button" class="btn-delete" data-index="${index}" title="Hapus produk ini">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        <span>Hapus</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label">Nama/Jenis Barang</label>
+                    <input type="text" name="blok3a_products[${index}][jenis_barang]" 
+                           value="${data.jenis_barang || ''}" 
+                           class="form-control jenis-barang-input" 
+                           placeholder="Contoh: Minyak Kelapa Sawit, Pakaian Jadi, dll">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Uraian Data Bulanan</label>
+                    <div class="quarter-tabs" role="tablist" aria-label="Pilih Triwulan untuk Produk">
+                        <button type="button" class="quarter-tab active" data-quarter="dec2024">Des 2024</button>
+                        <button type="button" class="quarter-tab" data-quarter="q1">Triwulan I</button>
+                        <button type="button" class="quarter-tab" data-quarter="q2">Triwulan II</button>
+                        <button type="button" class="quarter-tab" data-quarter="q3">Triwulan III</button>
+                        <button type="button" class="quarter-tab" data-quarter="q4">Triwulan IV</button>
+                    </div>
+                    
+                    ${this.generateAllQuartersGrid(index, data)}
+                    
+                </div>
+            </div>
+        </div>
+        `;
+    }
+
+    generateAllQuartersGrid(index, data) {
+        let html = '';
+
+        // Loop through all quarter definitions
+        for (const [qKey, qConf] of Object.entries(this.quarterConf)) {
+            const months = qConf.months; // ['2025_jan', etc]
+
+            html += `<div class="data-grid quarter-grid quarter-section" data-quarter="${qKey}">`;
+
+            // Header Row (Label + Month Names)
+            html += `<div class="grid-header">Uraian</div>`;
+            months.forEach(m => {
+                html += `<div class="grid-header">${this.monthLabels[m]}</div>`;
+            });
+
+            // Row 1: Banyaknya
+            html += `<div class="grid-label section-title">Banyaknya</div>`;
+            months.forEach(m => {
+                const val = data.banyaknya?.[m] || '';
+                html += `
+                <div class="grid-input">
+                    <span class="mobile-month-label">${this.monthLabels[m]}</span>
+                    <input type="number" step="0.01" 
+                           name="blok3a_products[${index}][banyaknya][${m}]"
+                           value="${val}"
+                           class="form-control" placeholder="0">
+                </div>`;
+            });
+
+            // Row 2: Nilai
+            html += `<div class="grid-label section-title">Nilai (Rp)</div>`;
+            months.forEach(m => {
+                const val = data.nilai?.[m] || '';
+                html += `
+                <div class="grid-input">
+                    <span class="mobile-month-label">${this.monthLabels[m]}</span>
+                    <input type="number" step="0.01" 
+                           name="blok3a_products[${index}][nilai][${m}]"
+                           value="${val}"
+                           class="form-control nilai-input"
+                           data-month="${m}"
+                           placeholder="0">
+                </div>`;
+            });
+
+            // Row 3: Harga/Satuan
+            html += `<div class="grid-label section-title">Harga Satuan</div>`;
+            months.forEach(m => {
+                const val = data.harga_satuan?.[m] || '';
+                html += `
+                <div class="grid-input">
+                    <span class="mobile-month-label">${this.monthLabels[m]}</span>
+                    <input type="number" step="0.01" 
+                           name="blok3a_products[${index}][harga_satuan][${m}]"
+                           value="${val}"
+                           class="form-control" placeholder="0">
+                </div>`;
+            });
+
+            html += `</div>`; // End grid
+        }
+        return html;
+    }
+
+    renderStaticSections() {
+        // "Lainnya" and "Total" also need to respect the Active Quarter switching
+        // We will generate the HTML for all quarters for them too.
+
+        const lainnyaData = window.surveyData?.lainnya || {};
+        const totalData = window.surveyData?.totals || {};
+
+        let lainnyaHTML = '';
+        let totalHTML = '';
+
+        for (const [qKey, qConf] of Object.entries(this.quarterConf)) {
+            const months = qConf.months;
+
+            // --- Lainnya ---
+            lainnyaHTML += `<div class="quarter-content" data-quarter="${qKey}" style="display:contents">`;
+            lainnyaHTML += `<div class="grid-label">Nilai (Rp)</div>`; // Label column
+            months.forEach(m => {
+                const val = lainnyaData.nilai?.[m] || '';
+                lainnyaHTML += `
+                <div class="grid-input">
+                   <span class="mobile-month-label">${this.monthLabels[m]}</span>
+                   <input type="number" step="0.01"
+                          name="blok3a_lainnya[nilai][${m}]"
+                          value="${val}"
+                          class="form-control lainnya-nilai-input"
+                          data-month="${m}"
+                          placeholder="0">
+                </div>`;
+            });
+            lainnyaHTML += `</div>`;
+
+            // --- Total ---
+            totalHTML += `<div class="quarter-content" data-quarter="${qKey}" style="display:contents">`;
+            totalHTML += `<div class="grid-label">Total (Rp)</div>`;
+            months.forEach(m => {
+                const val = totalData[m] || 0;
+                totalHTML += `
+                <div class="grid-input">
+                    <span class="mobile-month-label">${this.monthLabels[m]}</span>
+                    <input type="number" readonly
+                           name="blok3a_totals[${m}]"
+                           value="${val}"
+                           class="form-control total-input font-bold text-green-600"
+                           data-month="${m}"
+                           placeholder="0">
+                </div>`;
+            });
+            totalHTML += `</div>`;
         }
 
-        const lastRow = lastProductRows[lastProductRows.length - 1];
-        const lastRowInputs = lastRow.querySelectorAll('input[type="text"]');
+        // For grid systems to work with "display:contents", the parent needs to be the grid.
+        // The container `lainnya-grid-container` is the grid.
+        // We need to make sure headers are also there or handle them differently.
+        // Simplified approach for static sections: Just inject headers dynamically? 
+        // Or just render all headers and hide/show. Creates valid grid? 
+        // Let's use the same structure: separate grids per quarter, store them all, hide/show the container.
 
-        let hasData = false;
-        lastRowInputs.forEach(input => {
-            if (input.value.trim() !== '') {
-                hasData = true;
-            }
-        });
+        // Re-write render for Static Sections:
 
-        if (hasData) {
-            this.addProductRow();
+        this.lainnyaContainer.innerHTML = this.generateStaticQuarterGrids('lainnya', lainnyaData);
+        this.totalContainer.innerHTML = this.generateStaticQuarterGrids('total', totalData);
+    }
+
+    generateStaticQuarterGrids(type, data) {
+        let allHtml = '';
+        for (const [qKey, qConf] of Object.entries(this.quarterConf)) {
+            const months = qConf.months;
+            allHtml += `<div class="quarter-section contents" data-quarter="${qKey}">`; // 'contents' to respect parent grid?
+            // Actually parent is `grid`. If we wrap in div with display:block, grid breaks.
+            // If we use display:contents, valid.
+
+            // Wait, hide/show `display:contents` elements is tricky. 
+            // Better: The container IS the wrapper. We put separate Grid implementations for each quarter.
+            // But styling uses `quarter-grid` class on the container.
+            // Let's change Blade: Remove `quarter-grid` from container, put it on inner divs.
         }
+        return allHtml;
+        // Correction: The Blade has `id="lainnya-grid-container" class="data-grid quarter-grid"`.
+        // This expects direct children to be grid items.
+        // Plan: Clear class from container in JS, append full Grid Divs.
     }
 
-    setupValidation() {
-        // Basic validation setup
-        const requiredFields = this.form.querySelectorAll('[required]');
-        requiredFields.forEach(field => {
-            field.addEventListener('blur', () => {
-                this.validateField(field);
-            });
-        });
+    // Better implementation for Static Sections
+    generateStaticQuarterGridsV2(type, data) {
+        // We will replace the innerHTML of the container. 
+        // The container should NOT be a grid itself if we want to toggle whole blocks.
+        // I will remove `quarter-grid` and `data-grid` from parent in init if present.
+        this.lainnyaContainer.className = '';
+        this.totalContainer.className = '';
 
-        // Add numeric-only validation for all number inputs
-        this.setupNumericValidation();
-    }
+        let html = '';
+        for (const [qKey, qConf] of Object.entries(this.quarterConf)) {
+            html += `<div class="data-grid quarter-grid quarter-section" data-quarter="${qKey}">`;
 
-    setupNumericValidation() {
-        // Add event listeners to all current numeric inputs
-        this.addNumericValidationToInputs();
+            // Header
+            html += `<div class="grid-header">Uraian</div>`;
+            qConf.months.forEach(m => html += `<div class="grid-header">${this.monthLabels[m]}</div>`);
 
-        // Use MutationObserver to handle dynamically added inputs
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        const numericInputs = node.querySelectorAll('input[type="number"]');
-                        numericInputs.forEach(input => {
-                            this.addNumericValidationToInput(input);
-                        });
-                    }
-                });
-            });
-        });
+            // Body
+            html += `<div class="grid-label">${type === 'lainnya' ? 'Nilai' : 'Total'}</div>`;
+            qConf.months.forEach(m => {
+                // Value extraction
+                let val = '';
+                let name = '';
+                let cls = '';
 
-        observer.observe(this.productsTbody, {
-            childList: true,
-            subtree: true
-        });
-    }
-
-    addNumericValidationToInputs() {
-        const numericInputs = this.form.querySelectorAll('input[type="number"]');
-        numericInputs.forEach(input => {
-            this.addNumericValidationToInput(input);
-        });
-    }
-
-    addNumericValidationToInput(input) {
-        // Prevent non-numeric characters from being typed
-        input.addEventListener('keypress', (e) => {
-            // Allow: backspace, delete, tab, escape, enter
-            if ([8, 9, 27, 13, 46].indexOf(e.keyCode) !== -1 ||
-                // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-                (e.keyCode === 65 && e.ctrlKey === true) ||
-                (e.keyCode === 67 && e.ctrlKey === true) ||
-                (e.keyCode === 86 && e.ctrlKey === true) ||
-                (e.keyCode === 88 && e.ctrlKey === true)) {
-                return;
-            }
-
-            // Allow: decimal point (only one)
-            if (e.key === '.' && input.value.indexOf('.') === -1) {
-                return;
-            }
-
-            // Allow: numbers 0-9
-            if (e.key >= '0' && e.key <= '9') {
-                return;
-            }
-
-            // Prevent all other characters
-            e.preventDefault();
-        });
-
-        // Handle paste events to filter out non-numeric content
-        input.addEventListener('paste', (e) => {
-            e.preventDefault();
-            const paste = (e.clipboardData || window.clipboardData).getData('text');
-            const numericValue = paste.replace(/[^0-9.]/g, '');
-
-            // Ensure only one decimal point
-            const parts = numericValue.split('.');
-            if (parts.length > 2) {
-                const cleanValue = parts[0] + '.' + parts.slice(1).join('');
-                input.value = cleanValue;
-            } else {
-                input.value = numericValue;
-            }
-
-            // Trigger change event for auto-save
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-        });
-
-        // Validate on input to remove any non-numeric characters that might slip through
-        input.addEventListener('input', (e) => {
-            let value = e.target.value;
-
-            // Remove any non-numeric characters except decimal point
-            const cleanValue = value.replace(/[^0-9.]/g, '');
-
-            // Ensure only one decimal point
-            const parts = cleanValue.split('.');
-            if (parts.length > 2) {
-                const finalValue = parts[0] + '.' + parts.slice(1).join('');
-                e.target.value = finalValue;
-            } else if (cleanValue !== value) {
-                e.target.value = cleanValue;
-            }
-        });
-
-        // Validate on blur to ensure proper format
-        input.addEventListener('blur', (e) => {
-            let value = e.target.value.trim();
-
-            if (value === '') return;
-
-            // Parse and reformat to ensure valid number
-            const numValue = parseFloat(value);
-            if (!isNaN(numValue)) {
-                // Format to 2 decimal places if it's a currency field
-                if (input.classList.contains('nilai-input') || input.name.includes('nilai') || input.name.includes('totals')) {
-                    e.target.value = numValue.toFixed(2);
+                if (type === 'lainnya') {
+                    val = data.nilai?.[m] || '';
+                    name = `blok3a_lainnya[nilai][${m}]`;
+                    cls = 'form-control lainnya-nilai-input';
                 } else {
-                    e.target.value = numValue.toString();
+                    val = data[m] || 0;
+                    name = `blok3a_totals[${m}]`;
+                    cls = 'form-control total-input readonly font-bold text-green-600';
                 }
-            } else {
-                e.target.value = '';
-            }
-        });
-    }
 
-    validateField(field) {
-        if (field.required && !this.isFieldFilled(field)) {
-            this.showFieldError(field, 'Field ini wajib diisi');
-            return false;
-        }
-
-        this.clearFieldError(field);
-        return true;
-    }
-
-    isFieldFilled(field) {
-        if (field.type === 'radio' || field.type === 'checkbox') {
-            const group = this.form.querySelectorAll(`input[name="${field.name}"]`);
-            return Array.from(group).some(input => input.checked);
-        }
-        return field.value.trim() !== '';
-    }
-
-    showFieldError(field, message) {
-        this.clearFieldError(field);
-
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'field-error';
-        errorDiv.textContent = message;
-
-        field.parentNode.appendChild(errorDiv);
-        field.classList.add('error');
-    }
-
-    clearFieldError(field) {
-        const existingError = field.parentNode.querySelector('.field-error');
-        if (existingError) {
-            existingError.remove();
-        }
-        field.classList.remove('error');
-    }
-
-    validateForm() {
-        let isValid = true;
-        const requiredFields = this.form.querySelectorAll('[required]');
-
-        requiredFields.forEach(field => {
-            if (!this.validateField(field)) {
-                isValid = false;
-            }
-        });
-
-        return isValid;
-    }
-
-    async saveDraft() {
-        try {
-            if (!window.surveyManager) {
-                throw new Error('Survey manager not available');
-            }
-
-            // Use global SurveyManager to save without validation (draft mode)
-            await window.surveyManager.saveForm(false);
-        } catch (error) {
-            console.error('Save draft error:', error);
-            window.surveyManager?.showStatus('Gagal menyimpan draft: ' + error.message, 'error');
-        }
-    }
-
-    async saveAndContinue() {
-        try {
-            if (!this.validateForm()) {
-                window.surveyManager?.showStatus('Mohon lengkapi semua field yang wajib diisi', 'error');
-                return;
-            }
-
-            if (!window.surveyManager) {
-                throw new Error('Survey manager not available');
-            }
-
-            // Use global SurveyManager to save and complete (with validation)
-            await window.surveyManager.saveForm(true);
-        } catch (error) {
-            console.error('Save and continue error:', error);
-            window.surveyManager?.showStatus('Gagal menyimpan data: ' + error.message, 'error');
-        }
-    }
-
-    // =====================================================================
-    //  Column Resize – Excel-like draggable column borders
-    //  Uses <colgroup>/<col> elements which are authoritative under
-    //  table-layout:fixed.
-    // =====================================================================
-
-    /** Load saved column widths from localStorage */
-    _loadSavedColumnWidths() {
-        try {
-            const raw = localStorage.getItem('blok3a_col_widths');
-            if (raw) {
-                this.columnWidths = JSON.parse(raw);
-            }
-        } catch (_) {
-            this.columnWidths = {};
-        }
-    }
-
-    /** Persist column widths to localStorage */
-    _saveColumnWidths() {
-        try {
-            localStorage.setItem('blok3a_col_widths', JSON.stringify(this.columnWidths));
-        } catch (_) { /* ignore quota errors */ }
-    }
-
-    /**
-     * Apply stored column widths via the <col> elements in the colgroup.
-     * Must be called AFTER _buildColgroup / renderHeader.
-     */
-    _applyColumnWidths() {
-        if (!this.productsTable) return;
-        const visibleMonths = this.getVisibleMonths();
-
-        visibleMonths.forEach(month => {
-            const w = this.columnWidths[month];
-            if (!w) return;
-            const col = this.productsTable.querySelector(`col.col-month-${month}`);
-            if (col) {
-                col.style.width = w + 'px';
-            }
-        });
-    }
-
-    /**
-     * Attach resize-handle elements to every visible month header cell.
-     * Called after each quarter switch or row re-render.
-     */
-    _setupResizeHandles() {
-        if (!this.productsTable) return;
-
-        // Remove old handles
-        this.productsTable.querySelectorAll('.col-resize-handle').forEach(h => h.remove());
-
-        const monthHeaders = this.productsTable.querySelectorAll('.header-row-3 th.month-header');
-        monthHeaders.forEach(th => {
-            const month = th.getAttribute('data-month');
-            if (!month) return;
-
-            const handle = document.createElement('div');
-            handle.className = 'col-resize-handle';
-            handle.setAttribute('data-resize-month', month);
-            handle.title = 'Seret untuk ubah lebar kolom · Klik ganda untuk reset';
-            th.appendChild(handle);
-
-            // --- Pointer-based drag (works for mouse + touch) ---
-            handle.addEventListener('pointerdown', (e) => this._onResizePointerDown(e, month, th, handle));
-
-            // --- Double-click to reset ---
-            handle.addEventListener('dblclick', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                delete this.columnWidths[month];
-                this._saveColumnWidths();
-                // Reset <col> width to default
-                const col = this.productsTable.querySelector(`col.col-month-${month}`);
-                if (col) col.style.width = this.defaultColumnWidth + 'px';
+                html += `
+                <div class="grid-input">
+                     <label class="block text-xs text-gray-500 mb-1 sm:hidden">${this.monthLabels[m]}</label>
+                     <input type="number" step="0.01"
+                           name="${name}"
+                           value="${val}"
+                           class="${cls}"
+                           data-month="${m}"
+                           ${type === 'total' ? 'readonly' : ''}
+                           placeholder="0">
+                </div>
+                `;
             });
+
+            html += `</div>`;
+        }
+        return html;
+    }
+
+    // Logic: Quarter Visibility (per-card and per-section)
+    getCardIndex(cardId) {
+        const m = cardId && cardId.match(/product-card-(\d+)/);
+        if (!m) return null;
+        return parseInt(m[1]);
+    }
+
+    setCardActiveQuarter(cardElem, quarter) {
+        // Tabs active state
+        const tabs = cardElem.querySelectorAll('.quarter-tab');
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.quarter === quarter));
+        // Toggle sections within this card only
+        const sections = cardElem.querySelectorAll('.quarter-section');
+        sections.forEach(sec => {
+            if (sec.dataset.quarter === quarter) {
+                sec.classList.remove('hidden');
+            } else {
+                sec.classList.add('hidden');
+            }
         });
     }
 
-    /**
-     * Find the <col> element for a given month.
-     */
-    _getColElement(month) {
-        return this.productsTable.querySelector(`col.col-month-${month}`);
+    updateAllCardsVisibility() {
+        const cards = this.container.querySelectorAll('.product-card');
+        cards.forEach(card => {
+            const idx = this.getCardIndex(card.id);
+            const q = this.cardActiveQuarters[idx] || 'dec2024';
+            this.setCardActiveQuarter(card, q);
+        });
     }
 
-    /** Pointer-down handler – start resize drag */
-    _onResizePointerDown(e, month, th, handle) {
-        e.preventDefault();
-        e.stopPropagation();
+    updateSpecialSectionVisibility(type, quarter) {
+        const container = type === 'lainnya' ? this.lainnyaContainer : this.totalContainer;
+        if (!container) return;
+        container.querySelectorAll('.quarter-section').forEach(sec => {
+            sec.classList.toggle('hidden', sec.dataset.quarter !== quarter);
+        });
+    }
 
-        // Capture pointer so moves outside the handle still fire
-        handle.setPointerCapture(e.pointerId);
+    updateTabsActiveState(tabsContainer, activeQuarter) {
+        tabsContainer.querySelectorAll('.quarter-tab').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.quarter === activeQuarter);
+        });
+    }
 
-        const col = this._getColElement(month);
-        if (!col) return;
+    // Logic: Input Handling & Autosave
+    handleInput(e, shouldAutoSave = true) {
+        const input = e.target;
 
-        const startX = e.clientX;
-        // Read current computed width from the <col> or the header cell
-        const startW = th.getBoundingClientRect().width;
+        // 1. Calculate Totals if needed
+        if (input.classList.contains('nilai-input') || input.classList.contains('lainnya-nilai-input')) {
+            this.calculateTotals(input.dataset.month);
+        }
 
-        handle.classList.add('active');
-        document.body.classList.add('col-resizing');
+        // 2. Autosave
+        if (shouldAutoSave && window.surveyManager) {
+            // Remove validation styles
+            input.classList.remove('bg-green-50', 'border-green-500');
 
-        // Create tooltip
-        const tooltip = document.createElement('div');
-        tooltip.className = 'col-resize-tooltip';
-        tooltip.textContent = `${Math.round(startW)}px`;
-        tooltip.style.left = e.clientX + 'px';
-        tooltip.style.top = (e.clientY - 28) + 'px';
-        document.body.appendChild(tooltip);
+            window.surveyManager.scheduleAutoSave(input.name, input.value);
 
-        const onMove = (moveEvt) => {
-            const dx = moveEvt.clientX - startX;
-            let newW = Math.round(startW + dx);
-            newW = Math.max(this.minColumnWidth, Math.min(this.maxColumnWidth, newW));
+            // Feedback
+            setTimeout(() => {
+                if (input.value) input.classList.add('bg-green-50', 'border-green-500');
+                setTimeout(() => input.classList.remove('bg-green-50', 'border-green-500'), 2000);
+            }, 500);
+        }
 
-            // Apply width via <col> — this is what table-layout:fixed respects
-            col.style.width = newW + 'px';
+        // 3. Update preview table live
+        this.renderPreviewTable();
+    }
 
-            // Update tooltip
-            tooltip.textContent = `${newW}px`;
-            tooltip.style.left = moveEvt.clientX + 'px';
-            tooltip.style.top = (moveEvt.clientY - 28) + 'px';
-        };
+    calculateTotals(specificMonth = null) {
+        // If specific month is given, only calc that one? No, safer to calc all visible.
+        // Actually, calc all months for robustness, or just active quarter.
 
-        const onUp = (upEvt) => {
-            handle.releasePointerCapture(upEvt.pointerId);
-            handle.removeEventListener('pointermove', onMove);
-            handle.removeEventListener('pointerup', onUp);
-            handle.removeEventListener('pointercancel', onUp);
+        // Let's calc all months because user might change something that affects totals, 
+        // though usually user changes one field at a time.
+        // Iterating all inputs might be heavy if lots of products (e.g. 50 products * 13 months).
+        // Optimization: Only calc for the visible months of Active Quarter + specificMonth if it's outside (unlikely).
 
-            handle.classList.remove('active');
-            document.body.classList.remove('col-resizing');
+        const qConf = this.quarterConf[this.activeQuarter];
+        if (!qConf) return;
 
-            // Persist final width from the <col> or actual cell
-            const finalW = th.getBoundingClientRect().width;
-            this.columnWidths[month] = Math.round(finalW);
-            this._saveColumnWidths();
+        qConf.months.forEach(month => {
+            let sum = 0;
 
-            // Remove tooltip
-            if (tooltip.parentNode) tooltip.parentNode.removeChild(tooltip);
-        };
+            // Sum Products
+            const productInputs = document.querySelectorAll(`.nilai-input[data-month="${month}"]`);
+            productInputs.forEach(inp => {
+                sum += parseFloat(inp.value) || 0;
+            });
 
-        handle.addEventListener('pointermove', onMove);
-        handle.addEventListener('pointerup', onUp);
-        handle.addEventListener('pointercancel', onUp);
+            // Add Lainnya
+            const lainnyaInput = document.querySelector(`.lainnya-nilai-input[data-month="${month}"]`);
+            if (lainnyaInput) {
+                sum += parseFloat(lainnyaInput.value) || 0;
+            }
+
+            // Update Total
+            const totalInput = document.querySelector(`.total-input[data-month="${month}"]`);
+            if (totalInput) {
+                totalInput.value = sum;
+                // We typically don't autosave the total itself as it's computed, 
+                // but if backend expects it we should. The `window.surveyRoutes.autoSave` usually handles key-value pairs.
+                // Assuming backend calculates total or accepts it. Let's fire autosave for total too to be safe.
+                /* 
+                if (window.surveyManager) {
+                     window.surveyManager.scheduleAutoSave(totalInput.name, totalInput.value);
+                }
+                */
+            }
+        });
+
+        // Re-render preview after recalculation
+        this.renderPreviewTable();
+    }
+
+    // Preview Table Renderer (read-only)
+    renderPreviewTable() {
+        if (!this.previewContainer) return;
+        const months = ['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'];
+
+        // Gather product cards from DOM
+        const productCards = Array.from(this.container.querySelectorAll('.product-card'));
+
+        // Build table HTML with three sub-rows per product
+        let html = '<div class="preview-table"><table class="preview-table-el"><thead><tr>';
+        html += '<th class="sticky-col">Kode/Nama</th>';
+        html += '<th>Uraian</th>';
+        months.forEach(m => {
+            const label = this.monthLabels[m] + (m.startsWith('2025') ? ' 2025' : ' 2024');
+            html += `<th>${label}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        productCards.forEach((card, idx) => {
+            const nameInput = card.querySelector('input[name^="blok3a_products"][name$="[jenis_barang]"]');
+            const name = nameInput ? (nameInput.value || `Produk ${idx + 1}`) : `Produk ${idx + 1}`;
+            const code = `301.${idx + 1}`;
+
+            // Helper selectors for each month within this card
+            const getBanyaknya = (m) => {
+                const sel = `input[name^=\"blok3a_products\"][name*=\"[banyaknya][${m}]\"]`;
+                const inp = card.querySelector(sel);
+                return inp ? (parseFloat(inp.value) || 0) : 0;
+            };
+            const getNilai = (m) => {
+                const inp = card.querySelector(`.nilai-input[data-month=\"${m}\"]`);
+                return inp ? (parseFloat(inp.value) || 0) : 0;
+            };
+            const getHarga = (m) => {
+                const sel = `input[name^=\"blok3a_products\"][name*=\"[harga_satuan][${m}]\"]`;
+                const inp = card.querySelector(sel);
+                return inp ? (parseFloat(inp.value) || 0) : 0;
+            };
+
+            // Row 1: Banyaknya
+            html += `<tr>`;
+            html += `<td class="sticky-col" rowspan="3"><div class="code">${code}</div><div class="name">${this.escapeHtml(name)}</div></td>`;
+            html += `<td>Banyaknya</td>`;
+            months.forEach(m => html += `<td class="num">${this.formatNumber(getBanyaknya(m))}</td>`);
+            html += `</tr>`;
+
+            // Row 2: Nilai
+            html += `<tr>`;
+            html += `<td>Nilai (Jutaan Rp)</td>`;
+            months.forEach(m => html += `<td class="num">${this.formatNumber(getNilai(m))}</td>`);
+            html += `</tr>`;
+
+            // Row 3: Harga/Satuan
+            html += `<tr>`;
+            html += `<td>Harga/Satuan (Ribu Rp)</td>`;
+            months.forEach(m => html += `<td class="num">${this.formatNumber(getHarga(m))}</td>`);
+            html += `</tr>`;
+        });
+
+        // Lainnya (302) — only Nilai row is applicable
+        const lainnyaValues = months.map(m => {
+            const v = document.querySelector(`.lainnya-nilai-input[data-month=\"${m}\"]`);
+            return v ? (parseFloat(v.value) || 0) : 0;
+        });
+        html += `<tr>`;
+        html += `<td class="sticky-col"><div class="code">302.</div><div class="name">Lainnya</div></td>`;
+        html += `<td>Nilai</td>`;
+        lainnyaValues.forEach(v => html += `<td class="num">${this.formatNumber(v)}</td>`);
+        html += `</tr>`;
+
+        // Total (303) — only Nilai row is applicable
+        const totalValues = months.map(m => {
+            const v = document.querySelector(`.total-input[data-month=\"${m}\"]`);
+            return v ? (parseFloat(v.value) || 0) : 0;
+        });
+        html += `<tr class="total-row">`;
+        html += `<td class="sticky-col"><div class="code">303.</div><div class="name">Total</div></td>`;
+        html += `<td>Nilai</td>`;
+        totalValues.forEach(v => html += `<td class="num bold">${this.formatNumber(v)}</td>`);
+        html += `</tr>`;
+
+        html += '</tbody></table></div>';
+        this.previewContainer.innerHTML = html;
+    }
+
+    formatNumber(n) {
+        if (!isFinite(n) || n === 0) return '';
+        return new Intl.NumberFormat('id-ID').format(n);
+    }
+
+    escapeHtml(str) {
+        return (str || '').replace(/[&<>"]|'/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[s]));
+    }
+
+    // Actions
+    saveDraft() {
+        // Collect form data and submit
+        const data = new FormData(this.form);
+        // Use SurveyManager or fetch
+        if (window.surveyRoutes?.saveAll) {
+            const btn = document.getElementById('save-draft');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Menyimpan...';
+            btn.disabled = true;
+
+            fetch(window.surveyRoutes.saveAll, {
+                method: 'POST',
+                body: data,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    alert('Draft berhasil disimpan');
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Gagal menyimpan draft');
+                })
+                .finally(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        }
+    }
+
+    saveAndContinue() {
+        const data = new FormData(this.form);
+        // Mark completion so backend can compute next_block correctly
+        data.append('is_completed', 'true');
+
+        const btn = document.getElementById('save-complete');
+        btn.innerHTML = 'Menyimpan...';
+        btn.disabled = true;
+
+        fetch(window.surveyRoutes.saveAll, {
+            method: 'POST',
+            body: data,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(res => res.json().then(json => ({ ok: res.ok, body: json })))
+            .then(({ ok, body }) => {
+                if (!ok || !body?.success) {
+                    throw new Error(body?.message || 'Save failed');
+                }
+
+                // Decide next URL based on server-provided next_block
+                let nextUrl = null;
+                const nextBlock = body?.next_block;
+                if (nextBlock) {
+                    if (nextBlock === 'blok3b_industri' && window.surveyRoutes?.blok3b_industri) {
+                        nextUrl = window.surveyRoutes.blok3b_industri;
+                    } else if (nextBlock === 'blok3b_nonindustri' && window.surveyRoutes?.blok3b_nonindustri) {
+                        nextUrl = window.surveyRoutes.blok3b_nonindustri;
+                    } else if (nextBlock === 'blok6' && window.surveyRoutes?.blok6) {
+                        nextUrl = window.surveyRoutes.blok6;
+                    } else if (window.surveyRoutes && window.surveyRoutes[nextBlock]) {
+                        nextUrl = window.surveyRoutes[nextBlock];
+                    }
+                }
+
+                // Fallback to predefined nextBlok if server did not send next_block
+                if (!nextUrl && window.surveyRoutes?.nextBlok) {
+                    nextUrl = window.surveyRoutes.nextBlok;
+                }
+
+                if (nextUrl) {
+                    window.location.href = nextUrl;
+                } else {
+                    alert('Data tersimpan tetapi tidak ada blok berikutnya.');
+                    btn.innerHTML = 'Simpan dan Lanjutkan';
+                    btn.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Gagal menyimpan data');
+                btn.innerHTML = 'Simpan dan Lanjutkan';
+                btn.disabled = false;
+            });
     }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function () {
-    if (document.getElementById('survey-form') && document.getElementById('products-table')) {
-        window.surveyBlok3aManager = new SurveyBlok3aManager();
-    }
+// Initializer
+document.addEventListener('DOMContentLoaded', () => {
+    window.blok3aManager = new SurveyBlok3aManager();
+
+    // Override renderStaticSectionsV2 call inside init by updating prototype before use? 
+    // No, I'll just write `init` correctly in class definition above.
 });

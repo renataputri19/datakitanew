@@ -14,6 +14,7 @@ use App\Http\Controllers\BPS\VideoController as BPSVideoController;
 use App\Http\Controllers\BPS\DashboardController as BPSDashboardController;
 use App\Http\Controllers\BPS\UserController as BPSUserController;
 use App\Http\Controllers\SurveyController;
+use App\Http\Controllers\SibstrEditController;
 use App\Http\Controllers\TemporarySurveyController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\FormController;
@@ -224,6 +225,60 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/blok6/save-all', [SurveyController::class, 'saveAllBlok6'])->name('blok6.save');
             Route::get('/blok6/status', [SurveyController::class, 'getStatusBlok6'])->name('blok6.status');
             Route::post('/blok6/finish', [SurveyController::class, 'finishSurvey'])->name('blok6.finish');
+        });
+
+        // ── SIBSTR EDIT FLOW (separate routes for editing completed surveys) ──
+        Route::prefix('sibstr/edit')->name('sibstr.edit.')->group(function () {
+            // Page routes
+            Route::get('/blok1', [SibstrEditController::class, 'blok1'])->name('blok1');
+            Route::get('/blok2', [SibstrEditController::class, 'blok2'])->name('blok2');
+            Route::get('/blok3a', [SibstrEditController::class, 'blok3a'])->name('blok3a');
+            Route::get('/blok3b-industri', [SibstrEditController::class, 'blok3bIndustri'])->name('blok3b.industri');
+            Route::get('/blok3b-nonindustri', [SibstrEditController::class, 'blok3bNonIndustri'])->name('blok3b.nonindustri');
+            Route::get('/blok4', [SibstrEditController::class, 'blok4'])->name('blok4');
+            Route::get('/blok5', [SibstrEditController::class, 'blok5'])->name('blok5');
+            Route::get('/blok6', [SibstrEditController::class, 'blok6'])->name('blok6');
+
+            // Blok 1 AJAX
+            Route::post('/blok1/auto-save', [SurveyController::class, 'autoSave'])->name('autosave');
+            Route::post('/blok1/save-all', [SibstrEditController::class, 'saveAllBlok1'])->name('save');
+            Route::get('/blok1/status', [SurveyController::class, 'getStatus'])->name('status');
+
+            // Blok 2 AJAX
+            Route::post('/blok2/auto-save', [SurveyController::class, 'autoSaveBlok2'])->name('blok2.autosave');
+            Route::post('/blok2/save-all', [SibstrEditController::class, 'saveAllBlok2'])->name('blok2.save');
+            Route::get('/blok2/status', [SurveyController::class, 'getStatusBlok2'])->name('blok2.status');
+
+            // Blok 3A AJAX
+            Route::post('/blok3a/auto-save', [SurveyController::class, 'autoSaveBlok3a'])->name('blok3a.autosave');
+            Route::post('/blok3a/save-all', [SibstrEditController::class, 'saveAllBlok3a'])->name('blok3a.save');
+            Route::get('/blok3a/status', [SurveyController::class, 'getStatusBlok3a'])->name('blok3a.status');
+
+            // Blok 3B Industri AJAX
+            Route::post('/blok3b-industri/auto-save', [SurveyController::class, 'autoSaveBlok3bIndustri'])->name('blok3b.industri.autosave');
+            Route::post('/blok3b-industri/save-all', [SibstrEditController::class, 'saveAllBlok3bIndustri'])->name('blok3b.industri.save');
+            Route::get('/blok3b-industri/status', [SurveyController::class, 'getStatusBlok3bIndustri'])->name('blok3b.industri.status');
+
+            // Blok 3B Non-Industri AJAX
+            Route::post('/blok3b-nonindustri/auto-save', [SurveyController::class, 'autoSaveBlok3bNonIndustri'])->name('blok3b.nonindustri.autosave');
+            Route::post('/blok3b-nonindustri/save-all', [SibstrEditController::class, 'saveAllBlok3bNonIndustri'])->name('blok3b.nonindustri.save');
+            Route::get('/blok3b-nonindustri/status', [SurveyController::class, 'getStatusBlok3bNonIndustri'])->name('blok3b.nonindustri.status');
+
+            // Blok 4 AJAX
+            Route::post('/blok4/auto-save', [SurveyController::class, 'autoSaveBlok4'])->name('blok4.autosave');
+            Route::post('/blok4/save-all', [SibstrEditController::class, 'saveAllBlok4'])->name('blok4.save');
+            Route::get('/blok4/status', [SurveyController::class, 'getStatusBlok4'])->name('blok4.status');
+
+            // Blok 5 AJAX
+            Route::post('/blok5/auto-save', [SurveyController::class, 'autoSaveBlok5'])->name('blok5.autosave');
+            Route::post('/blok5/save-all', [SibstrEditController::class, 'saveAllBlok5'])->name('blok5.save');
+            Route::get('/blok5/status', [SurveyController::class, 'getStatusBlok5'])->name('blok5.status');
+
+            // Blok 6 AJAX
+            Route::post('/blok6/auto-save', [SurveyController::class, 'autoSaveBlok6'])->name('blok6.autosave');
+            Route::post('/blok6/save-all', [SibstrEditController::class, 'saveAllBlok6'])->name('blok6.save');
+            Route::get('/blok6/status', [SurveyController::class, 'getStatusBlok6'])->name('blok6.status');
+            Route::post('/blok6/finish', [SibstrEditController::class, 'finishSurvey'])->name('blok6.finish');
         });
     });
 

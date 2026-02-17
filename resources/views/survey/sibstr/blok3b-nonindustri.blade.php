@@ -9,6 +9,10 @@
 
 @section('content')
 <div class="survey-container">
+    @if(!empty($isEditMode))
+    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
+    @endif
+
     <!-- Survey Header -->
     <div class="survey-header" data-aos="fade-up">
         <h1 class="survey-title">
@@ -326,12 +330,12 @@
             <div class="form-subgrid">
                 <div class="form-subrow">
                             <label class="form-sublabel" for="q309_awal_display">a. Satu triwulan yang lalu - Persediaan Awal Periode (jumlah 307.a + 308.a + 309.a)</label>
-                            <input type="text" id="q309_awal_display" class="form-control currency-display readonly" placeholder="0" data-target-name="blok3b_nonindustri[q309a]" readonly style="background-color:#e9ecef">
+                            <input type="text" id="q309_awal_display" class="form-control currency-display readonly" placeholder="0" data-target-name="blok3b_nonindustri[q309a]" readonly disabled style="background-color:#e9ecef">
                             <input type="hidden" name="blok3b_nonindustri[q309a]" id="q309_awal" value="{{ $surveyResponse->blok3b_nonindustri_data['q309a'] ?? '' }}">
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel" for="q309_akhir_display">b. Satu triwulan yang lalu - Persediaan Akhir Periode (jumlah 307.b + 308.b + 309.b)</label>
-                            <input type="text" id="q309_akhir_display" class="form-control currency-display readonly" placeholder="0" data-target-name="blok3b_nonindustri[q309b]" readonly style="background-color:#e9ecef">
+                            <input type="text" id="q309_akhir_display" class="form-control currency-display readonly" placeholder="0" data-target-name="blok3b_nonindustri[q309b]" readonly disabled style="background-color:#e9ecef">
                             <input type="hidden" name="blok3b_nonindustri[q309b]" id="q309_akhir" value="{{ $surveyResponse->blok3b_nonindustri_data['q309b'] ?? '' }}">
                 </div>
                         <div class="form-subrow">
@@ -718,7 +722,7 @@
 @push('scripts')
 <script>
 // Set up survey routes for the JavaScript module
-window.surveyRoutes = {
+window.surveyRoutes = @json($editRoutes ?? null) || {
     autoSave: '{{ route("survey.sibstr.blok3b.nonindustri.autosave") }}',
     saveAll: '{{ route("survey.sibstr.blok3b.nonindustri.save") }}',
     status: '{{ route("survey.sibstr.blok3b.nonindustri.status") }}',

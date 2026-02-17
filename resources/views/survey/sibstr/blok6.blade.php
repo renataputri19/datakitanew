@@ -10,6 +10,10 @@
 
 @section('content')
 <div class="survey-container">
+    @if(!empty($isEditMode))
+    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
+    @endif
+
     <!-- Survey Header -->
     <div class="survey-header" data-aos="fade-up">
         <h1 class="survey-title">
@@ -60,7 +64,7 @@
         <!-- Form Actions -->
         <div class="form-actions">
             <div class="flex items-center gap-4">
-                <a href="{{ ($jaringanUnitKegiatan === 'unit_pembantu_penunjang') ? route('survey.sibstr.blok2') : (($kondisiPerusahaan === 'masih_aktif') ? route('survey.sibstr.blok5') : route('survey.sibstr.blok2')) }}" id="back-to-blok5" class="btn btn-secondary">
+                <a href="@if(!empty($isEditMode)){{ ($jaringanUnitKegiatan === 'unit_pembantu_penunjang') ? route('survey.sibstr.edit.blok2') : (($kondisiPerusahaan === 'masih_aktif') ? route('survey.sibstr.edit.blok5') : route('survey.sibstr.edit.blok2')) }}@else{{ ($jaringanUnitKegiatan === 'unit_pembantu_penunjang') ? route('survey.sibstr.blok2') : (($kondisiPerusahaan === 'masih_aktif') ? route('survey.sibstr.blok5') : route('survey.sibstr.blok2')) }}@endif" id="back-to-blok5" class="btn btn-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="15,18 9,12 15,6"></polyline>
                     </svg>
@@ -94,7 +98,7 @@
 @push('scripts')
 <script>
 // Set up survey routes for the JavaScript module
-window.surveyRoutes = {
+window.surveyRoutes = @json($editRoutes ?? null) || {
     autoSave: '{{ route("survey.sibstr.blok6.autosave") }}',
     saveAll: '{{ route("survey.sibstr.blok6.save") }}',
     status: '{{ route("survey.sibstr.blok6.status") }}',

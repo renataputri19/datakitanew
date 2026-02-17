@@ -184,32 +184,45 @@
             return; // Don't add loading state to settings page buttons
         }
 
-        const buttons = document.querySelectorAll('button[type="submit"]:not([data-no-loading]), a[data-loading]');
-        console.log('Initializing button loading for', buttons.length, 'buttons');
+        // Apply loading state on form submission to avoid cancelling native submit
+        const forms = document.querySelectorAll('form:not([data-no-loading])');
+        forms.forEach(form => {
+            // Skip logout forms entirely
+            if (form.action && form.action.includes('/logout')) return;
 
-        buttons.forEach(button => {
-            // Skip logout buttons - they need to submit immediately
-            if (button.closest('form')?.action?.includes('/logout')) {
-                console.log('Skipping logout button');
-                return;
-            }
+            form.addEventListener('submit', function(e) {
+                // If some other handler prevented submission (e.g., validation), do nothing
+                if (e.defaultPrevented) return;
 
-            button.addEventListener('click', function(e) {
-                if (this.form && !this.form.checkValidity()) return;
+                // Determine the submitter button (supported in modern browsers)
+                const submitter = e.submitter || form.querySelector('button[type="submit"], input[type="submit"]');
+                if (!submitter) return;
 
-                // Don't prevent default - let the form submit naturally
-                this.classList.add('loading');
-                this.disabled = true;
+                // Respect opt-out on the submitter
+                if (submitter.matches('[data-no-loading]')) return;
 
-                const originalText = this.innerHTML;
-                this.innerHTML = '<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Loading...';
+                // Add loading state without preventing default form submission
+                submitter.classList.add('loading');
+                submitter.disabled = true;
+                const originalText = submitter.innerHTML;
+                submitter.setAttribute('data-original-html', originalText);
+                submitter.innerHTML = '<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Loading...';
 
-                // Reset after 10 seconds as fallback
+                // Reset after 10 seconds as fallback if navigation did not happen
                 setTimeout(() => {
-                    this.classList.remove('loading');
-                    this.disabled = false;
-                    this.innerHTML = originalText;
+                    if (!document.body.contains(submitter)) return; // likely navigated
+                    submitter.classList.remove('loading');
+                    submitter.disabled = false;
+                    submitter.innerHTML = submitter.getAttribute('data-original-html') || originalText;
                 }, 10000);
+            });
+        });
+
+        // Also support anchor elements with explicit loading behavior
+        const loadingLinks = document.querySelectorAll('a[data-loading]');
+        loadingLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                this.classList.add('loading');
             });
         });
     }

@@ -10,6 +10,10 @@
 
 @section('content')
 <div class="survey-container">
+    @if(!empty($isEditMode))
+    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
+    @endif
+
     <!-- Survey Header -->
     <div class="survey-header" data-aos="fade-up">
         <h1 class="survey-title">
@@ -666,7 +670,7 @@
 @push('scripts')
 <script>
 // Set up survey routes for the JavaScript module
-window.surveyRoutes = {
+window.surveyRoutes = @json($editRoutes ?? null) || {
     autoSave: '{{ route("survey.sibstr.blok2.autosave") }}',
     saveAll: '{{ route("survey.sibstr.blok2.save") }}',
     status: '{{ route("survey.sibstr.blok2.status") }}',
