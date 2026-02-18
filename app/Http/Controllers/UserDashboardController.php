@@ -9,6 +9,8 @@ use App\Models\News;
 use App\Models\Institution;
 use App\Models\Video;
 use App\Models\SurveyResponse;
+use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class UserDashboardController extends Controller
 {
@@ -123,6 +125,40 @@ class UserDashboardController extends Controller
             'isCompleted' => $isCompleted,
             'completedAt' => $completedAt,
         ]);
+    }
+
+    /**
+     * Generate and download SIBSTR survey completion certificate.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function downloadSibstrCertificate()
+    {
+        $user = Auth::user();
+
+        // Fetch the unified SIBSTR response for the user
+        $response = SurveyResponse::where('user_id', $user->id)
+            ->where('survey_type', 'sibstr')
+            ->orderBy('updated_at', 'desc')
+            ->firstOrFail();
+
+        // Check if completed. If not, redirect back with error.
+        if (!$response->is_completed) {
+            return redirect()->route('dashboard.surveys.sibstr.results')->with('error', 'Survei belum selesai.');
+        }
+
+        $completedAt = $response->last_saved_at ?? now();
+
+        $data = [
+            'user' => $user,
+            'response' => $response,
+            'completedAt' => $completedAt,
+        ];
+
+        $pdf = Pdf::loadView('user-dashboard.sibstr-certificate', $data);
+        
+        // Return download response
+        return $pdf->download('Bukti-Penyelesaian-SIBSTR-' . Str::slug($response->nama_perusahaan ?? 'Perusahaan') . '.pdf');
     }
 
     public function updateProfile(Request $request)

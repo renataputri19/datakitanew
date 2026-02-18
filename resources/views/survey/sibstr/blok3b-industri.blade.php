@@ -304,12 +304,12 @@
                             <input type="hidden" name="blok3b_industri[q311b]" id="q311b" value="{{ $surveyResponse->blok3b_industri_data['q311b'] ?? '' }}" required>
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q311b1_display">b.1 Total upah dan gaji, serta jaminan sosial pegawai produksi selama tahun 2025</label>
+                            <label class="form-sublabel" for="q311b1_display">b.1 Total upah dan gaji, serta jaminan sosial pegawai <strong>produksi</strong> selama tahun 2025</label>
                             <input type="text" id="q311b1_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_industri[q311b1]" required>
                             <input type="hidden" name="blok3b_industri[q311b1]" id="q311b1" value="{{ $surveyResponse->blok3b_industri_data['q311b1'] ?? '' }}" required>
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q311b2_display">b.2 Total upah dan gaji, serta jaminan sosial selain pegawai produksi selama tahun 2025</label>
+                            <label class="form-sublabel" for="q311b2_display">b.2 Total upah dan gaji, serta jaminan sosial <strong>selain pegawai produksi</strong> selama tahun 2025</label>
                             <input type="text" id="q311b2_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_industri[q311b2]" required>
                             <input type="hidden" name="blok3b_industri[q311b2]" id="q311b2" value="{{ $surveyResponse->blok3b_industri_data['q311b2'] ?? '' }}" required>
                         </div>

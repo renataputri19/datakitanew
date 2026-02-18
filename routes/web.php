@@ -157,6 +157,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Survey Results (SIBSTR) page under dashboard
     Route::get('/dashboard/surveys/sibstr/results', [UserDashboardController::class, 'sibstrResults'])->name('dashboard.surveys.sibstr.results');
+    Route::get('/dashboard/surveys/sibstr/download-certificate', [UserDashboardController::class, 'downloadSibstrCertificate'])->name('dashboard.surveys.sibstr.download-certificate');
 
     // Legacy user dashboard routes (still available for backward compatibility)
     Route::get('/userdashboard', [UserDashboardController::class, 'index'])->name('userdashboard');

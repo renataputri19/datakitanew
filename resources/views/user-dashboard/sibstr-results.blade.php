@@ -32,12 +32,20 @@
       Ringkasan Hasil SIBSTR
     </h2>
     @if($isCompleted)
-      <a href="{{ route('survey.sibstr.edit.blok1') }}" class="ud-btn ud-btn-primary">
+      <div class="flex items-center gap-3">
+        <a href="{{ route('dashboard.surveys.sibstr.download-certificate') }}" class="ud-btn bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
           </svg>
-          Edit Survei
-      </a>
+          Unduh Bukti Penyelesaian
+        </a>
+        <a href="{{ route('survey.sibstr.edit.blok1') }}" class="ud-btn ud-btn-primary">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14M5 12h14"></path>
+            </svg>
+            Edit Survei
+        </a>
+      </div>
     @endif
   </div>
 

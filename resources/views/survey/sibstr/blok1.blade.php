@@ -36,30 +36,7 @@
     <form id="survey-form" class="survey-form" data-aos="fade-up" data-aos-delay="200">
         @csrf
 
-        <!-- Header Information Section -->
-        <div class="form-section">
-            <div class="section-header">
-                <h3 class="section-title">Header Information</h3>
-            </div>
-            <div class="form-grid">
-                <div class="form-row">
-                    <label class="form-label">
-                        <span class="question-number">1.</span>
-                        <span>KIP (Kode Identitas Perusahaan):</span>
-                    </label>
-                    <input type="text" name="kip" id="kip" value="{{ $surveyResponse->kip ?? '' }}"
-                           class="form-control" placeholder="Masukkan KIP">
-                </div>
-                <div class="form-row">
-                    <label class="form-label">
-                        <span class="question-number">2.</span>
-                        <span>IDSBR (ID Statistical Business Register):</span>
-                    </label>
-                    <input type="text" name="idsbr" id="idsbr" value="{{ $surveyResponse->idsbr ?? '' }}"
-                           class="form-control" placeholder="Masukkan IDSBR">
-                </div>
-            </div>
-        </div>
+        <!-- Header Information Section removed: KIP and IDSBR are admin-managed -->
 
         <!-- Section I: KETERANGAN UMUM -->
         <div class="form-section">
@@ -101,7 +78,7 @@
                         <span class="question-number">103.</span>
                         <span>Kabupaten/Kota:</span>
                     </label>
-                    <input type="text" name="kabupaten_kota" id="kabupaten_kota" value="{{ $surveyResponse->kabupaten_kota ?? '' }}"
+                    <input type="text" name="kabupaten_kota" id="kabupaten_kota" value="{{ $surveyResponse->kabupaten_kota ?? 'Kota Batam' }}"
                            class="form-control" required
                            placeholder="Masukkan kabupaten/kota">
                     @error('kabupaten_kota')
