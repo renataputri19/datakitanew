@@ -425,7 +425,7 @@
                 <div class="form-row">
                     <label class="form-label required">
                         <span class="question-number">315.</span>
-                        <span>Biaya Non operasional (air, listrik, gas, pemeliharaan, biaya angkutan) (rupiah)</span>
+                        <span>Biaya Non operasional (bunga pinjaman, pajak, premi asuransi, nilai hadiah/sumbangan) (rupiah)</span>
                     </label>
                     <div class="form-subgrid">
                         <div class="form-subrow">
@@ -445,16 +445,12 @@
                             <div class="hint-col">
                                 <div class="hint-heading">Termasuk:</div>
                                 <ul class="hint-list">
-                                    <li>✓ Pengeluaran listrik, bahan bakar dan air</li>
-                                    <li>✓ Pembelian bahan perkantoran umum</li>
-                                    <li>✓ Pembelian komponen dan bahan bakar untuk kendaraan bermotor</li>
-                                    <li>✓ Pembayaran sewa operasi (dengan atau tanpa operator)</li>
-                                    <li>✓ Pembayaran ke pihak lain untuk kargo, delivery, dan jasa angkutan</li>
-                                    <li>✓ Biaya lisensi software komputer berumur kurang dari satu tahun (termasuk biaya instalasi oleh provider eksternal)</li>
+                                    <li>✓ Biaya pendanaan digital</li>
+                                    <li>✓ Kerugian nilai data atau aset digital karena kebocoran atau kehilangan</li>
                                 </ul>
                             </div>
                         </div>
-                        <div class="hint-note text-muted">Catatan: Mencakup biaya-biaya yang tidak secara langsung dalam proses produksi seperti air, listrik, gas, pemeliharaan, serta biaya angkutan.</div>
+                        <div class="hint-note text-muted">Catatan: Semua pengeluaran untuk aktivitas pendanaan, kepemilikan aset, atau kejadian luar biasa lainnya selama tahun 2025, yang tidak terkait langsung dengan proses produksi barang dan jasa</div>
                     </div>
                 </div>
             </div>

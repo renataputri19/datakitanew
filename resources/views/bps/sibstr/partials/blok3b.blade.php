@@ -144,7 +144,7 @@
                     </div>
                     {{-- Q315 --}}
                     <div class="form-row">
-                        <label class="form-label"><span class="question-number">315.</span> Biaya Non operasional</label>
+                        <label class="form-label"><span class="question-number">315.</span> Biaya Non operasional (bunga pinjaman, pajak, premi asuransi, nilai hadiah/sumbangan) (rupiah)</label>
                         <div class="form-subgrid">
                             <div class="form-subrow"><label class="form-sublabel">a. Satu triwulan yang lalu</label><input type="text" value="{{ formatCurrencyBps($data['q315a'] ?? '') }}" class="form-control" readonly disabled></div>
                             <div class="form-subrow"><label class="form-sublabel">b. Selama tahun 2025</label><input type="text" value="{{ formatCurrencyBps($data['q315b'] ?? '') }}" class="form-control" readonly disabled></div>
@@ -335,7 +335,7 @@
                     </div>
                     {{-- Q315 --}}
                     <div class="form-row">
-                        <label class="form-label"><span class="question-number">315.</span> Biaya Non operasional</label>
+                        <label class="form-label"><span class="question-number">315.</span> Biaya Non operasional (bunga pinjaman, pajak, premi asuransi, nilai hadiah/sumbangan) (rupiah)</label>
                         <div class="form-subgrid">
                             <div class="form-subrow"><label class="form-sublabel">a. Satu triwulan yang lalu</label><input type="text" value="{{ formatCurrencyBps($data['q315a'] ?? '') }}" class="form-control" readonly disabled></div>
                             <div class="form-subrow"><label class="form-sublabel">b. Selama tahun 2025</label><input type="text" value="{{ formatCurrencyBps($data['q315b'] ?? '') }}" class="form-control" readonly disabled></div>

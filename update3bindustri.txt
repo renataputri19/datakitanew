@@ -122,18 +122,18 @@ Mencatat semua biaya pengeluaran (tidak termasuk pajak pertambahan nilai  (PPN) 
 	✓	Pembelian bahan perkantoran umum															✓	Pembayaran sewa operasi (dengan atau tanpa operator)																								
 	✓	Pembelian komponen dan bahan bakar untuk kendaraan bermotor															✓	Biaya lisensi software komputer yang berumur kurang dari satu tahun (termasuk biaya instalasi oleh provider eksternal)																								
 																																										
-315.	a.	Biaya Non operasional (air, listrik, gas, pemeliharaan, biaya angkutan) satu triwulan yang lalu (rupiah)																																								
-																							,				,				,				,							
-	b.	Biaya Non operasional (air, listrik, gas, pemeliharaan, biaya angkutan) selama tahun 2025 (rupiah)																																								
-																							,				,				,				,							
-	Catatan: 																																									
-	Mencakup biaya-biaya yang tidak secara langsung dalam proses produksi seperti air, listrik, gas, pemeliharaan, serta biaya angkutan																																									
-																																										
-	Termasuk:																																									
-	✓	Pengeluaran listrik, bahan bakar dan air															✓	pembayaran ke pihak lain untuk kargo, delivery, dan jasa angkutan																								
-	✓	Pembelian bahan perkantoran umum															✓	Pembayaran sewa operasi (dengan atau tanpa operator)																								
-	✓	Pembelian komponen dan bahan bakar untuk kendaraan bermotor															✓	Biaya lisensi software komputer yang berumur kurang dari satu tahun (termasuk biaya instalasi oleh provider eksternal)																								
-																																										
+315.	a.	Biaya Non operasional (bunga pinjaman, pajak, premi asuransi, nilai hadiah/sumbangan ) satu triwulan yang lalu (rupiah)																					,				,				,				,			
+																																					
+b.	Biaya Non operasional (bunga pinjaman, pajak, premi asuransi, nilai hadiah/sumbangan) selama tahun 2025 (rupiah)																					,				,				,				,			
+																																					
+Catatan: 																																					
+Semua pengeluaran untuk aktivitas pendanaan, kepemilikan aset, atau kejadian luar biasa lainnya selama tahun 2025, yang tidak terkait langsung dengan proses produksibarangdanjasa																																					
+																																					
+Termasuk:																																					
+✓	Biaya pendanaan digital																																				
+✓	Kerugian nilai data atau aset digital karena kebocoran atau kehilangan																																				
+																																					
+																																							
  EKSPOR IMPOR LUAR NEGERI																																										
 																																										
 316.	Berapa persentase nilai produksi yang dijual sebagai produk ekspor luar negeri																									,			 % (persen)													
