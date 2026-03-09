@@ -12,6 +12,7 @@ class SurveyBlok5Manager {
     init() {
         if (!this.form) return;
         this.setupAutoSave();
+        this.setupValidation();
         this.setupBackNavigation();
     }
 
@@ -41,6 +42,41 @@ class SurveyBlok5Manager {
                 }
             });
         }
+    }
+
+    setupValidation() {
+        // Attach change listeners to all Blok 5 radio groups for immediate feedback
+        const radios = this.form.querySelectorAll('input[type="radio"][name^="blok5["]');
+        const seen = new Set();
+        radios.forEach(radio => {
+            const name = radio.name;
+            if (seen.has(name)) return;
+            seen.add(name);
+            const group = this.form.querySelectorAll(`input[type="radio"][name="${name}"]`);
+            group.forEach(r => {
+                r.addEventListener('change', () => this.validateRadioGroup(name));
+                r.addEventListener('blur', () => this.validateRadioGroup(name));
+            });
+            // Initial validation pass (helps highlight missing groups when attempting save)
+            this.validateRadioGroup(name);
+        });
+    }
+
+    validateRadioGroup(groupName) {
+        const radios = this.form.querySelectorAll(`input[type="radio"][name="${groupName}"]`);
+        if (!radios.length) return true;
+        const first = radios[0];
+        const isSelected = Array.from(radios).some(r => r.checked);
+        if (!isSelected && first && first.required) {
+            if (window.surveyManager && typeof window.surveyManager.showRadioGroupError === 'function') {
+                window.surveyManager.showRadioGroupError(groupName, 'Pilihan ini wajib dipilih');
+            }
+            return false;
+        }
+        if (window.surveyManager && typeof window.surveyManager.clearRadioGroupError === 'function') {
+            window.surveyManager.clearRadioGroupError(groupName);
+        }
+        return true;
     }
 }
 

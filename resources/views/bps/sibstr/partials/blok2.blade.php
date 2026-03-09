@@ -53,6 +53,7 @@
                     </div>
                 </div>
 
+                @if(!empty($blok2Visibility['showAfterQ201']))
                 <!-- Question 202 -->
                 <div class="form-row">
                     <label class="form-label">
@@ -94,6 +95,7 @@
                 </div>
 
                 <!-- Question 203 -->
+                @if(!empty($blok2Visibility['showQ203']))
                 <div class="form-row">
                     <label class="form-label">
                         <span class="question-number">203.</span>
@@ -102,8 +104,10 @@
                     <input type="number" name="jumlah_cabang_dan_unit_usaha" value="{{ $surveyResponse->jumlah_cabang_dan_unit_usaha ?? '' }}"
                            class="form-control" readonly disabled>
                 </div>
+                @endif
 
                 <!-- Question 204 -->
+                @if(!empty($blok2Visibility['showQ204']))
                 <div class="form-row">
                     <label class="form-label">
                         <span class="question-number">204.</span>
@@ -142,7 +146,9 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
+                @if(!empty($blok2Visibility['showQ205to211']))
                 <!-- Question 205 -->
                 <div class="form-row">
                     <label class="form-label">
@@ -333,6 +339,7 @@
                 </div>
 
                 <!-- 210a: Tujuan penggunaan internet -->
+                @if(!empty($blok2Visibility['showQ210a']))
                 <div class="form-row">
                     <label class="form-label">
                         <span class="question-number">210a.</span>
@@ -363,8 +370,10 @@
                         @endforeach
                     </div>
                 </div>
+                @endif
 
                 <!-- 210b: Teknologi digital -->
+                @if(!empty($blok2Visibility['showQ210b']))
                 <div class="form-row">
                     <label class="form-label">
                         <span class="question-number">210b.</span>
@@ -381,6 +390,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- Question 211 -->
                 <div class="form-row">
@@ -421,6 +431,8 @@
                         </div>
                     </div>
                 </div>
+                @endif {{-- end showQ205to211 --}}
+                @endif {{-- end showAfterQ201 --}}
             </div>
         </div>
     </form>

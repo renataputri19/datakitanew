@@ -647,17 +647,25 @@
         </div>
 
         <!-- View Mode Indicator -->
-        <div class="view-mode-indicator">
-            <p>
+        <div class="view-mode-indicator" style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+            <p style="display:flex; align-items:center; gap:.5rem; margin:0;">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                Mode Tampilan Read-Only — Seluruh blok survei ditampilkan secara lengkap di satu halaman
+                Mode Tampilan Read-Only 
             </p>
+            <a href="{{ route('bps.sibstr.download', $surveyResponse->id) }}" class="bps-back-button" style="display:inline-flex; align-items:center; gap:.5rem; background:#1e40af; color:#fff; padding:.5rem .75rem; border-radius:.5rem; text-decoration:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3a1 1 0 011 1v10.586l3.293-3.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0l-5-5a1 1 0 111.414-1.414L11 14.586V4a1 1 0 011-1z" />
+                    <path d="M5 18a1 1 0 011-1h12a1 1 0 011 1v1a2 2 0 01-2 2H7a2 2 0 01-2-2v-1z" />
+                </svg>
+                Download PDF
+            </a>
         </div>
 
         <!-- ===== BLOK I: Keterangan Umum ===== -->
+        @if(($showBlocks['blok1'] ?? true))
         <div class="block-section" id="section-blok1">
             <div class="block-section-header">
                 <div class="block-number">I</div>
@@ -670,8 +678,10 @@
                 @include('bps.sibstr.partials.blok1')
             </div>
         </div>
+        @endif
 
         <!-- ===== BLOK II: Pendahuluan ===== -->
+        @if(($showBlocks['blok2'] ?? true))
         <div class="block-section" id="section-blok2">
             <div class="block-section-header">
                 <div class="block-number">II</div>
@@ -684,8 +694,10 @@
                 @include('bps.sibstr.partials.blok2')
             </div>
         </div>
+        @endif
 
         <!-- ===== BLOK IIIA: Kondisi Perekonomian ===== -->
+        @if(!empty($showBlocks['blok3a']))
         <div class="block-section" id="section-blok3a">
             <div class="block-section-header">
                 <div class="block-number">IIIA</div>
@@ -698,22 +710,29 @@
                 @include('bps.sibstr.partials.blok3a')
             </div>
         </div>
+        @endif
 
         <!-- ===== BLOK IIIB ===== -->
+        @if(!empty($showBlocks['blok3bIndustri']) || !empty($showBlocks['blok3bNonIndustri']))
         <div class="block-section" id="section-blok3b">
             <div class="block-section-header">
                 <div class="block-number">IIIB</div>
                 <div>
-                    <h2>Blok IIIB: Pendapatan & Pengeluaran</h2>
+                    <h2>Blok IIIB: Pendapatan & Pengeluaran @if(!empty($showBlocks['blok3bIndustri'])) (Industri) @elseif(!empty($showBlocks['blok3bNonIndustri'])) (Non-Industri) @endif</h2>
                     <div class="block-subtitle">Pendapatan, Persediaan, dan Pengeluaran</div>
                 </div>
             </div>
             <div class="block-section-body">
-                @include('bps.sibstr.partials.blok3b')
+                @include('bps.sibstr.partials.blok3b', [
+                    'showIndustri' => !empty($showBlocks['blok3bIndustri']),
+                    'showNonIndustri' => !empty($showBlocks['blok3bNonIndustri'])
+                ])
             </div>
         </div>
+        @endif
 
         <!-- ===== BLOK IV: Fenomena dan Catatan ===== -->
+        @if(!empty($showBlocks['blok4']))
         <div class="block-section" id="section-blok4">
             <div class="block-section-header">
                 <div class="block-number">IV</div>
@@ -726,8 +745,10 @@
                 @include('bps.sibstr.partials.blok4')
             </div>
         </div>
+        @endif
 
         <!-- ===== BLOK V: Kondisi dan Prospek Usaha ===== -->
+        @if(!empty($showBlocks['blok5']))
         <div class="block-section" id="section-blok5">
             <div class="block-section-header">
                 <div class="block-number">V</div>
@@ -740,8 +761,10 @@
                 @include('bps.sibstr.partials.blok5')
             </div>
         </div>
+        @endif
 
         <!-- ===== BLOK VI: Catatan ===== -->
+        @if(!empty($showBlocks['blok6']))
         <div class="block-section" id="section-blok6">
             <div class="block-section-header">
                 <div class="block-number">VI</div>
@@ -754,14 +777,25 @@
                 @include('bps.sibstr.partials.blok6')
             </div>
         </div>
+        @endif
 
         <!-- Bottom Actions -->
         <div class="bps-bottom-actions">
+            @php
+                $shown = 0;
+                $shown += !empty($showBlocks['blok1']) ? 1 : 0;
+                $shown += !empty($showBlocks['blok2']) ? 1 : 0;
+                $shown += !empty($showBlocks['blok3a']) ? 1 : 0;
+                $shown += (!empty($showBlocks['blok3bIndustri']) || !empty($showBlocks['blok3bNonIndustri'])) ? 1 : 0;
+                $shown += !empty($showBlocks['blok4']) ? 1 : 0;
+                $shown += !empty($showBlocks['blok5']) ? 1 : 0;
+                $shown += !empty($showBlocks['blok6']) ? 1 : 0;
+            @endphp
             <div class="page-summary">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Menampilkan 7 blok survei dalam mode read-only
+                Menampilkan {{ $shown }} blok survei yang relevan
             </div>
             <a href="{{ route('bps.sibstr.index') }}" class="bps-back-button">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -781,48 +815,62 @@
             Daftar Isi
         </div>
         <ul class="bps-toc-list">
+            @if(!empty($showBlocks['blok1']))
             <li class="bps-toc-item">
                 <a href="#section-blok1" class="bps-toc-link active" data-section="section-blok1">
                     <span class="toc-dot"></span>
                     Blok I: Keterangan Umum
                 </a>
             </li>
+            @endif
+            @if(!empty($showBlocks['blok2']))
             <li class="bps-toc-item">
                 <a href="#section-blok2" class="bps-toc-link" data-section="section-blok2">
                     <span class="toc-dot"></span>
                     Blok II: Pendahuluan
                 </a>
             </li>
+            @endif
+            @if(!empty($showBlocks['blok3a']))
             <li class="bps-toc-item">
                 <a href="#section-blok3a" class="bps-toc-link" data-section="section-blok3a">
                     <span class="toc-dot"></span>
                     Blok IIIA: Produksi
                 </a>
             </li>
+            @endif
+            @if(!empty($showBlocks['blok3bIndustri']) || !empty($showBlocks['blok3bNonIndustri']))
             <li class="bps-toc-item">
                 <a href="#section-blok3b" class="bps-toc-link" data-section="section-blok3b">
                     <span class="toc-dot"></span>
-                    Blok IIIB: Pendapatan
+                    Blok IIIB: Pendapatan @if(!empty($showBlocks['blok3bIndustri'])) (Industri) @elseif(!empty($showBlocks['blok3bNonIndustri'])) (Non-Industri) @endif
                 </a>
             </li>
+            @endif
+            @if(!empty($showBlocks['blok4']))
             <li class="bps-toc-item">
                 <a href="#section-blok4" class="bps-toc-link" data-section="section-blok4">
                     <span class="toc-dot"></span>
                     Blok IV: Fenomena
                 </a>
             </li>
+            @endif
+            @if(!empty($showBlocks['blok5']))
             <li class="bps-toc-item">
                 <a href="#section-blok5" class="bps-toc-link" data-section="section-blok5">
                     <span class="toc-dot"></span>
                     Blok V: Kondisi Usaha
                 </a>
             </li>
+            @endif
+            @if(!empty($showBlocks['blok6']))
             <li class="bps-toc-item">
                 <a href="#section-blok6" class="bps-toc-link" data-section="section-blok6">
                     <span class="toc-dot"></span>
                     Blok VI: Catatan
                 </a>
             </li>
+            @endif
         </ul>
     </nav>
 </div>

@@ -25,6 +25,11 @@
     color: #fca5a5;
 }
 
+/* Ensure inline error messages align under the control column in grid rows */
+.form-row .field-error-message {
+    grid-column: 2;
+}
+
 /* Success field styling (optional) */
 .field-success {
     border-color: #10b981 !important;

@@ -55,7 +55,7 @@ class SurveyManager {
             nibField.addEventListener('blur', () => this.validateNib(nibField));
         }
 
-        // Validation for LEGALISASI NAMA (only letters and spaces)
+        // Validation for LEGALISASI NAMA (align with server: any string, required)
         const legalisasiNamaField = this.form.querySelector('input[name="legalisasi_nama"]');
         if (legalisasiNamaField) {
             legalisasiNamaField.addEventListener('input', (e) => this.handleLegalisasiNamaInput(e));
@@ -139,40 +139,25 @@ class SurveyManager {
      */
     handleLegalisasiNamaInput(event) {
         const field = event.target;
-        const originalValue = field.value;
-
-        // Keep only letters (A-Z, a-z) and spaces
-        const sanitizedValue = originalValue.replace(/[^A-Za-z\s]/g, '');
-
-        // If we removed invalid characters, update the field and show error
-        if (sanitizedValue !== originalValue) {
-            field.value = sanitizedValue;
-            this.showFieldError(field, 'Nama hanya boleh berisi huruf dan spasi');
-        } else {
-            // Clear error if current content is valid so far
-            this.clearFieldError(field);
-        }
+        // Trim spaces; do not restrict characters — server allows any string
+        field.value = (field.value || '').replace(/\s+/g, ' ').trimStart();
+        this.clearFieldError(field);
     }
 
     /**
      * Validate Legalisasi Nama field - must contain only letters and spaces
      */
     validateLegalisasiNama(field) {
-        const value = field.value.trim();
-        const nameRegex = /^[A-Za-z\s]+$/;
-
-        // Required check if applicable
-        if (field.hasAttribute('required') && !value) {
+        const value = (field.value || '').trim();
+        // Align with server: required string up to 255 chars
+        if (field.hasAttribute('required') && value === '') {
             this.showFieldError(field, 'Nama penanggung jawab wajib diisi');
             return false;
         }
-
-        // Pattern check
-        if (value && !nameRegex.test(value)) {
-            this.showFieldError(field, 'Nama hanya boleh berisi huruf dan spasi');
+        if (value.length > 255) {
+            this.showFieldError(field, 'Maksimal 255 karakter');
             return false;
         }
-
         this.clearFieldError(field);
         return true;
     }
@@ -198,9 +183,43 @@ class SurveyManager {
      * Validate required field
      */
     validateRequired(field) {
-        const value = field.value.trim();
+        // Only enforce when the attribute exists
+        if (!field || !field.hasAttribute('required')) {
+            this.clearFieldError(field);
+            return true;
+        }
 
-        if (field.hasAttribute('required') && !value) {
+        // Special handling for radio groups
+        if (field.type === 'radio') {
+            const groupName = field.name;
+            const radios = this.form.querySelectorAll(`input[type="radio"][name="${groupName}"]`);
+            const anyChecked = Array.from(radios).some(r => r.checked);
+            if (!anyChecked) {
+                // Show a single error for the whole group
+                this.showRadioGroupError(groupName, 'Field ini wajib dipilih');
+                return false;
+            }
+            // Clear group error when valid
+            this.clearRadioGroupError(groupName);
+            return true;
+        }
+
+        // For checkboxes (if any required)
+        if (field.type === 'checkbox') {
+            const groupName = field.name;
+            const boxes = this.form.querySelectorAll(`input[type="checkbox"][name="${groupName}"]`);
+            const anyChecked = Array.from(boxes).some(b => b.checked);
+            if (!anyChecked) {
+                this.showFieldError(field, 'Field ini wajib dipilih');
+                return false;
+            }
+            this.clearFieldError(field);
+            return true;
+        }
+
+        // For selects and text-like inputs
+        const value = (field.value || '').trim();
+        if (value === '') {
             this.showFieldError(field, 'Field ini wajib diisi');
             return false;
         }
@@ -213,6 +232,8 @@ class SurveyManager {
      * Show field error message
      */
     showFieldError(field, message) {
+        if (!field) return;
+
         // Remove existing error
         this.clearFieldError(field);
 
@@ -223,20 +244,41 @@ class SurveyManager {
         const errorElement = document.createElement('div');
         errorElement.className = 'field-error-message';
         errorElement.textContent = message;
+        // Ensure it renders under the control column in grid layout
+        errorElement.style.gridColumn = '2 / span 1';
 
-        // Insert error message after the field
-        field.parentNode.insertBefore(errorElement, field.nextSibling);
+        // Prefer rendering into a dedicated `.form-errors` container if present
+        const formRow = field.closest && field.closest('.form-row');
+        const errorContainer = formRow ? formRow.querySelector('.form-errors') : null;
+        if (errorContainer) {
+            const existing = errorContainer.querySelector('.field-error-message');
+            if (existing) existing.remove();
+            errorContainer.appendChild(errorElement);
+        } else {
+            // Fallback: insert after the field
+            field.parentNode.insertBefore(errorElement, field.nextSibling);
+        }
     }
 
     /**
      * Clear field error message
      */
     clearFieldError(field) {
+        if (!field) return;
+
         // Remove error class
         field.classList.remove('field-error');
 
-        // Remove error message
-        const errorElement = field.parentNode.querySelector('.field-error-message');
+        // Remove error message, preferring `.form-errors` container when present
+        const formRow = field.closest && field.closest('.form-row');
+        const errorContainer = formRow ? formRow.querySelector('.form-errors') : null;
+        if (errorContainer) {
+            const messageEl = errorContainer.querySelector('.field-error-message');
+            if (messageEl) messageEl.remove();
+            return;
+        }
+
+        const errorElement = field.parentNode ? field.parentNode.querySelector('.field-error-message') : null;
         if (errorElement) {
             errorElement.remove();
         }
@@ -545,8 +587,9 @@ class SurveyManager {
                 const validation = this.validateFormBeforeSave();
                 if (!validation.isValid) {
                     // Field-level errors are already displayed by validate* calls
-                    // Provide simple guidance near submit and scroll to first error
-                    this.showSubmissionGuidance('Mohon lengkapi semua field yang wajib diisi dengan benar');
+                    // Provide compact guidance with top error details near submit
+                    const details = (validation.errors || []).slice(0, 4);
+                    this.showSubmissionGuidance('Mohon lengkapi semua field yang wajib diisi dengan benar', details);
                     this.scrollToFirstError();
                     return;
                 }
@@ -632,7 +675,26 @@ class SurveyManager {
                 // Handle validation errors specifically
                 if (response.status === 422 && result.errors) {
                     this.handleServerValidationErrors(result.errors || {});
-                    this.showSubmissionGuidance('Mohon lengkapi semua field yang wajib diisi dengan benar');
+
+                    // Build a compact summary of first few errors by field label
+                    const toBracketName = (key) => {
+                        if (!key || typeof key !== 'string') return key;
+                        if (key.includes('[')) return key;
+                        if (!key.includes('.')) return key;
+                        const parts = key.split('.');
+                        const root = parts.shift();
+                        return root + '[' + parts.join('][') + ']';
+                    };
+                    const detailItems = Object.keys(result.errors)
+                        .slice(0, 4)
+                        .map((key) => {
+                            const bracketKey = toBracketName(key);
+                            const field = this.form.querySelector(`[name="${bracketKey}"]`) || this.form.querySelector(`[name="${key}"]`);
+                            const label = field ? this.getFieldLabel(field) : key;
+                            const msgRaw = Array.isArray(result.errors[key]) ? result.errors[key][0] : (result.errors[key] || 'Tidak valid');
+                            return `${label}: ${msgRaw}`;
+                        });
+                    this.showSubmissionGuidance('Mohon lengkapi semua field yang wajib diisi dengan benar', detailItems);
                     this.scrollToFirstError();
                     this.showStatus('Terdapat kesalahan pada form. Mohon periksa kembali.', 'error');
                     return;
@@ -654,7 +716,7 @@ class SurveyManager {
     /**
      * Show a brief guidance message near the submit button
      */
-    showSubmissionGuidance(message) {
+    showSubmissionGuidance(message, details = null) {
         if (!this.form) return;
 
         // Prefer the complete/save button container
@@ -669,7 +731,12 @@ class SurveyManager {
             // Place guidance just after the button container
             container.appendChild(guidance);
         }
-        guidance.textContent = message;
+        if (Array.isArray(details) && details.length) {
+            const items = details.map(d => `• ${d}`).join('\n');
+            guidance.innerHTML = `${message}<br><span style="display:block; white-space:pre-line; margin-top:4px;">${items}</span>`;
+        } else {
+            guidance.textContent = message;
+        }
     }
 
     /**
@@ -679,26 +746,32 @@ class SurveyManager {
         if (!this.form) return;
 
         // Prefer fields marked with error
-        let firstErrorEl = this.form.querySelector('.field-error');
+        let firstErrorField = this.form.querySelector('.field-error');
 
-        // Fallback: if no field has error class, try error messages
-        if (!firstErrorEl) {
-            const firstErrorMsg = this.form.querySelector('.field-error-message');
-            if (firstErrorMsg) {
-                // Try focusing the previous input/textarea/select sibling
-                const candidateField = firstErrorMsg.previousElementSibling;
-                if (candidateField && (candidateField.tagName === 'INPUT' || candidateField.tagName === 'TEXTAREA' || candidateField.tagName === 'SELECT')) {
-                    firstErrorEl = candidateField;
+        // Fallback: look for messages inside a `.form-errors` container
+        if (!firstErrorField) {
+            const containerMsg = this.form.querySelector('.form-errors .field-error-message');
+            if (containerMsg) {
+                const formRow = containerMsg.closest('.form-row');
+                if (formRow) {
+                    const candidate = formRow.querySelector('input, textarea, select');
+                    if (candidate) firstErrorField = candidate; else firstErrorField = containerMsg;
                 } else {
-                    firstErrorEl = firstErrorMsg;
+                    firstErrorField = containerMsg;
                 }
             }
         }
 
-        if (firstErrorEl) {
-            firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            if (typeof firstErrorEl.focus === 'function') {
-                firstErrorEl.focus();
+        // Last fallback: any error message
+        if (!firstErrorField) {
+            const anyMsg = this.form.querySelector('.field-error-message');
+            if (anyMsg) firstErrorField = anyMsg;
+        }
+
+        if (firstErrorField) {
+            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (typeof firstErrorField.focus === 'function') {
+                firstErrorField.focus();
             }
         }
     }
@@ -709,50 +782,92 @@ class SurveyManager {
     handleServerValidationErrors(errors) {
         if (!this.form || !errors) return;
 
+        // Helper: convert Laravel dot notation to bracket notation (blok1.nama -> blok1[nama])
+        const toBracketName = (key) => {
+            if (!key || typeof key !== 'string') return key;
+            if (key.includes('[')) return key; // already in bracket form
+            if (!key.includes('.')) return key;
+            const parts = key.split('.');
+            const root = parts.shift();
+            return root + '[' + parts.join('][') + ']';
+        };
+
         // Clear any existing errors first
         const errorFields = this.form.querySelectorAll('.field-error');
         errorFields.forEach(field => this.clearFieldError(field));
         const errorMsgs = this.form.querySelectorAll('.field-error-message');
         errorMsgs.forEach(msg => msg.remove());
 
-        Object.keys(errors).forEach(fieldName => {
-            const field = this.form.querySelector(`[name="${fieldName}"]`);
-            const messages = Array.isArray(errors[fieldName]) ? errors[fieldName] : [errors[fieldName]];
-            if (!field) return;
+        Object.keys(errors).forEach((fieldKey) => {
+            const messages = Array.isArray(errors[fieldKey]) ? errors[fieldKey] : [errors[fieldKey]];
+            const bracketName = toBracketName(fieldKey);
 
-            // If the field is a radio group, render the error next to the group container
-            if (field.type === 'radio') {
-                const groupName = field.name;
-                const firstRadio = this.form.querySelector(`input[name="${groupName}"]`);
-                const radioGroupContainer = firstRadio ? firstRadio.closest('.radio-group') : null;
+            // Try to find the field by bracket notation first, then raw key
+            let field = this.form.querySelector(`[name="${bracketName}"]`) || this.form.querySelector(`[name="${fieldKey}"]`);
 
-                // Prefer using blok2 manager's helper when available
-                if (window.surveyBlok2Manager && typeof window.surveyBlok2Manager.showRadioGroupError === 'function') {
-                    window.surveyBlok2Manager.showRadioGroupError(groupName, messages[0]);
-                    return;
-                }
-
-                // Fallback: inject error element after the radio group container
-                if (radioGroupContainer && radioGroupContainer.parentNode) {
-                    // Clear any existing radio-group error in this subrow
-                    const existing = radioGroupContainer.parentNode.querySelector('.radio-group-error');
-                    if (existing) existing.remove();
-
-                    const errorElement = document.createElement('div');
-                    errorElement.className = 'field-error-message radio-group-error';
-                    errorElement.textContent = messages[0];
-                    radioGroupContainer.parentNode.insertBefore(errorElement, radioGroupContainer.nextSibling);
-                    return;
-                }
-
-                // As a last resort, show inline next to the radio input
-                this.showFieldError(field, messages[0]);
-                return;
+            // If field corresponds to a radio group name, pick the first radio for placement
+            if (!field) {
+                const radio = this.form.querySelector(`input[type="radio"][name="${bracketName}"]`) || this.form.querySelector(`input[type="radio"][name="${fieldKey}"]`);
+                if (radio) field = radio;
             }
 
-            // Default: show field error next to the input control
-            this.showFieldError(field, messages[0]);
+            // If the backend validated a hidden field, prefer the paired visible display input when available
+            if (field && field.type === 'hidden') {
+                const displayInput = this.form.querySelector(`.currency-display[data-target-name="${bracketName}"]`) || this.form.querySelector(`.currency-display[data-target-name="${fieldKey}"]`);
+                if (displayInput) field = displayInput;
+            }
+
+            if (field) {
+                // Radio group special rendering (use group container when possible)
+                if (field.type === 'radio') {
+                    const groupName = field.name;
+                    this.showRadioGroupError(groupName, messages[0]);
+                    return;
+                }
+
+                this.showFieldError(field, messages[0]);
+            }
         });
+    }
+
+    /**
+     * Show error message for a radio group by name
+     */
+    showRadioGroupError(groupName, message) {
+        if (!this.form || !groupName) return;
+
+        const firstRadio = this.form.querySelector(`input[type="radio"][name="${groupName}"]`);
+        const radioGroupContainer = firstRadio ? firstRadio.closest('.radio-group') : null;
+        if (radioGroupContainer && radioGroupContainer.parentNode) {
+            // Remove existing group error near this container
+            const existing = radioGroupContainer.parentNode.querySelector('.radio-group-error');
+            if (existing) existing.remove();
+            const errorElement = document.createElement('div');
+            errorElement.className = 'field-error-message radio-group-error';
+            errorElement.textContent = message;
+            // Ensure grid placement in the control column
+            errorElement.style.gridColumn = '2 / span 1';
+            radioGroupContainer.parentNode.insertBefore(errorElement, radioGroupContainer.nextSibling);
+        } else if (firstRadio) {
+            // Fallback: show basic field error on the first radio
+            this.showFieldError(firstRadio, message);
+        }
+    }
+
+    /**
+     * Clear radio group error message by name
+     */
+    clearRadioGroupError(groupName) {
+        if (!this.form || !groupName) return;
+        const firstRadio = this.form.querySelector(`input[type="radio"][name="${groupName}"]`);
+        const radioGroupContainer = firstRadio ? firstRadio.closest('.radio-group') : null;
+        if (radioGroupContainer && radioGroupContainer.parentNode) {
+            const existing = radioGroupContainer.parentNode.querySelector('.radio-group-error');
+            if (existing) existing.remove();
+        }
+        // Also clear individual radio field-error classes
+        const radios = this.form.querySelectorAll(`input[type="radio"][name="${groupName}"]`);
+        radios.forEach(r => this.clearFieldError(r));
     }
 
     /**
@@ -762,30 +877,23 @@ class SurveyManager {
         const formInputs = this.form.querySelectorAll('input, textarea, select');
 
         formInputs.forEach(input => {
-            // Remove automatic validation on input - let auto-save handle it
+            // Apply light feedback on blur using HTML5 validity classes
             input.addEventListener('blur', (e) => {
-                // Only validate on blur if the field has been saved successfully
-                if (e.target.classList.contains('field-valid')) {
-                    this.validateField(e.target);
-                }
+                this.applyFieldValidityClass(e.target);
             });
         });
     }
 
     /**
-     * Validate individual field
+     * Apply HTML5 validity classes without touching inline error messages
+     * Keeping the method name distinct avoids overriding core validateField().
      */
-    validateField(field) {
+    applyFieldValidityClass(field) {
         const isValid = field.checkValidity();
-
-        // Remove existing validation classes
         field.classList.remove('field-valid', 'field-invalid');
-
-        // Add appropriate class
-        if (field.value.trim() !== '') {
+        if ((field.value || '').trim() !== '') {
             field.classList.add(isValid ? 'field-valid' : 'field-invalid');
         }
-
         return isValid;
     }
 

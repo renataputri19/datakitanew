@@ -117,6 +117,7 @@
                                 <td class="row-label sticky-col">
                                     <span class="question-number">{{ $row['key'] }}.</span>
                                     <span>{{ $row['label'] }}</span>
+                                    <span class="required-asterisk" style="color: #ef4444;">*</span>
                                     @if(isset($descriptions[$row['key']]))
                                         <small class="component-desc">{{ $descriptions[$row['key']] }}</small>
                                     @endif
@@ -131,7 +132,7 @@
                                                     $checked = isset($data[$row['key']][$period]) && $data[$row['key']][$period] === $opt['value'];
                                                 @endphp
                                                 <label class="radio-pill">
-                                                    <input type="radio" name="{{ $name }}" value="{{ $opt['value'] }}" {{ $checked ? 'checked' : '' }}>
+                                                    <input type="radio" name="{{ $name }}" value="{{ $opt['value'] }}" {{ $checked ? 'checked' : '' }} required>
                                                     <span>{{ $opt['text'] }}</span>
                                                 </label>
                                             @endforeach
@@ -173,7 +174,7 @@
             </div>
 
             <div class="text-sm text-gray-500 dark:text-gray-400">
-                <span>Pastikan semua pilihan diisi sesuai kondisi/prospek perusahaan.</span>
+                <span>* Wajib diisi</span>
             </div>
         </div>
     </form>

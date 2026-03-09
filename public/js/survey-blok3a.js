@@ -59,6 +59,9 @@ class SurveyBlok3aManager {
         this.updateSpecialSectionVisibility('total', this.totalActiveQuarter);
         this.setupAutoCalculation();
 
+        // Initialize display inputs from hidden values
+        this.initializeDisplayValues();
+
         // Initial preview render
         this.renderPreviewTable();
     }
@@ -129,6 +132,8 @@ class SurveyBlok3aManager {
 
         // Global Event Delegation for Inputs (AutoSave & Calc)
         this.form.addEventListener('input', (e) => this.handleInput(e));
+        // Format on blur for display inputs
+        this.form.addEventListener('blur', (e) => this.handleBlur(e), true);
         this.form.addEventListener('click', (e) => {
             // 1. Handle Delete
             const deleteBtn = e.target.closest('.btn-delete');
@@ -342,10 +347,16 @@ class SurveyBlok3aManager {
                 html += `
                 <div class="grid-input">
                     <span class="mobile-month-label">${this.monthLabels[m]}</span>
-                    <input type="number" step="0.01" 
+                    <input type="text"
+                           value="${this.formatCurrencyDisplay(val)}"
+                           class="form-control numeric-display banyaknya-display" 
+                           data-month="${m}"
+                           data-target-name="blok3a_products[${index}][banyaknya][${m}]"
+                           placeholder="0">
+                    <input type="hidden"
                            name="blok3a_products[${index}][banyaknya][${m}]"
                            value="${val}"
-                           class="form-control banyaknya-input" data-month="${m}" placeholder="0">
+                           class="form-control banyaknya-input" data-month="${m}">
                 </div>`;
             });
 
@@ -356,12 +367,17 @@ class SurveyBlok3aManager {
                 html += `
                 <div class="grid-input">
                     <span class="mobile-month-label">${this.monthLabels[m]}</span>
-                    <input type="number" step="0.01" 
+                    <input type="text"
+                           value="${this.formatCurrencyDisplay(val)}"
+                           class="form-control numeric-display nilai-display"
+                           data-month="${m}"
+                           data-target-name="blok3a_products[${index}][nilai][${m}]"
+                           placeholder="0">
+                    <input type="hidden"
                            name="blok3a_products[${index}][nilai][${m}]"
                            value="${val}"
                            class="form-control nilai-input"
-                           data-month="${m}"
-                           placeholder="0">
+                           data-month="${m}">
                 </div>`;
             });
 
@@ -372,10 +388,16 @@ class SurveyBlok3aManager {
                 html += `
                 <div class="grid-input">
                     <span class="mobile-month-label">${this.monthLabels[m]}</span>
-                    <input type="number" step="0.01" 
+                    <input type="text"
+                           value="${this.formatCurrencyDisplay(val)}"
+                           class="form-control numeric-display harga-satuan-display readonly" 
+                           data-month="${m}"
+                           data-target-name="blok3a_products[${index}][harga_satuan][${m}]"
+                           readonly placeholder="0">
+                    <input type="hidden" 
                            name="blok3a_products[${index}][harga_satuan][${m}]"
                            value="${val}"
-                           class="form-control readonly harga-satuan-input" data-month="${m}" readonly placeholder="0">
+                           class="form-control readonly harga-satuan-input" data-month="${m}">
                 </div>`;
             });
 
@@ -503,13 +525,18 @@ class SurveyBlok3aManager {
                 html += `
                 <div class="grid-input">
                      <label class="block text-xs text-gray-500 mb-1 sm:hidden">${this.monthLabels[m]}</label>
-                     <input type="number" step="0.01"
+                     <input type="text"
+                           value="${this.formatCurrencyDisplay(val)}"
+                           class="form-control numeric-display ${type === 'lainnya' ? 'lainnya-nilai-display' : 'total-display'} ${type === 'total' ? 'readonly' : ''}"
+                           data-month="${m}"
+                           data-target-name="${name}"
+                           ${type === 'total' ? 'readonly' : ''}
+                           placeholder="0">
+                     <input type="hidden"
                            name="${name}"
                            value="${val}"
                            class="${cls}"
-                           data-month="${m}"
-                           ${type === 'total' ? 'readonly' : ''}
-                           placeholder="0">
+                           data-month="${m}">
                 </div>
                 `;
             });
@@ -570,6 +597,46 @@ class SurveyBlok3aManager {
         const card = input.closest('.product-card');
         const month = input.dataset ? input.dataset.month : null;
 
+        // Handle formatted display inputs
+        if (input.classList && input.classList.contains('numeric-display')) {
+            const targetName = input.getAttribute('data-target-name');
+            const hidden = targetName ? this.form.querySelector(`input[type="hidden"][name="${targetName}"]`) : null;
+            const numericValue = this.parseCurrencyToNumber(input.value);
+
+            if (hidden) {
+                if (numericValue === null) {
+                    hidden.value = '';
+                } else {
+                    hidden.value = Number(numericValue).toFixed(2);
+                }
+            }
+
+            // Compute dependent values
+            const isNilai = input.classList.contains('nilai-display') || input.classList.contains('lainnya-nilai-display');
+            const isBanyaknya = input.classList.contains('banyaknya-display');
+            if (isNilai) {
+                this.calculateTotals(month);
+                if (card) this.recalcHargaSatuanForCard(card, month);
+            }
+            if (isBanyaknya) {
+                if (card) this.recalcHargaSatuanForCard(card, month);
+            }
+
+            // Autosave with hidden field name
+            if (shouldAutoSave && window.surveyManager && targetName) {
+                input.classList.remove('bg-green-50', 'border-green-500');
+                window.surveyManager.scheduleAutoSave(targetName, hidden ? hidden.value : '');
+                setTimeout(() => {
+                    if (input.value) input.classList.add('bg-green-50', 'border-green-500');
+                    setTimeout(() => input.classList.remove('bg-green-50', 'border-green-500'), 2000);
+                }, 500);
+            }
+
+            // Update preview
+            this.renderPreviewTable();
+            return;
+        }
+
         // 1. Calculate Totals if needed
         if (input.classList.contains('nilai-input') || input.classList.contains('lainnya-nilai-input')) {
             this.calculateTotals(input.dataset.month);
@@ -600,6 +667,19 @@ class SurveyBlok3aManager {
         this.renderPreviewTable();
     }
 
+    handleBlur(e) {
+        const input = e.target;
+        if (!input || !input.classList) return;
+        if (input.classList.contains('numeric-display')) {
+            const numericValue = this.parseCurrencyToNumber(input.value);
+            if (numericValue === null) {
+                input.value = '';
+            } else {
+                input.value = this.formatCurrencyDisplay(numericValue);
+            }
+        }
+    }
+
     // Compute Harga/Satuan = Nilai / Banyaknya in the given card
     recalcHargaSatuanForCard(cardElem, specificMonth = null, skipAutoSave = false) {
         if (!cardElem) return;
@@ -620,6 +700,12 @@ class SurveyBlok3aManager {
             priceInp.readOnly = true;
             priceInp.classList.add('readonly');
             priceInp.setAttribute('aria-readonly', 'true');
+
+            // Update display field for harga satuan
+            const priceDisp = cardElem.querySelector(`.harga-satuan-display[data-month="${m}"]`);
+            if (priceDisp) {
+                priceDisp.value = price !== '' ? this.formatCurrencyDisplay(price) : '';
+            }
 
             // Auto-save computed price for persistence (unless skipped)
             if (!skipAutoSave && window.surveyManager && priceInp.name) {
@@ -645,7 +731,7 @@ class SurveyBlok3aManager {
         monthsToCalc.forEach(month => {
             let sum = 0;
 
-            // Sum Products (Nilai per bulan)
+            // Sum Products (Nilai per bulan) from hidden inputs
             const productInputs = document.querySelectorAll(`.nilai-input[data-month="${month}"]`);
             productInputs.forEach(inp => {
                 sum += parseFloat(inp.value) || 0;
@@ -657,10 +743,19 @@ class SurveyBlok3aManager {
                 sum += parseFloat(lainnyaInput.value) || 0;
             }
 
-            // Update Total (readonly inputs)
+            // Update Total (readonly hidden input)
             const totalInput = document.querySelector(`.total-input[data-month="${month}"]`);
             if (totalInput) {
                 totalInput.value = sum;
+                // Update display field
+                const totalDisp = document.querySelector(`.total-display[data-month="${month}"]`);
+                if (totalDisp) {
+                    totalDisp.value = this.formatCurrencyDisplay(sum);
+                }
+                // Auto-save computed total silently
+                if (window.surveyManager && totalInput.name) {
+                    window.surveyManager.scheduleAutoSave(totalInput.name, Number(sum).toFixed(2), true);
+                }
             }
         });
 
@@ -765,6 +860,49 @@ class SurveyBlok3aManager {
     formatNumber(n) {
         if (!isFinite(n) || n === 0) return '';
         return new Intl.NumberFormat('id-ID').format(n);
+    }
+
+    // Initialize display fields from hidden raw values
+    initializeDisplayValues() {
+        if (!this.form) return;
+        const displays = Array.from(this.form.querySelectorAll('.numeric-display'));
+        displays.forEach(disp => {
+            const targetName = disp.getAttribute('data-target-name');
+            if (!targetName) return;
+            const hidden = this.form.querySelector(`input[type="hidden"][name="${targetName}"]`);
+            if (!hidden) return;
+            const v = hidden.value;
+            if (v !== '' && v !== null && v !== undefined) {
+                const num = parseFloat(String(v).replace(',', '.'));
+                if (!isNaN(num)) {
+                    disp.value = this.formatCurrencyDisplay(num);
+                }
+            }
+        });
+    }
+
+    // Parsing and formatting utilities (similar to Blok 3B)
+    parseCurrencyToNumber(raw) {
+        if (raw === undefined || raw === null) return null;
+        const s = String(raw).trim();
+        if (s === '') return null;
+        const normalized = s.replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.\-]/g, '');
+        // Disallow negatives
+        if (normalized.includes('-')) return null;
+        const num = parseFloat(normalized);
+        if (isNaN(num)) return null;
+        if (num < 0) return null;
+        return Number(num.toFixed(2));
+    }
+
+    formatCurrencyDisplay(num) {
+        try {
+            const n = typeof num === 'number' ? num : parseFloat(num);
+            if (isNaN(n)) return '';
+            return n.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        } catch (_e) {
+            return String(num ?? '');
+        }
     }
 
     escapeHtml(str) {

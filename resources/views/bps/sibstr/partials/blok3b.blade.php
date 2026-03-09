@@ -23,7 +23,14 @@
             ];
         @endphp
 
-        {{-- Always render Industri section --}}
+        @php
+            // Determine which variant(s) to render; default to both for backward compatibility
+            $renderIndustri = isset($showIndustri) ? (bool)$showIndustri : true;
+            $renderNonIndustri = isset($showNonIndustri) ? (bool)$showNonIndustri : true;
+        @endphp
+
+        {{-- Render Industri section when requested --}}
+        @if($renderIndustri)
             @php $data = $dataIndustri; @endphp
             
             <div style="padding: 1rem 1.5rem 0;">
@@ -205,8 +212,10 @@
                     </div>
                  </div>
              </div>
+        @endif
 
-        {{-- Always render Non-Industri section --}}
+        {{-- Render Non-Industri section when requested --}}
+        @if($renderNonIndustri)
             @php $data = $dataNonIndustri; @endphp
 
             <div style="padding: 1rem 1.5rem 0;">
@@ -397,6 +406,6 @@
                  </div>
              </div>
 
-        
+        @endif
     </form>
 </div>

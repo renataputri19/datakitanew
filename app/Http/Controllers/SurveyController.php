@@ -1044,10 +1044,36 @@ class SurveyController extends Controller
         try {
             $user = Auth::user();
 
-            // Minimal validation: ensure array shape for blok5
-            $validator = Validator::make($request->all(), [
-                'blok5' => 'nullable|array',
-            ]);
+            $isCompleted = $request->boolean('is_completed', false);
+
+            // Build validation rules. When completing, all radio groups are required.
+            $rules = [
+                'blok5' => $isCompleted ? 'required|array' : 'nullable|array',
+            ];
+
+            if ($isCompleted) {
+                $rows = ['501','502','503','504','505','506','507'];
+                $periods = ['p1','p2','p3','p4','p5','p6'];
+                foreach ($rows as $row) {
+                    foreach ($periods as $period) {
+                        if ($row === '506') {
+                            // Delivery time options
+                            $rules["blok5.$row.$period"] = 'required|in:lebih_cepat,tetap,lebih_lambat';
+                        } else {
+                            // Normal naik/tetap/turun options
+                            $rules["blok5.$row.$period"] = 'required|in:naik,tetap,turun';
+                        }
+                    }
+                }
+            }
+
+            $messages = [
+                'blok5.required' => 'Semua pertanyaan Blok V wajib diisi.',
+                'blok5.*.*.required' => 'Pilihan wajib dipilih.',
+                'blok5.*.*.in' => 'Pilihan tidak valid.',
+            ];
+
+            $validator = Validator::make($request->all(), $rules, $messages);
 
             if ($validator->fails()) {
                 return response()->json([
@@ -1063,7 +1089,7 @@ class SurveyController extends Controller
 
             $surveyResponse->updateWithAutoSave([
                 'blok5_data' => $data,
-                'blok5_completed' => $request->boolean('is_completed', false),
+                'blok5_completed' => $isCompleted,
             ]);
 
             // Next block after Blok 5 is Blok 6
