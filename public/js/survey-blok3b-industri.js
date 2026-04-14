@@ -16,6 +16,7 @@ class SurveyBlok3bIndustriManager {
 
         this.setupEventListeners();
         this.initializeDisplayValues();
+        this.updateInventoryTotals();
         this.updateAssetTotal();
         this.updateAssetRequiredIndicators();
         this.updateOwnershipTotal();
@@ -55,6 +56,9 @@ class SurveyBlok3bIndustriManager {
                 }
 
                 // Recompute totals when relevant inputs change
+                if (targetName && /\[q30[678]_(awal|akhir)\]/.test(targetName)) {
+                    this.updateInventoryTotals();
+                }
                 if (targetName && /\[q318(a|b)\]/.test(targetName)) {
                     this.updateAssetTotal();
                     this.updateAssetRequiredIndicators();
@@ -195,6 +199,25 @@ class SurveyBlok3bIndustriManager {
         if (displaySelectorId) {
             const disp = document.getElementById(displaySelectorId);
             if (disp) disp.value = this.formatCurrencyDisplay(value);
+        }
+    }
+
+    updateInventoryTotals() {
+        const awal = this.getHiddenValue('blok3b_industri[q306_awal]')
+                   + this.getHiddenValue('blok3b_industri[q307_awal]')
+                   + this.getHiddenValue('blok3b_industri[q308_awal]');
+        const akhir = this.getHiddenValue('blok3b_industri[q306_akhir]')
+                    + this.getHiddenValue('blok3b_industri[q307_akhir]')
+                    + this.getHiddenValue('blok3b_industri[q308_akhir]');
+        this.setHiddenAndDisplay('blok3b_industri[q309_awal]', awal, 'q309_awal_display');
+        this.setHiddenAndDisplay('blok3b_industri[q309_akhir]', akhir, 'q309_akhir_display');
+        const hidAwal = document.getElementById('q309_awal_val');
+        if (hidAwal) hidAwal.value = Number(awal).toFixed(2);
+        const hidAkhir = document.getElementById('q309_akhir_val');
+        if (hidAkhir) hidAkhir.value = Number(akhir).toFixed(2);
+        if (window.surveyManager) {
+            window.surveyManager.scheduleAutoSave('blok3b_industri[q309_awal]', Number(awal).toFixed(2), true);
+            window.surveyManager.scheduleAutoSave('blok3b_industri[q309_akhir]', Number(akhir).toFixed(2), true);
         }
     }
 

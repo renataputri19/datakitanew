@@ -36,7 +36,17 @@ class SurveyBlok5Manager {
         if (backBtn) {
             backBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const target = window.surveyRoutes?.backToBlok4;
+                let target;
+                const isTriwulanan = window.surveyData?.isTriwulanan;
+                if (isTriwulanan) {
+                    const prefix = window.surveyData?.kbliPrefix;
+                    const isIndustri = typeof prefix === 'number' && prefix >= 10 && prefix <= 33;
+                    target = isIndustri
+                        ? window.surveyRoutes?.backToBlok3bIndustri
+                        : window.surveyRoutes?.backToBlok3bNonIndustri;
+                } else {
+                    target = window.surveyRoutes?.backToBlok4;
+                }
                 if (target) {
                     window.location.href = target;
                 }

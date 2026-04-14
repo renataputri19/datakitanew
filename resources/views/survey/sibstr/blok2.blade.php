@@ -13,7 +13,7 @@
     $currentTriwulan = $triwulan ?? $surveyResponse->triwulan ?? 0;
     $currentTahun    = $tahun    ?? $surveyResponse->tahun    ?? 2025;
     $currentPeriod   = $period   ?? ($currentTriwulan === 0 ? 'tahunan' : (string) $currentTriwulan);
-    $isReadOnlyMode  = !empty($isEditMode) && $currentTriwulan > 0;
+    $isReadOnlyMode  = false; // Triwulanan edit mode is fully editable
 @endphp
 
 @if($isReadOnlyMode)
@@ -231,6 +231,7 @@
                     </div>
                 </div>
 
+                @if($currentPeriod === 'tahunan')
                 <!-- Question 203 -->
                 <div class="form-row">
                     <label class="form-label required">
@@ -341,6 +342,7 @@
                         <div class="error-message">{{ $message }}</div>
                     @enderror
                 </div>
+                @endif
 
                 @if($currentTriwulan == 0)
                 {{-- Q207: Tahunan 2025 — detailed worker breakdown --}}
@@ -494,6 +496,7 @@
                     </div>
                 </div>
 
+                @if($currentPeriod === 'tahunan')
                 <!-- Question 209 -->
                 <div class="form-row">
                     <label class="form-label required">
@@ -555,6 +558,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 @if($currentPeriod === 'tahunan')
                 <!-- Question 210 -->
@@ -623,6 +627,7 @@
                 </div>
                 @endif
 
+                @if($currentPeriod === 'tahunan')
                 <!-- Question 212 -->
                 <div class="form-row">
                     <label class="form-label required">
@@ -789,6 +794,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
         </div>
 

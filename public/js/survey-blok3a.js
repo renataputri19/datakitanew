@@ -15,24 +15,51 @@ class SurveyBlok3aManager {
         // State
         this.products = []; // Array to store current product structures
         this.cardActiveQuarters = {}; // per-card quarter state: { index: quarter }
-        this.lainnyaActiveQuarter = 'dec2024';
-        this.totalActiveQuarter = 'dec2024';
 
-        // Month Definitions
-        this.quarterConf = {
-            'dec2024': { label: 'Des 2024', months: ['2024_des'] },
-            'q1': { label: 'Triwulan I', months: ['2025_jan', '2025_feb', '2025_mar'] },
-            'q2': { label: 'Triwulan II', months: ['2025_apr', '2025_mei', '2025_jun'] },
-            'q3': { label: 'Triwulan III', months: ['2025_jul', '2025_agu', '2025_sep'] },
-            'q4': { label: 'Triwulan IV', months: ['2025_okt', '2025_nov', '2025_des'] }
+        // Month Definitions — overridden by server config if available
+        const serverConf = window.surveyData?.quarterConf;
+        if (serverConf && typeof serverConf === 'object') {
+            this.quarterConf = serverConf;
+        } else {
+            this.quarterConf = {
+                'dec_prev': { label: 'Des 2024', months: ['2024_des'] },
+                'q1': { label: 'Triwulan I', months: ['2025_jan', '2025_feb', '2025_mar'] },
+                'q2': { label: 'Triwulan II', months: ['2025_apr', '2025_mei', '2025_jun'] },
+                'q3': { label: 'Triwulan III', months: ['2025_jul', '2025_agu', '2025_sep'] },
+                'q4': { label: 'Triwulan IV', months: ['2025_okt', '2025_nov', '2025_des'] }
+            };
+        }
+
+        // Default active quarter = first key in quarterConf
+        const firstQKey = window.surveyData?.firstQuarter || Object.keys(this.quarterConf)[0];
+        this.lainnyaActiveQuarter = firstQKey;
+        this.totalActiveQuarter = firstQKey;
+
+        // Triwulanan when quarterConf has ≤ 2 entries (dec_prev + one quarter)
+        this.isTriwulanan = Object.keys(this.quarterConf).length <= 2;
+
+        // Build monthLabels map from quarterConf
+        const fullMonthNames = {
+            'jan':'Januari','feb':'Februari','mar':'Maret','apr':'April','mei':'Mei',
+            'jun':'Juni','jul':'Juli','agu':'Agustus','sep':'September',
+            'okt':'Oktober','nov':'November','des':'Desember'
         };
+        this.monthLabels = {};
+        for (const qConf of Object.values(this.quarterConf)) {
+            for (const mKey of qConf.months) {
+                const parts = mKey.match(/^(\d{4})_(\w+)$/);
+                this.monthLabels[mKey] = parts ? (fullMonthNames[parts[2]] || parts[2]) : mKey;
+            }
+        }
 
-        this.monthLabels = {
-            '2024_des': 'Desember',
-            '2025_jan': 'Januari', '2025_feb': 'Februari', '2025_mar': 'Maret',
-            '2025_apr': 'April', '2025_mei': 'Mei', '2025_jun': 'Juni',
-            '2025_jul': 'Juli', '2025_agu': 'Agustus', '2025_sep': 'September',
-            '2025_okt': 'Oktober', '2025_nov': 'November', '2025_des': 'Desember'
+        // Legacy compatibility (kept for any code that still references old keys)
+        if (!this.monthLabels['2024_des']) this.monthLabels['2024_des'] = 'Desember';
+        if (!this.monthLabels['2025_jan']) {
+            const legacyMonths = { 'jan':'Januari','feb':'Februari','mar':'Maret','apr':'April','mei':'Mei',
+                'jun':'Juni','jul':'Juli','agu':'Agustus','sep':'September','okt':'Oktober','nov':'November','des':'Desember' };
+            Object.entries(legacyMonths).forEach(([m,l]) => {
+                if (!this.monthLabels[`2025_${m}`]) this.monthLabels[`2025_${m}`] = l;
+            });
         };
 
         this.init();
@@ -206,8 +233,9 @@ class SurveyBlok3aManager {
 
         // New rows should remain collapsed by default; no auto-expand on add
 
-        // Set default quarter for this card and show
-        this.cardActiveQuarters[index] = 'dec2024';
+        // Set default quarter for this card and show (use first key from quarterConf)
+        const defaultQKey = Object.keys(this.quarterConf)[0];
+        this.cardActiveQuarters[index] = defaultQKey;
         const card = document.getElementById(`product-card-${index}`);
         if (card) this.setCardActiveQuarter(card, this.cardActiveQuarters[index]);
     }
@@ -323,6 +351,7 @@ class SurveyBlok3aManager {
                     <p class="form-hint" style="margin-top:0.3rem;font-size:0.78rem;color:#6b7280;">Catatan: Bila satuan yang digunakan tidak standar seperti 'botol' atau 'kaleng', agar dikonversikan ke satuan metrik seperti liter, M3, dsb.</p>
                 </div>
 
+                ${!this.isTriwulanan ? `
                 <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">KBLI 5 Digit</label>
@@ -351,16 +380,14 @@ class SurveyBlok3aManager {
                                class="form-control negara-ekspor-input"
                                placeholder="Contoh: Amerika Serikat">
                     </div>
-                </div>
+                </div>` : ''}
 
                 <div class="form-group">
                     <label class="form-label">Uraian Data Bulanan/Triwulanan</label>
                     <div class="quarter-tabs" role="tablist" aria-label="Pilih Triwulan untuk Produk">
-                        <button type="button" class="quarter-tab active" data-quarter="dec2024">Des 2024</button>
-                        <button type="button" class="quarter-tab" data-quarter="q1">Triwulan I</button>
-                        <button type="button" class="quarter-tab" data-quarter="q2">Triwulan II</button>
-                        <button type="button" class="quarter-tab" data-quarter="q3">Triwulan III</button>
-                        <button type="button" class="quarter-tab" data-quarter="q4">Triwulan IV</button>
+                        ${Object.entries(this.quarterConf).map(([qKey, qConf], i) =>
+                            `<button type="button" class="quarter-tab${i===0?' active':''}" data-quarter="${qKey}">${qConf.label}</button>`
+                        ).join('')}
                     </div>
                     
                     ${this.generateAllQuartersGrid(index, data)}
@@ -618,7 +645,7 @@ class SurveyBlok3aManager {
         const cards = this.container.querySelectorAll('.product-card');
         cards.forEach(card => {
             const idx = this.getCardIndex(card.id);
-            const q = this.cardActiveQuarters[idx] || 'dec2024';
+            const q = this.cardActiveQuarters[idx] || Object.keys(this.quarterConf)[0];
             this.setCardActiveQuarter(card, q);
         });
     }
@@ -812,7 +839,20 @@ class SurveyBlok3aManager {
     // Preview Table Renderer (read-only)
     renderPreviewTable() {
         if (!this.previewContainer) return;
-        const months = ['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'];
+        // Dynamic months from quarterConf (replaces hardcoded 2024/2025 list)
+        const months = Object.values(this.quarterConf).flatMap(q => q.months);
+
+        // Build label: always include year extracted from the key (e.g. "2026_jan" → "Januari 2026")
+        const fullMonthNames = {
+            'jan':'Januari','feb':'Februari','mar':'Maret','apr':'April','mei':'Mei',
+            'jun':'Juni','jul':'Juli','agu':'Agustus','sep':'September',
+            'okt':'Oktober','nov':'November','des':'Desember'
+        };
+        const getMonthLabel = (m) => {
+            const parts = m.match(/^(\d{4})_(\w+)$/);
+            if (!parts) return m;
+            return (fullMonthNames[parts[2]] || parts[2]) + ' ' + parts[1];
+        };
 
         // Gather product cards from DOM
         const productCards = Array.from(this.container.querySelectorAll('.product-card'));
@@ -822,8 +862,7 @@ class SurveyBlok3aManager {
         html += '<th class="sticky-col">Kode/Nama</th>';
         html += '<th>Uraian</th>';
         months.forEach(m => {
-            const label = this.monthLabels[m] + (m.startsWith('2025') ? ' 2025' : ' 2024');
-            html += `<th>${label}</th>`;
+            html += `<th>${getMonthLabel(m)}</th>`;
         });
         html += '</tr></thead><tbody>';
 

@@ -156,6 +156,11 @@
 
 @push('scripts')
 <script>
+// Auto-redirect triwulanan users — blok4 fenomena is tahunan-only
+@if(($triwulan ?? 0) > 0)
+window.location.replace('{{ route("survey.sibstr.blok5", ["year" => $tahun, "period" => $period]) }}');
+@endif
+
 // Set up survey routes for the JavaScript module
 @if(isset($editRoutes) && !empty($editRoutes))
 window.surveyRoutes = @json($editRoutes);

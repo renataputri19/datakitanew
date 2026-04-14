@@ -20,6 +20,7 @@ class SurveyBlok3bNonIndustriManager {
         // Enforce readonly + styling for auto-calculated totals
         this.enforceReadonlyForTotals();
         // Ensure automated totals are computed and auto-saved on initial load
+        this.updateInventoryTotals();
         this.updateRevenueTotal();
         this.updateRevenueTotalYear();
         this.updateAssetTotal();
@@ -62,6 +63,9 @@ class SurveyBlok3bNonIndustriManager {
                 }
 
                 // Recompute totals when relevant inputs change
+                if (targetName && /\[q30[678]_(awal|akhir)\]/.test(targetName)) {
+                    this.updateInventoryTotals();
+                }
                 if (targetName && /(q303|q304)/.test(targetName)) {
                     this.updateRevenueTotal();
                 }
@@ -173,6 +177,7 @@ class SurveyBlok3bNonIndustriManager {
     enforceReadonlyForTotals() {
         const readonlyIds = [
             'q305_display', 'q305_year_display',
+            'q309_ni_awal_display', 'q309_ni_akhir_display',
             'q318c_display', 'q319i_display',
             'q313_c_display', 'q314_c_display',
         ];
@@ -227,6 +232,25 @@ class SurveyBlok3bNonIndustriManager {
         if (displaySelectorId) {
             const disp = document.getElementById(displaySelectorId);
             if (disp) disp.value = this.formatCurrencyDisplay(value);
+        }
+    }
+
+    updateInventoryTotals() {
+        const awal = this.getHiddenValue('blok3b_nonindustri[q306_awal]')
+                   + this.getHiddenValue('blok3b_nonindustri[q307_awal]')
+                   + this.getHiddenValue('blok3b_nonindustri[q308_awal]');
+        const akhir = this.getHiddenValue('blok3b_nonindustri[q306_akhir]')
+                    + this.getHiddenValue('blok3b_nonindustri[q307_akhir]')
+                    + this.getHiddenValue('blok3b_nonindustri[q308_akhir]');
+        this.setHiddenAndDisplay('blok3b_nonindustri[q309_awal]', awal, 'q309_ni_awal_display');
+        this.setHiddenAndDisplay('blok3b_nonindustri[q309_akhir]', akhir, 'q309_ni_akhir_display');
+        const hidAwal = document.getElementById('q309_ni_awal_val');
+        if (hidAwal) hidAwal.value = Number(awal).toFixed(2);
+        const hidAkhir = document.getElementById('q309_ni_akhir_val');
+        if (hidAkhir) hidAkhir.value = Number(akhir).toFixed(2);
+        if (window.surveyManager) {
+            window.surveyManager.scheduleAutoSave('blok3b_nonindustri[q309_awal]', Number(awal).toFixed(2), true);
+            window.surveyManager.scheduleAutoSave('blok3b_nonindustri[q309_akhir]', Number(akhir).toFixed(2), true);
         }
     }
 

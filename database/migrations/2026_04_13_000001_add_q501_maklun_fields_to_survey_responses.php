@@ -21,7 +21,7 @@ return new class extends Migration
         Schema::table('survey_responses', function (Blueprint $table) {
             // Q305a: Nilai pendapatan dari jasa industri (maklun) — annual, in Rupiah
             if (!Schema::hasColumn('survey_responses', 'blok3a_q305a_maklun_nilai')) {
-                $table->decimal('blok3a_q305a_maklun_nilai', 20, 2)->nullable()->after('blok3a_q305_online');
+                $table->decimal('blok3a_q305a_maklun_nilai', 20, 2)->nullable();
             }
             // Q305b: Persentase nilai pendapatan dari jasa industri (maklun) luar negeri — 0–100%
             if (!Schema::hasColumn('survey_responses', 'blok3a_q305b_maklun_pct')) {

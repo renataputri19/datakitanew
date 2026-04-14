@@ -83,10 +83,36 @@
                 <p class="section-subtitle">Isi pilihan untuk setiap periode waktu.</p>
             </div>
 
-            <p class="table-caption">Gunakan geser horizontal pada tabel.</p>
+            @php
+                $currentTw = $triwulan ?? 0;
+                $isTriwulanan = $currentTw > 0;
+                if ($isTriwulanan) {
+                    $twLabels   = ['I','II','III','IV'];
+                    $prevTw     = $currentTw === 1 ? 4 : $currentTw - 1;
+                    $prevYear   = $currentTw === 1 ? ($tahun - 1) : $tahun;
+                    $nextTw     = $currentTw === 4 ? 1 : $currentTw + 1;
+                    $nextYear   = $currentTw === 4 ? ($tahun + 1) : $tahun;
+                    $twKondisiHeader = "Kondisi TW {$twLabels[$currentTw-1]}-{$tahun} vs TW {$twLabels[$prevTw-1]}-{$prevYear}";
+                    $twProspekHeader = "Prospek TW {$twLabels[$nextTw-1]}-{$nextYear} vs TW {$twLabels[$currentTw-1]}-{$tahun}";
+                }
+            @endphp
+
+            <p class="table-caption">{{ $isTriwulanan ? 'Isi kondisi triwulan ini dan prospek triwulan berikutnya.' : 'Gunakan geser horizontal pada tabel.' }}</p>
             <div class="table-responsive">
                 <table class="survey-table">
                     <thead>
+                        @if($isTriwulanan)
+                        <tr>
+                            <th class="sticky-col">Komponen</th>
+                            <th>{{ $twKondisiHeader }}</th>
+                            <th class="prospect">{{ $twProspekHeader }}</th>
+                        </tr>
+                        <tr>
+                            <th class="sticky-col"></th>
+                            <th class="col-subtype">Kondisi</th>
+                            <th class="col-subtype prospect">Prospek</th>
+                        </tr>
+                        @else
                         <tr>
                             <th class="sticky-col">Komponen</th>
                             <th>Kondisi TW I-2025 vs TW IV-2024</th>
@@ -105,6 +131,7 @@
                             <th class="col-subtype">Triwulan</th>
                             <th class="col-subtype prospect">Prospek</th>
                         </tr>
+                        @endif
                     </thead>
                     <tbody>
                         @php
@@ -117,7 +144,11 @@
                                 ['key' => '506', 'label' => 'Waktu Pengiriman Pemasok', 'type' => 'delivery'],
                                 ['key' => '507', 'label' => 'Persediaan Bahan Baku', 'type' => 'normal'],
                             ];
-                            $periods = ['p1','p2','p3','p4','p5','p6'];
+                            // Triwulanan: only 2 columns (p1=kondisi, p2=prospek)
+                            // Tahunan: all 6 columns
+                            $periods = $isTriwulanan ? ['p1','p2'] : ['p1','p2','p3','p4','p5','p6'];
+                            // Prospect column indices: tahunan=3,5; triwulanan=1
+                            $prospectIndices = $isTriwulanan ? [1] : [3, 5];
                             $labelsNormal = [ ['value'=>'naik','text'=>'Naik'], ['value'=>'tetap','text'=>'Tetap'], ['value'=>'turun','text'=>'Turun'] ];
                             $labelsDelivery = [ ['value'=>'lebih_cepat','text'=>'Lebih cepat'], ['value'=>'tetap','text'=>'Tetap'], ['value'=>'lebih_lambat','text'=>'Lebih lambat'] ];
                             $data = $surveyResponse->blok5_data ?? [];
@@ -142,14 +173,14 @@
                                         <small class="component-desc">{{ $descriptions[$row['key']] }}</small>
                                     @endif
                                 </td>
-                                @foreach($periods as $index => $period)
-                                    @php $isProspect = in_array($index, [3,5]); @endphp
+                                @foreach($periods as $index => $pKey)
+                                    @php $isProspect = in_array($index, $prospectIndices); @endphp
                                     <td class="{{ $isProspect ? 'prospect-col' : '' }}">
                                         <div class="radio-group">
                                             @foreach(($row['type']==='delivery' ? $labelsDelivery : $labelsNormal) as $opt)
                                                 @php
-                                                    $name = "blok5[{$row['key']}][$period]";
-                                                    $checked = isset($data[$row['key']][$period]) && $data[$row['key']][$period] === $opt['value'];
+                                                    $name = "blok5[{$row['key']}][$pKey]";
+                                                    $checked = isset($data[$row['key']][$pKey]) && $data[$row['key']][$pKey] === $opt['value'];
                                                 @endphp
                                                 <label class="radio-pill">
                                                     <input type="radio" name="{{ $name }}" value="{{ $opt['value'] }}" {{ $checked ? 'checked' : '' }} required>
@@ -173,7 +204,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="15,18 9,12 15,6"></polyline>
                     </svg>
-                    Kembali ke Bab 4
+                    {{ ($triwulan ?? 0) > 0 ? 'Kembali ke Bab 3' : 'Kembali ke Bab 4' }}
                 </button>
 
                 <button type="button" id="save-draft" class="btn btn-secondary">
@@ -244,13 +275,16 @@
 window.surveyRoutes = @json($editRoutes);
 @else
 window.surveyRoutes = {
-    autoSave:   '{{ route("survey.sibstr.blok5.autosave", ["year" => $tahun, "period" => $period]) }}',
-    saveAll:    '{{ route("survey.sibstr.blok5.save",     ["year" => $tahun, "period" => $period]) }}',
-    status:     '{{ route("survey.sibstr.blok5.status",   ["year" => $tahun, "period" => $period]) }}',
-    backToBlok4:'{{ route("survey.sibstr.blok4",          ["year" => $tahun, "period" => $period]) }}',
-    blok6:      '{{ route("survey.sibstr.blok6",          ["year" => $tahun, "period" => $period]) }}',
-    nextBlok:   '{{ route("survey.sibstr.blok6",          ["year" => $tahun, "period" => $period]) }}'
+    autoSave:                '{{ route("survey.sibstr.blok5.autosave", ["year" => $tahun, "period" => $period]) }}',
+    saveAll:                 '{{ route("survey.sibstr.blok5.save",     ["year" => $tahun, "period" => $period]) }}',
+    status:                  '{{ route("survey.sibstr.blok5.status",   ["year" => $tahun, "period" => $period]) }}',
+    backToBlok4:             '{{ route("survey.sibstr.blok4",              ["year" => $tahun, "period" => $period]) }}',
+    backToBlok3bIndustri:    '{{ route("survey.sibstr.blok3b.industri",    ["year" => $tahun, "period" => $period]) }}',
+    backToBlok3bNonIndustri: '{{ route("survey.sibstr.blok3b.nonindustri", ["year" => $tahun, "period" => $period]) }}',
+    blok6:                   '{{ route("survey.sibstr.blok6",              ["year" => $tahun, "period" => $period]) }}',
+    nextBlok:                '{{ route("survey.sibstr.blok6",              ["year" => $tahun, "period" => $period]) }}'
 };
+window.surveyData = { isTriwulanan: {{ ($triwulan ?? 0) > 0 ? 'true' : 'false' }}, kbliPrefix: @json($kbliPrefix ?? '') };
 @endif
 </script>
 <script src="{{ asset('js/survey.js') }}"></script>

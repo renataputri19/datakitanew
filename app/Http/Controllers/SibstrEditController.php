@@ -243,7 +243,10 @@ class SibstrEditController extends Controller
             'saveAll'        => route('survey.sibstr.edit.blok3b.industri.save', $p),
             'status'         => route('survey.sibstr.edit.blok3b.industri.status', $p),
             'backToBlok3a'   => route('survey.sibstr.edit.blok3a', $p),
-            'nextBlok'       => route('survey.sibstr.edit.blok3c.industri', $p),
+            'nextBlok'       => $triwulan > 0
+                ? route('survey.sibstr.edit.blok5', $p)
+                : route('survey.sibstr.edit.blok3c.industri', $p),
+            'blok5'          => route('survey.sibstr.edit.blok5', $p),
             'blok3b_industri'=> route('survey.sibstr.edit.blok3b.industri', $p),
         ];
     }
@@ -257,7 +260,10 @@ class SibstrEditController extends Controller
             'saveAll'            => route('survey.sibstr.edit.blok3b.nonindustri.save', $p),
             'status'             => route('survey.sibstr.edit.blok3b.nonindustri.status', $p),
             'backToBlok2'        => route('survey.sibstr.edit.blok3a', $p),
-            'nextBlok'           => route('survey.sibstr.edit.blok4', $p),
+            'nextBlok'           => $triwulan > 0
+                ? route('survey.sibstr.edit.blok5', $p)
+                : route('survey.sibstr.edit.blok4', $p),
+            'blok5'              => route('survey.sibstr.edit.blok5', $p),
             'blok3b_nonindustri' => route('survey.sibstr.edit.blok3b.nonindustri', $p),
         ];
     }

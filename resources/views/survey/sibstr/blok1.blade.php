@@ -13,7 +13,7 @@
     $currentTriwulan = $triwulan ?? $surveyResponse->triwulan ?? 0;
     $currentTahun    = $tahun    ?? $surveyResponse->tahun    ?? 2025;
     $currentPeriod   = $period   ?? ($currentTriwulan === 0 ? 'tahunan' : (string) $currentTriwulan);
-    $isReadOnlyMode  = !empty($isEditMode) && $currentTriwulan > 0;
+    $isReadOnlyMode  = false; // Triwulanan edit mode is fully editable
 @endphp
 
 @if($isReadOnlyMode)

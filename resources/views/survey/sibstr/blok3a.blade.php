@@ -94,13 +94,33 @@
             <h3 class="special-title text-green-700 dark:text-green-400">
                 <span class="text-xl">303.</span> Total Pendapatan
             </h3>
-            <!-- Per-section Quarter Tabs -->
+            <!-- Per-section Quarter Tabs (dynamic based on tahun/triwulan) -->
+            @php
+                $currentTw  = $triwulan ?? 0;
+                $curYear    = $tahun ?? 2025;
+                $prevYear   = $curYear - 1;
+                $twMonthMap = [
+                    1 => ['key' => 'q1', 'label' => 'Triwulan I',   'months' => ["{$curYear}_jan", "{$curYear}_feb", "{$curYear}_mar"]],
+                    2 => ['key' => 'q2', 'label' => 'Triwulan II',  'months' => ["{$curYear}_apr", "{$curYear}_mei", "{$curYear}_jun"]],
+                    3 => ['key' => 'q3', 'label' => 'Triwulan III', 'months' => ["{$curYear}_jul", "{$curYear}_agu", "{$curYear}_sep"]],
+                    4 => ['key' => 'q4', 'label' => 'Triwulan IV',  'months' => ["{$curYear}_okt", "{$curYear}_nov", "{$curYear}_des"]],
+                ];
+                $quarterConf = ['dec_prev' => ['label' => "Des {$prevYear}", 'months' => ["{$prevYear}_des"]]];
+                if ($currentTw > 0) {
+                    // Triwulanan: show only previous Dec + current quarter
+                    $quarterConf[$twMonthMap[$currentTw]['key']] = $twMonthMap[$currentTw];
+                } else {
+                    // Tahunan: all 4 quarters
+                    foreach ($twMonthMap as $tw) {
+                        $quarterConf[$tw['key']] = $tw;
+                    }
+                }
+                $firstQKey = array_key_first($quarterConf);
+            @endphp
             <div class="quarter-tabs" id="total-tabs" role="tablist" aria-label="Pilih Triwulan untuk Total">
-                <button type="button" class="quarter-tab active" data-quarter="dec2024">Des 2024</button>
-                <button type="button" class="quarter-tab" data-quarter="q1">Triwulan I</button>
-                <button type="button" class="quarter-tab" data-quarter="q2">Triwulan II</button>
-                <button type="button" class="quarter-tab" data-quarter="q3">Triwulan III</button>
-                <button type="button" class="quarter-tab" data-quarter="q4">Triwulan IV</button>
+                @foreach($quarterConf as $qKey => $qConf)
+                <button type="button" class="quarter-tab {{ $loop->first ? 'active' : '' }}" data-quarter="{{ $qKey }}">{{ $qConf['label'] }}</button>
+                @endforeach
             </div>
             <div class="data-grid quarter-grid" id="total-grid-container">
                 <!-- Total inputs will be injected here -->
@@ -116,8 +136,23 @@
                 @php
                     $products = $surveyResponse->blok3a_products ?? [];
                     $totals = $surveyResponse->blok3a_totals ?? [];
-                    $months = ['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'];
-                    $monthLabels = ['Des 2024', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                    // Build preview months/labels from dynamic quarterConf
+                    $monthNameMap = ['jan'=>'Jan','feb'=>'Feb','mar'=>'Mar','apr'=>'Apr','mei'=>'Mei',
+                                     'jun'=>'Jun','jul'=>'Jul','agu'=>'Agu','sep'=>'Sep','okt'=>'Okt',
+                                     'nov'=>'Nov','des'=>'Des'];
+                    $months = [];
+                    $monthLabels = [];
+                    foreach ($quarterConf as $qConf) {
+                        foreach ($qConf['months'] as $mKey) {
+                            $months[] = $mKey;
+                            preg_match('/^(\d{4})_(\w+)$/', $mKey, $mm);
+                            $moLabel = $monthNameMap[$mm[2] ?? ''] ?? strtoupper($mm[2] ?? $mKey);
+                            // Show year for the Dec baseline and for all triwulanan columns
+                            $monthLabels[] = ($mm[2] === 'des' || $currentTw > 0)
+                                ? $moLabel . ' ' . ($mm[1] ?? '')
+                                : $moLabel;
+                        }
+                    }
                 @endphp
 
                 @if(count($products) > 0 || !empty($totals))
@@ -206,6 +241,7 @@
 
         <!-- Questions 302, 305, 306 — unified section matching Blok 2 layout -->
         @php $pl = $surveyResponse->blok3a_pendapatan_lainnya ?? []; @endphp
+        @if(($triwulan ?? 0) == 0)
         <div class="form-section" id="pendapatan-section">
             <div class="section-header">
                 <h3 class="section-title">Pendapatan Lainnya &amp; Jasa Industri</h3>
@@ -325,6 +361,7 @@
 
             </div>
         </div>
+        @endif
 
         <!-- Actions -->
         <div class="form-actions mt-8">
@@ -391,7 +428,9 @@ window.surveyRoutes = {
 
 window.surveyData = {
     products: @json($surveyResponse->blok3a_products ?? []),
-    totals: @json($surveyResponse->blok3a_totals ?? [])
+    totals: @json($surveyResponse->blok3a_totals ?? []),
+    quarterConf: @json($quarterConf),
+    firstQuarter: '{{ $firstQKey }}'
 };
 </script>
 <script src="{{ asset('js/survey.js') }}"></script>

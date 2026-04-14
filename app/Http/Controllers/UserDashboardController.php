@@ -221,19 +221,21 @@ class UserDashboardController extends Controller
      */
     public function downloadSibstrCertificate(Request $request)
     {
-        $user  = Auth::user();
-        $tahun = (int) $request->query('tahun', 2025);
+        $user     = Auth::user();
+        $tahun    = (int) $request->query('tahun', 2025);
+        $triwulan = (int) $request->query('triwulan', 0);
 
-        // Fetch the annual (triwulan = 0) SIBSTR response for the given year.
+        // Fetch the SIBSTR response for the given year and period (0 = tahunan, 1-4 = triwulanan).
         $response = SurveyResponse::where('user_id', $user->id)
             ->where('survey_type', 'sibstr')
             ->where('tahun', $tahun)
-            ->where('triwulan', 0)
+            ->where('triwulan', $triwulan)
             ->first();
 
         if (!$response) {
+            $periodLabel = $triwulan > 0 ? 'triwulan ' . $triwulan : 'tahunan';
             return redirect()->route('dashboard.surveys.sibstr.results.year', $tahun)
-                ->with('error', 'Data survei tahunan untuk tahun ' . $tahun . ' tidak ditemukan.');
+                ->with('error', 'Data survei ' . $periodLabel . ' untuk tahun ' . $tahun . ' tidak ditemukan.');
         }
 
         // Check if completed. If not, redirect back with error.
@@ -245,15 +247,20 @@ class UserDashboardController extends Controller
         $completedAt = $response->last_saved_at ?? now();
 
         $data = [
-            'user' => $user,
-            'response' => $response,
+            'user'        => $user,
+            'response'    => $response,
             'completedAt' => $completedAt,
+            'triwulan'    => $triwulan,
+            'tahun'       => $tahun,
         ];
 
         $pdf = Pdf::loadView('user-dashboard.sibstr-certificate', $data);
-        
+
+        $suffix   = $triwulan > 0 ? '-TW' . $triwulan : '';
+        $filename = 'Bukti-Penyelesaian-SIBSTR-' . $tahun . $suffix . '-' . Str::slug($response->nama_perusahaan ?? 'Perusahaan') . '.pdf';
+
         // Return download response
-        return $pdf->download('Bukti-Penyelesaian-SIBSTR-' . Str::slug($response->nama_perusahaan ?? 'Perusahaan') . '.pdf');
+        return $pdf->download($filename);
     }
 
     public function updateProfile(Request $request)

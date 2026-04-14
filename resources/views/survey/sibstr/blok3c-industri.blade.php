@@ -449,6 +449,11 @@
 
 @push('scripts')
 <script>
+// Auto-redirect triwulanan users — blok3c is tahunan-only
+@if(($triwulan ?? 0) > 0)
+window.location.replace('{{ route("survey.sibstr.blok5", ["year" => $tahun, "period" => $period]) }}');
+@endif
+
 @if(isset($editRoutes) && !empty($editRoutes))
 window.surveyRoutes = @json($editRoutes);
 @else
@@ -457,7 +462,7 @@ window.surveyRoutes = {
     saveAll:         '{{ route("survey.sibstr.blok3c.industri.save",     ["year" => $tahun, "period" => $period]) }}',
     status:          '{{ route("survey.sibstr.blok3c.industri.status",   ["year" => $tahun, "period" => $period]) }}',
     backToBlok3b:    '{{ route("survey.sibstr.blok3b.industri",          ["year" => $tahun, "period" => $period]) }}',
-    nextBlok:        '{{ route("survey.sibstr.blok4",                    ["year" => $tahun, "period" => $period]) }}',
+    nextBlok:        '{{ ($triwulan ?? 0) > 0 ? route("survey.sibstr.blok5", ["year" => $tahun, "period" => $period]) : route("survey.sibstr.blok4", ["year" => $tahun, "period" => $period]) }}',
     blok3b_industri: '{{ route("survey.sibstr.blok3b.industri",          ["year" => $tahun, "period" => $period]) }}'
 };
 @endif

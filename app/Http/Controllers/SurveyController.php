@@ -407,7 +407,18 @@ class SurveyController extends Controller
 
         $referenceResponse = $this->getPreviousPeriodResponse($user->id, $tahun, $triwulan);
 
-        return view('survey.sibstr.blok5', compact('surveyResponse', 'tahun', 'triwulan', 'period', 'referenceResponse'));
+        // Determine KBLI prefix so triwulanan back-navigation can pick the correct blok3b
+        $kbliPrefix = null;
+        $latestBlok5 = \App\Models\SurveyResponse::where('user_id', $user->id)
+            ->where('survey_type', 'sibstr')
+            ->whereNotNull('kbli_utama')
+            ->latest()
+            ->first();
+        if ($latestBlok5?->kbli_utama && preg_match('/^(\d{2})/', $latestBlok5->kbli_utama, $m)) {
+            $kbliPrefix = (int) $m[1];
+        }
+
+        return view('survey.sibstr.blok5', compact('surveyResponse', 'tahun', 'triwulan', 'period', 'referenceResponse', 'kbliPrefix'));
     }
 
     /**
@@ -810,91 +821,99 @@ class SurveyController extends Controller
 
             // Only validate other fields if kondisi_perusahaan is 'masih_aktif'
             if ($isMasihAktif) {
+                $requestTriwulan = (int) $request->input('triwulan', 0);
+                $isTahunan = $requestTriwulan === 0;
+
                 $rules = array_merge($rules, [
                     'jaringan_unit_kegiatan' => 'required|string|in:tunggal,pabrik_unit_produksi,pusat_ada_kegiatan_produksi,kantor_pusat_administrasi_perwakilan,unit_pembantu_penunjang',
-
-                    // Q203 required only when 202 = c or d
-                    'jumlah_cabang_dan_unit_usaha' => 'nullable|integer|min:0|required_if:jaringan_unit_kegiatan,pusat_ada_kegiatan_produksi|required_if:jaringan_unit_kegiatan,kantor_pusat_administrasi_perwakilan',
-
-                    // Q204 sub-fields required only when 202 = b
-                    'info_kantor_pusat_nama' => 'nullable|string|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
-                    'info_kantor_pusat_alamat' => 'nullable|string|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
-                    'info_kantor_pusat_email' => 'nullable|email|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
-                    'info_kantor_pusat_negara' => 'nullable|string|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
-                    'info_kantor_pusat_provinsi' => 'nullable|string|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
-                    'info_kantor_pusat_kabkota' => 'nullable|string|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
-
-                    // 205 onwards should NOT be required when 202 = e (unit_pembantu_penunjang)
-                    'jumlah_bulan_aktif_2025' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0|max:12',
-                    'rata_hari_kerja_bulanan_2025' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0|max:31',
-                    'rata_jam_kerja_per_hari_2025' => 'nullable|numeric|min:0',
-                    'rata_shift_per_hari_2025' => 'nullable|integer|min:0',
                 ]);
 
-                // Q207 (Tahunan) vs Q203 (Triwulanan) — period-aware TK validation
-                $requestTriwulan = (int) $request->input('triwulan', 0);
-                if ($requestTriwulan === 0) {
+                // Q203-Q206: tahunan-only (hidden for triwulanan)
+                if ($isTahunan) {
+                    $rules = array_merge($rules, [
+                        // Q203 required only when 202 = c or d
+                        'jumlah_cabang_dan_unit_usaha' => 'nullable|integer|min:0|required_if:jaringan_unit_kegiatan,pusat_ada_kegiatan_produksi|required_if:jaringan_unit_kegiatan,kantor_pusat_administrasi_perwakilan',
+
+                        // Q204 sub-fields required only when 202 = b
+                        'info_kantor_pusat_nama' => 'nullable|string|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
+                        'info_kantor_pusat_alamat' => 'nullable|string|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
+                        'info_kantor_pusat_email' => 'nullable|email|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
+                        'info_kantor_pusat_negara' => 'nullable|string|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
+                        'info_kantor_pusat_provinsi' => 'nullable|string|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
+                        'info_kantor_pusat_kabkota' => 'nullable|string|required_if:jaringan_unit_kegiatan,pabrik_unit_produksi',
+
+                        // Q205/206 should NOT be required when 202 = e (unit_pembantu_penunjang)
+                        'jumlah_bulan_aktif_2025' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0|max:12',
+                        'rata_hari_kerja_bulanan_2025' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0|max:31',
+                        'rata_jam_kerja_per_hari_2025' => 'nullable|numeric|min:0',
+                        'rata_shift_per_hari_2025' => 'nullable|integer|min:0',
+                    ]);
+                }
+
+                // Q207: period-aware TK validation
+                if ($isTahunan) {
                     // Tahunan: require detailed Q207 worker breakdown
                     $rules = array_merge($rules, [
-                        'jumlah_seluruh_pekerja'          => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
-                        'tenaga_kerja_laki_laki'          => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
-                        'tenaga_kerja_perempuan'          => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
+                        'jumlah_seluruh_pekerja'             => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
+                        'tenaga_kerja_laki_laki'             => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
+                        'tenaga_kerja_perempuan'             => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
                         'pekerja_bukan_outsourcing_produksi' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
                         'pekerja_bukan_outsourcing_lainnya'  => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
-                        'pekerja_outsourcing_produksi'    => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
-                        'pekerja_outsourcing_lainnya'     => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
-                        'tenaga_kerja_asing'              => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
+                        'pekerja_outsourcing_produksi'       => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
+                        'pekerja_outsourcing_lainnya'        => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
+                        'tenaga_kerja_asing'                 => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0',
                     ]);
                 } else {
-                    // Triwulanan: require only single average TK entry (Q203)
+                    // Triwulanan: require only single average TK entry (Q207)
                     $rules['rata_rata_tenaga_kerja'] = 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0';
                 }
 
+                // Q208: kegiatan utama (both modes)
                 $rules = array_merge($rules, [
-                    // Q207/Q203: TK fields differ by period (tahunan vs triwulanan)
-                    // Detect period from the hidden form fields
                     'kegiatan_utama_perusahaan' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|max:1000',
                     'produk_utama_perusahaan'   => 'nullable|string|max:1000',
                     'kbli_utama' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|regex:/^\d{5}$/',
-                    // Q210 sertifikasi (all nullable free-text fields)
+                    // Q210 sertifikasi (nullable — both modes)
                     'sertifikasi_keamanan_produk'        => 'nullable|string|max:500',
                     'sertifikasi_kesehatan_keberlanjutan' => 'nullable|string|max:500',
                     'sertifikasi_kualitas_manajemen'      => 'nullable|string|max:500',
                     'sertifikasi_tidak_ada'               => 'nullable|string|max:500',
                     'sertifikasi_lainnya'                 => 'nullable|string|max:500',
-                    // Q211 model industri (nullable checkboxes)
+                    // Q211 model industri (nullable — both modes)
                     'model_industri_oem'       => 'nullable|boolean',
                     'model_industri_odm'       => 'nullable|boolean',
                     'model_industri_obm'       => 'nullable|boolean',
                     'model_industri_tidak_ada' => 'nullable|boolean',
                     'model_industri_lainnya'   => 'nullable|string|max:500',
-                    'memproduksi_barang_sendiri' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
-                    'menyediakan_layanan_makan_minum' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
-                    'penjualan_barang_pihak_lain' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
-                    'aktivitas_jasa' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
-                    'penggunaan_internet' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
-
-                    // When 210 = Ya and not 202 = e, require 210a and 210b
-                    'internet_a1_menerima_pesanan' => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
-                    'internet_a2_produksi' => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
-                    'internet_a3_distribusi' => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
-                    'internet_a4_beli_bahan_baku' => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
-                    'internet_a5_promosi' => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
-                    'internet_a6_lainnya' => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
-                    'pemanfaatan_teknologi_digital' => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
-
-                    'produksi_ramah_lingkungan' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya_seluruh,ya_sebagian,tidak',
-                    'penggunaan_input_ramah_lingkungan' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
                 ]);
+
+                // Q209, Q212, Q213: tahunan-only (hidden for triwulanan)
+                if ($isTahunan) {
+                    $rules = array_merge($rules, [
+                        // Q209
+                        'memproduksi_barang_sendiri'      => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
+                        'menyediakan_layanan_makan_minum' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
+                        'penjualan_barang_pihak_lain'     => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
+                        'aktivitas_jasa'                  => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
+                        // Q212
+                        'penggunaan_internet' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
+                        'internet_a1_menerima_pesanan' => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
+                        'internet_a2_produksi'         => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
+                        'internet_a3_distribusi'       => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
+                        'internet_a4_beli_bahan_baku'  => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
+                        'internet_a5_promosi'          => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
+                        'internet_a6_lainnya'          => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
+                        'pemanfaatan_teknologi_digital' => 'exclude_if:jaringan_unit_kegiatan,unit_pembantu_penunjang|required_if:penggunaan_internet,ya|in:ya,tidak',
+                        // Q213
+                        'produksi_ramah_lingkungan'         => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya_seluruh,ya_sebagian,tidak',
+                        'penggunaan_input_ramah_lingkungan' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|string|in:ya,tidak',
+                    ]);
+                }
 
                 $messages = array_merge($messages, [
                     'jaringan_unit_kegiatan.required' => 'Jaringan atau unit kegiatan perusahaan wajib dipilih',
                     'jaringan_unit_kegiatan.in' => 'Pilihan jaringan atau unit kegiatan perusahaan tidak valid',
-
-                    // Q203 messages
                     'jumlah_cabang_dan_unit_usaha.required_if' => 'Pertanyaan 203 wajib diisi saat R202 = c atau d',
-
-                    // Q204 messages
                     'info_kantor_pusat_nama.required_if' => 'Nama Kantor Pusat wajib diisi saat R202 = b',
                     'info_kantor_pusat_alamat.required_if' => 'Alamat Kantor Pusat wajib diisi saat R202 = b',
                     'info_kantor_pusat_email.required_if' => 'Email Kantor Pusat wajib diisi saat R202 = b',
@@ -902,8 +921,6 @@ class SurveyController extends Controller
                     'info_kantor_pusat_negara.required_if' => 'Negara Kantor Pusat wajib diisi saat R202 = b',
                     'info_kantor_pusat_provinsi.required_if' => 'Provinsi Kantor Pusat wajib diisi saat R202 = b',
                     'info_kantor_pusat_kabkota.required_if' => 'Kabupaten/Kota Kantor Pusat wajib diisi saat R202 = b',
-
-                    // Other messages
                     'penggunaan_internet.required' => 'Pertanyaan penggunaan internet wajib dipilih',
                     'kbli_utama.regex' => 'KBLI harus berupa 5 digit angka (contoh: 12345)',
                     'internet_a1_menerima_pesanan.required_if' => 'Isian 210a (menerima pesanan) wajib diisi saat 210 = Ya',
@@ -1336,15 +1353,15 @@ class SurveyController extends Controller
             ];
 
             if ($isCompleted) {
+                ['triwulan' => $twCheck] = $this->getPeriod();
                 $rows = ['501','502','503','504','505','506','507'];
-                $periods = ['p1','p2','p3','p4','p5','p6'];
+                // Triwulanan uses only p1 (kondisi) and p2 (prospek)
+                $periods = $twCheck > 0 ? ['p1','p2'] : ['p1','p2','p3','p4','p5','p6'];
                 foreach ($rows as $row) {
                     foreach ($periods as $period) {
                         if ($row === '506') {
-                            // Delivery time options
                             $rules["blok5.$row.$period"] = 'required|in:lebih_cepat,tetap,lebih_lambat';
                         } else {
-                            // Normal naik/tetap/turun options
                             $rules["blok5.$row.$period"] = 'required|in:naik,tetap,turun';
                         }
                     }
@@ -2143,58 +2160,62 @@ class SurveyController extends Controller
             if ($isCompleted) {
                 // Validation rules for numeric currency-like fields (non-negative) and percentages (0..100)
                 $rules = [
-                    'blok3b_industri.q306_awal' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q306_akhir' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q306_year_awal' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q306_year_akhir' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q307_awal' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q307_akhir' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q307_year_awal' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q307_year_akhir' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q308_awal' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q308_akhir' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q308_year_awal' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q308_year_akhir' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q309_awal' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q309_akhir' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q310b_awal' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q310b_akhir' => 'nullable|numeric|min:0',
-            'blok3b_industri.q310' => 'nullable|numeric|min:0',
-            'blok3b_industri.q310_year' => 'nullable|numeric|min:0',
-            // Q311 updated structure: require all four subfields
-            'blok3b_industri.q311a' => 'required|numeric|min:0',
-            'blok3b_industri.q311b' => 'required|numeric|min:0',
-            'blok3b_industri.q311b1' => 'required|numeric|min:0',
-            'blok3b_industri.q311b2' => 'required|numeric|min:0',
-            'blok3b_industri.q312' => 'nullable|numeric|min:0',
-            'blok3b_industri.q312_year' => 'nullable|numeric|min:0',
-            'blok3b_industri.q313' => 'nullable|numeric|min:0',
-            'blok3b_industri.q313_year' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q315a' => 'nullable|numeric|min:0',
-                    'blok3b_industri.q315b' => 'nullable|numeric|min:0',
+                    'blok3b_industri.q306_awal'       => 'nullable|numeric|min:0',
+                    'blok3b_industri.q306_akhir'      => 'nullable|numeric|min:0',
+                    'blok3b_industri.q307_awal'       => 'nullable|numeric|min:0',
+                    'blok3b_industri.q307_akhir'      => 'nullable|numeric|min:0',
+                    'blok3b_industri.q308_awal'       => 'nullable|numeric|min:0',
+                    'blok3b_industri.q308_akhir'      => 'nullable|numeric|min:0',
+                    'blok3b_industri.q309_awal'       => 'nullable|numeric|min:0',
+                    'blok3b_industri.q309_akhir'      => 'nullable|numeric|min:0',
+                    'blok3b_industri.q310'            => 'nullable|numeric|min:0',
+                    // Q311a: biaya TK triwulan lalu (both modes)
+                    'blok3b_industri.q311a'           => 'required|numeric|min:0',
+                    'blok3b_industri.q312'            => 'nullable|numeric|min:0',
+                    'blok3b_industri.q313'            => 'nullable|numeric|min:0',
+                    'blok3b_industri.q315a'           => 'nullable|numeric|min:0',
+                    'blok3b_industri.q315b'           => 'nullable|numeric|min:0',
                 ];
 
-                // Human-friendly attribute labels and messages
-                $attributes = [
-                    'blok3b_industri.q319g' => 'Total kepemilikan (Q319g)',
-                ];
+                // Tahunan-only fields: year inventory, TK year breakdown, year costs
+                if ($triwulan === 0) {
+                    $rules = array_merge($rules, [
+                        'blok3b_industri.q306_year_awal'  => 'nullable|numeric|min:0',
+                        'blok3b_industri.q306_year_akhir' => 'nullable|numeric|min:0',
+                        'blok3b_industri.q307_year_awal'  => 'nullable|numeric|min:0',
+                        'blok3b_industri.q307_year_akhir' => 'nullable|numeric|min:0',
+                        'blok3b_industri.q308_year_awal'  => 'nullable|numeric|min:0',
+                        'blok3b_industri.q308_year_akhir' => 'nullable|numeric|min:0',
+                        'blok3b_industri.q310b_awal'      => 'nullable|numeric|min:0',
+                        'blok3b_industri.q310b_akhir'     => 'nullable|numeric|min:0',
+                        'blok3b_industri.q310_year'       => 'nullable|numeric|min:0',
+                        // Q311b: TK selama tahun 2025 (tahunan-only)
+                        'blok3b_industri.q311b'           => 'required|numeric|min:0',
+                        'blok3b_industri.q311b1'          => 'required|numeric|min:0',
+                        'blok3b_industri.q311b2'          => 'required|numeric|min:0',
+                        'blok3b_industri.q312_year'       => 'nullable|numeric|min:0',
+                        'blok3b_industri.q313_year'       => 'nullable|numeric|min:0',
+                    ]);
+                }
 
                 $messages = [
-                    // Make the q319g message more human-friendly
                     'blok3b_industri.q319g.max' => 'Total kepemilikan tidak boleh melebihi 100%.'
                 ];
+                $attributes = ['blok3b_industri.q319g' => 'Total kepemilikan (Q319g)'];
 
                 $validator = Validator::make($request->all(), $rules, $messages, $attributes);
 
-                // Ensure Q311.b (total selama tahun 2025) is at least b.1 + b.2
-                $validator->after(function($v) use ($data) {
-                    $b  = (float) ($data['q311b']  ?? 0);
-                    $b1 = (float) ($data['q311b1'] ?? 0);
-                    $b2 = (float) ($data['q311b2'] ?? 0);
-                    if ($b < ($b1 + $b2)) {
-                        $v->errors()->add('blok3b_industri[q311b]', 'Nilai b (tahun 2025) harus ≥ b.1 + b.2');
-                    }
-                });
+                // Tahunan-only: Q311b must be >= b.1 + b.2
+                if ($triwulan === 0) {
+                    $validator->after(function($v) use ($data) {
+                        $b  = (float) ($data['q311b']  ?? 0);
+                        $b1 = (float) ($data['q311b1'] ?? 0);
+                        $b2 = (float) ($data['q311b2'] ?? 0);
+                        if ($b < ($b1 + $b2)) {
+                            $v->errors()->add('blok3b_industri[q311b]', 'Nilai b (tahun 2025) harus ≥ b.1 + b.2');
+                        }
+                    });
+                }
 
                 if ($validator->fails()) {
                     return response()->json([
@@ -2215,8 +2236,8 @@ class SurveyController extends Controller
                 'blok3b_industri_completed' => $isCompleted,
             ]);
 
-            // Next block after 3B Industri is Blok 3C Industri
-            $nextBlock = 'blok3c_industri';
+            // Next block: triwulanan skips blok3c entirely → blok5
+            $nextBlock = $triwulan > 0 ? 'blok5' : 'blok3c_industri';
 
             return response()->json([
                 'success' => true,
@@ -2390,42 +2411,58 @@ class SurveyController extends Controller
 
             // Validation rules for numeric fields (non-negative) and percentages
             $rules = [
-                'blok3b_nonindustri.q303' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q304' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q305' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q306a' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q306b' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q307a' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q307b' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q308a' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q308b' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q309a' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q309b' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q310' => 'nullable|numeric|min:0',
-                // Q311 updated structure: require all four subfields
-                'blok3b_nonindustri.q311a' => 'required|numeric|min:0',
-                'blok3b_nonindustri.q311b' => 'required|numeric|min:0',
-                'blok3b_nonindustri.q311b1' => 'required|numeric|min:0',
-                'blok3b_nonindustri.q311b2' => 'required|numeric|min:0',
-                'blok3b_nonindustri.q312' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q313' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q315a' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q315b' => 'nullable|numeric|min:0',
-                'blok3b_nonindustri.q314' => 'nullable|numeric|min:0|max:100',
-                'blok3b_nonindustri.q315' => 'nullable|numeric|min:0|max:100',
+                'blok3b_nonindustri.q303'     => 'nullable|numeric|min:0',
+                'blok3b_nonindustri.q304'     => 'nullable|numeric|min:0',
+                'blok3b_nonindustri.q305'     => 'nullable|numeric|min:0',
+                'blok3b_nonindustri.q312'     => 'nullable|numeric|min:0',
+                'blok3b_nonindustri.q317_a'   => 'nullable|numeric|min:0',
+                'blok3b_nonindustri.q315_a'   => 'nullable|numeric|min:0',
+                'blok3b_nonindustri.q315_c'   => 'nullable|numeric|min:0',
+                'blok3b_nonindustri.q315_e'   => 'nullable|numeric|min:0',
+                // Q313: biaya TK — nullable for Triwulanan; required added below for Tahunan
+                'blok3b_nonindustri.q313_a1'  => 'nullable|numeric|min:0',
+                'blok3b_nonindustri.q313_a2'  => 'nullable|numeric|min:0',
+                'blok3b_nonindustri.q313_b1'  => 'nullable|numeric|min:0',
+                'blok3b_nonindustri.q313_b2'  => 'nullable|numeric|min:0',
             ];
 
-            $validator = Validator::make($request->all(), $rules);
+            // Tahunan-only fields
+            if ($triwulan === 0) {
+                $rules = array_merge($rules, [
+                    // Q313: biaya TK required for Tahunan
+                    'blok3b_nonindustri.q313_a1'           => 'required|numeric|min:0',
+                    'blok3b_nonindustri.q313_a2'           => 'required|numeric|min:0',
+                    'blok3b_nonindustri.q313_b1'           => 'required|numeric|min:0',
+                    'blok3b_nonindustri.q313_b2'           => 'required|numeric|min:0',
+                    'blok3b_nonindustri.q303_year'         => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q304_year'         => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q305_year'         => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q306_year_awal'    => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q306_year_akhir'   => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q307_year_awal'    => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q307_year_akhir'   => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q308_year_awal'    => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q308_year_akhir'   => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q312_year'         => 'nullable|numeric|min:0',
+                    // Q317b-k (tahunan-only subs)
+                    'blok3b_nonindustri.q317_b'            => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q317_c1'           => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q317_c2'           => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q317_d'            => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q317_e'            => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q317_f'            => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q317_g'            => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q317_h'            => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q317_i'            => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q317_j'            => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q317_k'            => 'nullable|numeric|min:0',
+                    // Q321-Q322 asset and capital fields
+                    'blok3b_nonindustri.q318a'             => 'nullable|numeric|min:0',
+                    'blok3b_nonindustri.q318b'             => 'nullable|numeric|min:0',
+                ]);
+            }
 
-            // Ensure Q311.b (total selama tahun 2025) is at least b.1 + b.2
-            $validator->after(function($v) use ($sanitized) {
-                $b  = (float) ($sanitized['q311b']  ?? 0);
-                $b1 = (float) ($sanitized['q311b1'] ?? 0);
-                $b2 = (float) ($sanitized['q311b2'] ?? 0);
-                if ($b < ($b1 + $b2)) {
-                    $v->errors()->add('blok3b_nonindustri[q311b]', 'Nilai b (tahun 2025) harus ≥ b.1 + b.2');
-                }
-            });
+            $validator = Validator::make($request->all(), $rules);
 
             if ($validator->fails()) {
                 return response()->json([
@@ -2445,7 +2482,8 @@ class SurveyController extends Controller
                 'blok3b_nonindustri_completed' => $request->boolean('is_completed', false),
             ]);
 
-            $nextBlock = 'blok4';
+            // Triwulanan skips blok4 (fenomena) and goes directly to blok5
+            $nextBlock = $triwulan > 0 ? 'blok5' : 'blok4';
 
             return response()->json([
                 'success' => true,

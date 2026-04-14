@@ -466,6 +466,7 @@ class SurveyResponse extends Model
 
         // Ensure we have at least one empty product row when none saved
         if (empty($products)) {
+            $monthKeys = $this->getBlok3aMonthKeys();
             $products = [
                 [
                     'jenis_barang' => '',
@@ -474,9 +475,9 @@ class SurveyResponse extends Model
                     'kbli_5digit' => '',
                     'persen_ekspor' => '',
                     'negara_ekspor' => '',
-                    'banyaknya' => array_fill_keys(['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'], ''),
-                    'nilai' => array_fill_keys(['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'], ''),
-                    'harga_satuan' => array_fill_keys(['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'], ''),
+                    'banyaknya'    => array_fill_keys($monthKeys, ''),
+                    'nilai'        => array_fill_keys($monthKeys, ''),
+                    'harga_satuan' => array_fill_keys($monthKeys, ''),
                 ]
             ];
         }
@@ -498,7 +499,7 @@ class SurveyResponse extends Model
         if (empty($lainnya)) {
             $lainnya = [
                 'uraian' => '',
-                'nilai' => array_fill_keys(['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'], ''),
+                'nilai'  => array_fill_keys($this->getBlok3aMonthKeys(), ''),
             ];
         }
 
@@ -517,28 +518,69 @@ class SurveyResponse extends Model
 
         // Default structure for totals row
         if (empty($totals)) {
-            $totals = array_fill_keys(['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'], 0);
+            $totals = array_fill_keys($this->getBlok3aMonthKeys(), 0);
         }
 
         return $totals;
     }
 
     /**
-     * Calculate totals for Blok IIIA based on products and lainnya data.
+     * Return the ordered month keys for Blok IIIA based on this response's tahun/triwulan.
+     * For triwulanan: Dec of previous year + 3 months of the current quarter.
+     * For tahunan:    Dec of previous year + all 12 months of the current year.
+     */
+    private function getBlok3aMonthKeys(): array
+    {
+        $tahun    = (int) ($this->tahun    ?? date('Y'));
+        $triwulan = (int) ($this->triwulan ?? 0);
+        $prevYear = $tahun - 1;
+
+        if ($triwulan > 0) {
+            $twMonths = [
+                1 => ['jan', 'feb', 'mar'],
+                2 => ['apr', 'mei', 'jun'],
+                3 => ['jul', 'agu', 'sep'],
+                4 => ['okt', 'nov', 'des'],
+            ];
+            $keys = ["{$prevYear}_des"];
+            foreach (($twMonths[$triwulan] ?? []) as $m) {
+                $keys[] = "{$tahun}_{$m}";
+            }
+            return $keys;
+        }
+
+        $allMonths = ['jan','feb','mar','apr','mei','jun','jul','agu','sep','okt','nov','des'];
+        $keys = ["{$prevYear}_des"];
+        foreach ($allMonths as $m) {
+            $keys[] = "{$tahun}_{$m}";
+        }
+        return $keys;
+    }
+
+    /**
+     * Calculate totals for Blok IIIA based on products data.
+     * Uses dynamic month keys to avoid hardcoded year references.
      */
     public function calculateBlok3aTotals()
     {
         $products = $this->blok3a_products ?? [];
-        $lainnya = $this->blok3a_lainnya ?? [];
-        $totals = array_fill_keys(['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'], 0);
+        $totals = [];
 
-        // Sum all "nilai" values from products
+        // Sum all "nilai" values from products dynamically
         foreach ($products as $product) {
             if (isset($product['nilai']) && is_array($product['nilai'])) {
                 foreach ($product['nilai'] as $month => $value) {
+                    if (!array_key_exists($month, $totals)) {
+                        $totals[$month] = 0;
+                    }
                     $totals[$month] += (float) ($value ?: 0);
                 }
             }
+        }
+
+        // If no products have nilai data yet, return zero-filled structure for this period
+        if (empty($totals)) {
+            $totals = array_fill_keys($this->getBlok3aMonthKeys(), 0);
         }
 
         // Note: blok3a_lainnya (old Rincian 302 monthly) removed; new blok3a_pendapatan_lainnya

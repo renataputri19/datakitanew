@@ -36,7 +36,13 @@
             <div class="recipient-name">{{ $user->name }}</div>
             <div class="company-name">{{ $response->nama_perusahaan ?? 'Perusahaan' }}</div>
             
-            <p>Atas partisipasinya dalam melengkapi dan menyelesaikan<br><strong>Survei Industri Besar dan Sedang Triwulanan (SIBSTR)</strong></p>
+            <p>Atas partisipasinya dalam melengkapi dan menyelesaikan<br>
+            @if(isset($triwulan) && $triwulan > 0)
+                <strong>Survei Industri Besar dan Sedang Triwulanan (SIBSTR) — {{ ['I','II','III','IV'][$triwulan-1] }} Tahun {{ $tahun }}</strong>
+            @else
+                <strong>Survei Industri Besar dan Sedang Triwulanan (SIBSTR) — Tahunan {{ $tahun ?? '' }}</strong>
+            @endif
+            </p>
             
             <p>Status: <span style="color: #059669; font-weight: bold;">SELESAI</span></p>
             
