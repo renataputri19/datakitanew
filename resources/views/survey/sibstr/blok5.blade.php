@@ -45,6 +45,26 @@
         <p class="survey-description">
             Isi indikator kondisi dan prospek usaha per triwulan.
         </p>
+
+        @if(isset($referenceResponse) && $referenceResponse)
+        <div style="margin-top:1rem;">
+            <button type="button"
+                    onclick="openRefDrawer()"
+                    style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
+                           border-radius:0.625rem;border:2px solid #fbbf24;
+                           background:rgba(254,243,199,0.85);color:#92400e;
+                           font-size:0.8125rem;font-weight:700;cursor:pointer;
+                           transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;
+                           box-shadow:0 1px 4px rgba(251,191,36,0.25);"
+                    aria-label="Buka panel data referensi untuk perbandingan">
+                <svg style="width:1rem;height:1rem;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Lihat Data Referensi
+            </button>
+        </div>
+        @endif
     </div>
 
     <!-- Auto-save Status -->
@@ -178,6 +198,43 @@
             </div>
         </div>
     </form>
+
+    @if(isset($referenceResponse) && $referenceResponse)
+    @include('survey.sibstr.partials.reference-drawer', [
+        'referenceResponse' => $referenceResponse,
+        'currentTwLabel'    => null,
+        'fields' => [
+            ['name' => 'blok5_data.501.p1', 'label' => '501. Pesanan — TW I vs TW IV',         'copyable' => false],
+            ['name' => 'blok5_data.501.p2', 'label' => '501. Pesanan — TW II vs TW I',         'copyable' => false],
+            ['name' => 'blok5_data.501.p3', 'label' => '501. Pesanan — TW III vs TW II',       'copyable' => false],
+            ['name' => 'blok5_data.501.p5', 'label' => '501. Pesanan — TW IV vs TW III',       'copyable' => false],
+            ['name' => 'blok5_data.502.p1', 'label' => '502. Produksi — TW I vs TW IV',        'copyable' => false],
+            ['name' => 'blok5_data.502.p2', 'label' => '502. Produksi — TW II vs TW I',        'copyable' => false],
+            ['name' => 'blok5_data.502.p3', 'label' => '502. Produksi — TW III vs TW II',      'copyable' => false],
+            ['name' => 'blok5_data.502.p5', 'label' => '502. Produksi — TW IV vs TW III',      'copyable' => false],
+            ['name' => 'blok5_data.503.p1', 'label' => '503. Kapasitas — TW I vs TW IV',       'copyable' => false],
+            ['name' => 'blok5_data.503.p2', 'label' => '503. Kapasitas — TW II vs TW I',       'copyable' => false],
+            ['name' => 'blok5_data.503.p3', 'label' => '503. Kapasitas — TW III vs TW II',     'copyable' => false],
+            ['name' => 'blok5_data.503.p5', 'label' => '503. Kapasitas — TW IV vs TW III',     'copyable' => false],
+            ['name' => 'blok5_data.504.p1', 'label' => '504. Tenaga Kerja — TW I vs TW IV',    'copyable' => false],
+            ['name' => 'blok5_data.504.p2', 'label' => '504. Tenaga Kerja — TW II vs TW I',    'copyable' => false],
+            ['name' => 'blok5_data.504.p3', 'label' => '504. Tenaga Kerja — TW III vs TW II',  'copyable' => false],
+            ['name' => 'blok5_data.504.p5', 'label' => '504. Tenaga Kerja — TW IV vs TW III',  'copyable' => false],
+            ['name' => 'blok5_data.505.p1', 'label' => '505. Jam Kerja — TW I vs TW IV',       'copyable' => false],
+            ['name' => 'blok5_data.505.p2', 'label' => '505. Jam Kerja — TW II vs TW I',       'copyable' => false],
+            ['name' => 'blok5_data.505.p3', 'label' => '505. Jam Kerja — TW III vs TW II',     'copyable' => false],
+            ['name' => 'blok5_data.505.p5', 'label' => '505. Jam Kerja — TW IV vs TW III',     'copyable' => false],
+            ['name' => 'blok5_data.506.p1', 'label' => '506. Pengiriman Pemasok — TW I vs TW IV',  'copyable' => false],
+            ['name' => 'blok5_data.506.p2', 'label' => '506. Pengiriman Pemasok — TW II vs TW I',  'copyable' => false],
+            ['name' => 'blok5_data.506.p3', 'label' => '506. Pengiriman Pemasok — TW III vs TW II','copyable' => false],
+            ['name' => 'blok5_data.506.p5', 'label' => '506. Pengiriman Pemasok — TW IV vs TW III','copyable' => false],
+            ['name' => 'blok5_data.507.p1', 'label' => '507. Persediaan Bahan Baku — TW I vs TW IV',  'copyable' => false],
+            ['name' => 'blok5_data.507.p2', 'label' => '507. Persediaan Bahan Baku — TW II vs TW I',  'copyable' => false],
+            ['name' => 'blok5_data.507.p3', 'label' => '507. Persediaan Bahan Baku — TW III vs TW II','copyable' => false],
+            ['name' => 'blok5_data.507.p5', 'label' => '507. Persediaan Bahan Baku — TW IV vs TW III','copyable' => false],
+        ],
+    ])
+    @endif
 </div>
 
 @push('scripts')
@@ -187,14 +244,12 @@
 window.surveyRoutes = @json($editRoutes);
 @else
 window.surveyRoutes = {
-    autoSave: '{{ route("survey.sibstr.blok5.autosave") }}',
-    saveAll: '{{ route("survey.sibstr.blok5.save") }}',
-    status: '{{ route("survey.sibstr.blok5.status") }}',
-    backToBlok4: '{{ route("survey.sibstr.blok4") }}',
-    // Explicit route key used by SurveyManager when result.next_block === 'blok6'
-    blok6: '{{ route("survey.sibstr.blok6") }}',
-    // Fallback default next block
-    nextBlok: '{{ route("survey.sibstr.blok6") }}'
+    autoSave:   '{{ route("survey.sibstr.blok5.autosave", ["year" => $tahun, "period" => $period]) }}',
+    saveAll:    '{{ route("survey.sibstr.blok5.save",     ["year" => $tahun, "period" => $period]) }}',
+    status:     '{{ route("survey.sibstr.blok5.status",   ["year" => $tahun, "period" => $period]) }}',
+    backToBlok4:'{{ route("survey.sibstr.blok4",          ["year" => $tahun, "period" => $period]) }}',
+    blok6:      '{{ route("survey.sibstr.blok6",          ["year" => $tahun, "period" => $period]) }}',
+    nextBlok:   '{{ route("survey.sibstr.blok6",          ["year" => $tahun, "period" => $period]) }}'
 };
 @endif
 </script>

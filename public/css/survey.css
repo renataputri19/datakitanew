@@ -972,13 +972,7 @@
   margin-top: 8px;
   text-align: left; /* override any global centering */
 }
-/* Reserve left column for errors and keep hints on right */
-.form-row > .form-errors {
-  /* occupies the left grid column by natural flow */
-}
-.form-row > .form-hint {
-  /* stays paired in the right column when .form-errors is present */
-}
+/* Reserve left column for errors and keep hints on right — natural grid flow handles positioning */
 
 .hint-grid {
   display: grid;
@@ -1025,4 +1019,81 @@
   .hint-col {
     border-left-width: 2px; /* slightly lighter on mobile */
   }
+}
+
+/* ─── Question Number & Sub-question Layout (Blok 2 / Blok 3A pattern) ─── */
+
+/* Blue bold question number: "302.", "305.", "306." */
+.question-number {
+    font-weight: 700;
+    color: var(--primary-blue);
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 2.5rem;
+    line-height: 1.5;
+}
+
+/* Container for a group of sub-rows inside the right column of a form-row */
+.form-subgrid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+}
+
+/* Each sub-question: sub-label on the left, input on the right */
+.form-subrow {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: var(--spacing-3);
+    align-items: start;
+}
+
+/* Sub-question label (e.g. "a. Uraian kegiatan...") */
+.form-sublabel {
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+    font-weight: 500;
+    line-height: 1.5;
+    padding-top: var(--spacing-2);
+}
+
+.dark .form-sublabel {
+    color: var(--gray-400);
+}
+
+/* Small hint text displayed below an input */
+.form-hint-inline {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-top: 0.2rem;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.dark .form-hint-inline {
+    color: var(--gray-400);
+}
+
+/* Currency / unit prefix or suffix (Rp, %) */
+.input-prefix {
+    font-weight: 600;
+    color: var(--gray-700);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.dark .input-prefix {
+    color: var(--gray-300);
+}
+
+/* Responsive: stack sub-rows on small screens */
+@media (max-width: 640px) {
+    .form-subrow {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-2);
+    }
+    .form-sublabel {
+        padding-top: 0;
+    }
 }

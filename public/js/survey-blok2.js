@@ -68,11 +68,11 @@ class SurveyBlok2Manager {
             const q203Input = document.querySelector('input[name="jumlah_cabang_dan_unit_usaha"]');
             const q203Row = q203Input ? q203Input.closest('.form-row') : null;
             const q204Row = document.getElementById('informasi_kantor_pusat_row');
-            const rows205to211 = this.getFormRowsByQuestionNumbers(['205', '206', '207', '208', '209', '210', '210a', '210b', '211']);
+            const rows205to213 = this.getFormRowsByQuestionNumbers(['205', '206', '207', '208', '209', '210', '211', '212', '212a', '212b', '213']);
             this.setRowVisible(q202Row, false);
             this.setRowVisible(q203Row, false);
             this.setRowVisible(q204Row, false);
-            rows205to211.forEach(row => this.setRowVisible(row, false));
+            rows205to213.forEach(row => this.setRowVisible(row, false));
             const saveCompleteButton = document.getElementById('save-complete');
             const blok6Button = document.getElementById('go-to-blok6');
             if (saveCompleteButton) saveCompleteButton.style.display = 'none';
@@ -127,13 +127,13 @@ class SurveyBlok2Manager {
         const q203Input = document.querySelector('input[name="jumlah_cabang_dan_unit_usaha"]');
         const q203Row = q203Input ? q203Input.closest('.form-row') : null;
         const q204Row = document.getElementById('informasi_kantor_pusat_row');
-        const rows205to211 = this.getFormRowsByQuestionNumbers(['205', '206', '207', '208', '209', '210', '210a', '210b', '211']);
+        const rows205to213 = this.getFormRowsByQuestionNumbers(['205', '206', '207', '208', '209', '210', '211', '212', '212a', '212b', '213']);
 
         // Toggle rows based on kondisi perusahaan
         this.setRowVisible(q202Row, isActive, { autoSaveNames: ['jaringan_unit_kegiatan'] });
         this.setRowVisible(q203Row, isActive, { autoSaveNames: ['jumlah_cabang_dan_unit_usaha'] });
         this.setRowVisible(q204Row, isActive, { autoSavePrefix: 'info_kantor_pusat_' });
-        rows205to211.forEach(row => this.setRowVisible(row, isActive));
+        rows205to213.forEach(row => this.setRowVisible(row, isActive));
 
         // Update navigation buttons immediately
         this.updateNavigationButtons(value);
@@ -219,7 +219,7 @@ class SurveyBlok2Manager {
         const q203Row = q203Input ? q203Input.closest('.form-row') : null;
         const q204Row = document.getElementById('informasi_kantor_pusat_row');
 
-        const rows205to211 = this.getFormRowsByQuestionNumbers(['205', '206', '207', '208', '209', '210', '210a', '210b', '211']);
+        const rows205to213 = this.getFormRowsByQuestionNumbers(['205', '206', '207', '208', '209', '210', '211', '212', '212a', '212b', '213']);
 
         const saveCompleteButton = document.getElementById('save-complete');
         const blok6Button = document.getElementById('go-to-blok6');
@@ -229,7 +229,7 @@ class SurveyBlok2Manager {
             this.setRowVisible(q202Row, false);
             this.setRowVisible(q203Row, false, { autoSaveNames: ['jumlah_cabang_dan_unit_usaha'] });
             this.setRowVisible(q204Row, false, { autoSavePrefix: 'info_kantor_pusat_' });
-            rows205to211.forEach(row => this.setRowVisible(row, false));
+            rows205to213.forEach(row => this.setRowVisible(row, false));
             if (saveCompleteButton) saveCompleteButton.style.display = 'none';
             if (blok6Button) blok6Button.style.display = '';
             return;
@@ -240,7 +240,7 @@ class SurveyBlok2Manager {
             this.setRowVisible(q202Row, true);
             this.setRowVisible(q203Row, false);
             this.setRowVisible(q204Row, false);
-            rows205to211.forEach(row => this.setRowVisible(row, true));
+            rows205to213.forEach(row => this.setRowVisible(row, true));
             if (saveCompleteButton) saveCompleteButton.style.display = '';
             if (blok6Button) blok6Button.style.display = 'none';
             return;
@@ -251,7 +251,7 @@ class SurveyBlok2Manager {
                 // Skip to 205: hide 203 and 204
                 this.setRowVisible(q203Row, false);
                 this.setRowVisible(q204Row, false);
-                rows205to211.forEach(row => this.setRowVisible(row, true));
+                rows205to213.forEach(row => this.setRowVisible(row, true));
                 if (saveCompleteButton) saveCompleteButton.style.display = '';
                 if (blok6Button) blok6Button.style.display = 'none';
                 break;
@@ -260,7 +260,7 @@ class SurveyBlok2Manager {
                 // Continue to 204: show 204, 203 not required
                 this.setRowVisible(q203Row, false);
                 this.setRowVisible(q204Row, true);
-                rows205to211.forEach(row => this.setRowVisible(row, true));
+                rows205to213.forEach(row => this.setRowVisible(row, true));
                 if (saveCompleteButton) saveCompleteButton.style.display = '';
                 if (blok6Button) blok6Button.style.display = 'none';
                 break;
@@ -270,7 +270,7 @@ class SurveyBlok2Manager {
                 // Continue to 203: show 203 only
                 this.setRowVisible(q203Row, true);
                 this.setRowVisible(q204Row, false);
-                rows205to211.forEach(row => this.setRowVisible(row, true));
+                rows205to213.forEach(row => this.setRowVisible(row, true));
                 if (saveCompleteButton) saveCompleteButton.style.display = '';
                 if (blok6Button) blok6Button.style.display = 'none';
                 break;
@@ -279,7 +279,7 @@ class SurveyBlok2Manager {
                 // Skip to Blok VI: hide 203, 204, and 205 onwards
                 this.setRowVisible(q203Row, false);
                 this.setRowVisible(q204Row, false);
-                rows205to211.forEach(row => this.setRowVisible(row, false));
+                rows205to213.forEach(row => this.setRowVisible(row, false));
                 if (saveCompleteButton) saveCompleteButton.style.display = 'none';
                 if (blok6Button) blok6Button.style.display = '';
                 break;

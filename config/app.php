@@ -18,6 +18,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'dev_allowed_email' => env('DEV_ALLOWED_EMAIL', null),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -2,8 +2,7 @@
  * Blok 3B Industri (SIBSTR) client interactions
  * - Currency display inputs synced to hidden numeric fields
  * - Auto-save via SurveyManager for each field change
- * - Auto-total for Q309 (awal, akhir)
- * - Quarter start/end labels for inventory questions
+ * - Positive-only validation for all currency fields
  */
 
 class SurveyBlok3bIndustriManager {
@@ -16,13 +15,11 @@ class SurveyBlok3bIndustriManager {
         this.percentInputs = Array.from(this.form.querySelectorAll('.percent-input'));
 
         this.setupEventListeners();
-        this.setQuarterLabels();
         this.initializeDisplayValues();
-        this.updateTotals();
-        this.updateYearTotals();
         this.updateAssetTotal();
         this.updateAssetRequiredIndicators();
         this.updateOwnershipTotal();
+        this.updateWorkerTotals();
     }
 
     setupEventListeners() {
@@ -58,15 +55,15 @@ class SurveyBlok3bIndustriManager {
                 }
 
                 // Recompute totals when relevant inputs change
-                if (targetName && /(q306_|q307_|q308_)(awal|akhir)/.test(targetName)) {
-                    this.updateTotals();
-                }
-                if (targetName && /(q306_|q307_|q308_)year_(awal|akhir)/.test(targetName)) {
-                    this.updateYearTotals();
-                }
                 if (targetName && /\[q318(a|b)\]/.test(targetName)) {
                     this.updateAssetTotal();
                     this.updateAssetRequiredIndicators();
+                }
+                if (targetName && /\[q313_(a1|a2|b1|b2)\]/.test(targetName)) {
+                    this.updateWorkerTotal313();
+                }
+                if (targetName && /\[q314_(a1|a2|b1|b2)\]/.test(targetName)) {
+                    this.updateWorkerTotal314();
                 }
             });
 
@@ -96,7 +93,7 @@ class SurveyBlok3bIndustriManager {
                         window.surveyManager.scheduleAutoSave(fieldName, '', true);
                     }
                     // Update ownership total when any percent input cleared
-                    if (/blok3b_industri\[q319[abcdef]\]/.test(fieldName)) {
+                    if (/blok3b_industri\[q319[abcdefgh]\]/.test(fieldName)) {
                         this.updateOwnershipTotal();
                     }
                     return;
@@ -123,8 +120,8 @@ class SurveyBlok3bIndustriManager {
                     if (window.surveyManager) {
                         window.surveyManager.scheduleAutoSave(fieldName, String(num));
                     }
-                    // Update ownership total when one of 319a-f changed
-                    if (/blok3b_industri\[q319[abcdef]\]/.test(fieldName)) {
+                    // Update ownership total when one of 319a-h changed
+                    if (/blok3b_industri\[q319[abcdefgh]\]/.test(fieldName)) {
                         this.updateOwnershipTotal();
                     }
                 }
@@ -201,44 +198,6 @@ class SurveyBlok3bIndustriManager {
         }
     }
 
-    updateTotals() {
-        // Q309 totals = sum of 306, 307, 308 (awal/akhir)
-        const awal = this.getHiddenValue('blok3b_industri[q306_awal]') +
-                     this.getHiddenValue('blok3b_industri[q307_awal]') +
-                     this.getHiddenValue('blok3b_industri[q308_awal]');
-        const akhir = this.getHiddenValue('blok3b_industri[q306_akhir]') +
-                      this.getHiddenValue('blok3b_industri[q307_akhir]') +
-                      this.getHiddenValue('blok3b_industri[q308_akhir]');
-
-        // Update hidden and display
-        this.setHiddenAndDisplay('blok3b_industri[q309_awal]', awal, 'q309_awal_display');
-        this.setHiddenAndDisplay('blok3b_industri[q309_akhir]', akhir, 'q309_akhir_display');
-
-        // Auto-save totals immediately
-        if (window.surveyManager) {
-            window.surveyManager.scheduleAutoSave('blok3b_industri[q309_awal]', Number(awal).toFixed(2), true);
-            window.surveyManager.scheduleAutoSave('blok3b_industri[q309_akhir]', Number(akhir).toFixed(2), true);
-        }
-    }
-
-    updateYearTotals() {
-        // Year-level totals = sum of year_awal and year_akhir across 306/307/308
-        const awalYear = this.getHiddenValue('blok3b_industri[q306_year_awal]') +
-                         this.getHiddenValue('blok3b_industri[q307_year_awal]') +
-                         this.getHiddenValue('blok3b_industri[q308_year_awal]');
-        const akhirYear = this.getHiddenValue('blok3b_industri[q306_year_akhir]') +
-                          this.getHiddenValue('blok3b_industri[q307_year_akhir]') +
-                          this.getHiddenValue('blok3b_industri[q308_year_akhir]');
-
-        this.setHiddenAndDisplay('blok3b_industri[q310b_awal]', awalYear, 'q310b_awal_display');
-        this.setHiddenAndDisplay('blok3b_industri[q310b_akhir]', akhirYear, 'q310b_akhir_display');
-
-        if (window.surveyManager) {
-            window.surveyManager.scheduleAutoSave('blok3b_industri[q310b_awal]', Number(awalYear).toFixed(2), true);
-            window.surveyManager.scheduleAutoSave('blok3b_industri[q310b_akhir]', Number(akhirYear).toFixed(2), true);
-        }
-    }
-
     updateAssetTotal() {
         const a = this.getHiddenValue('blok3b_industri[q318a]');
         const b = this.getHiddenValue('blok3b_industri[q318b]');
@@ -267,7 +226,7 @@ class SurveyBlok3bIndustriManager {
     }
 
     updateOwnershipTotal() {
-        const keys = ['a','b','c','d','e','f'];
+        const keys = ['a','b','c','d','e','f','g','h'];
         let sum = 0;
         keys.forEach(k => {
             const input = this.form.querySelector(`input[name="blok3b_industri[q319${k}]"]`);
@@ -275,54 +234,42 @@ class SurveyBlok3bIndustriManager {
             if (!isNaN(v)) sum += v;
         });
         // Clamp to 100 for display but save actual sum
-        const disp = document.getElementById('q319g_display');
+        const disp = document.getElementById('q319i_display');
         if (disp) disp.value = Math.min(100, Math.max(0, sum));
-        const hidden = this.form.querySelector('input[type="hidden"][name="blok3b_industri[q319g]"]');
+        const hidden = this.form.querySelector('input[type="hidden"][name="blok3b_industri[q319i]"]');
         if (hidden) hidden.value = Number(sum).toFixed(2);
         if (window.surveyManager) {
-            window.surveyManager.scheduleAutoSave('blok3b_industri[q319g]', Number(sum).toFixed(2), true);
+            window.surveyManager.scheduleAutoSave('blok3b_industri[q319i]', Number(sum).toFixed(2), true);
         }
     }
 
-    setQuarterLabels() {
-        // Compute last quarter period labels (start and end dates)
-        const now = new Date();
-        const currentQuarter = Math.floor(now.getMonth() / 3) + 1; // 1..4
-        let lastQuarter = currentQuarter - 1;
-        let year = now.getFullYear();
-        if (lastQuarter < 1) {
-            lastQuarter = 4;
-            year = year - 1;
+    updateWorkerTotals() {
+        this.updateWorkerTotal313();
+        this.updateWorkerTotal314();
+    }
+
+    updateWorkerTotal313() {
+        const a1 = this.getHiddenValue('blok3b_industri[q313_a1]');
+        const a2 = this.getHiddenValue('blok3b_industri[q313_a2]');
+        const b1 = this.getHiddenValue('blok3b_industri[q313_b1]');
+        const b2 = this.getHiddenValue('blok3b_industri[q313_b2]');
+        const total = a1 + a2 + b1 + b2;
+        this.setHiddenAndDisplay('blok3b_industri[q313_c]', total, 'q313_c_display');
+        if (window.surveyManager) {
+            window.surveyManager.scheduleAutoSave('blok3b_industri[q313_c]', Number(total).toFixed(2), true);
         }
-        const quarterMonths = {
-            1: [0, 2],   // Jan..Mar
-            2: [3, 5],   // Apr..Jun
-            3: [6, 8],   // Jul..Sep
-            4: [9, 11],  // Oct..Dec
-        };
-        const [startM, endM] = quarterMonths[lastQuarter];
-        const startDate = new Date(year, startM, 1);
-        const endDate = new Date(year, endM + 1, 0); // last day of end month
+    }
 
-        const fmt = (d) => {
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-            return `${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-        };
-
-        const awalText = fmt(startDate);
-        const akhirText = fmt(endDate);
-
-        const awalLabels = ['q1_awal_label', 'q2_awal_label', 'q3_awal_label'];
-        const akhirLabels = ['q1_akhir_label', 'q2_akhir_label', 'q3_akhir_label'];
-        awalLabels.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = awalText; });
-        akhirLabels.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = akhirText; });
-
-        // Also set year-level labels used by annual inventory fields
-        const yearStr = String(endDate.getFullYear());
-        const awalYearLabels = ['q1_year_awal_label', 'q2_year_awal_label', 'q3_year_awal_label'];
-        const akhirYearLabels = ['q1_year_akhir_label', 'q2_year_akhir_label', 'q3_year_akhir_label'];
-        awalYearLabels.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = `1 Jan ${yearStr}`; });
-        akhirYearLabels.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = `31 Des ${yearStr}`; });
+    updateWorkerTotal314() {
+        const a1 = this.getHiddenValue('blok3b_industri[q314_a1]');
+        const a2 = this.getHiddenValue('blok3b_industri[q314_a2]');
+        const b1 = this.getHiddenValue('blok3b_industri[q314_b1]');
+        const b2 = this.getHiddenValue('blok3b_industri[q314_b2]');
+        const total = a1 + a2 + b1 + b2;
+        this.setHiddenAndDisplay('blok3b_industri[q314_c]', total, 'q314_c_display');
+        if (window.surveyManager) {
+            window.surveyManager.scheduleAutoSave('blok3b_industri[q314_c]', Number(total).toFixed(2), true);
+        }
     }
 
     // Inline field error helpers (consistent with other survey forms)

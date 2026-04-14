@@ -130,6 +130,18 @@ class SurveyBlok3aManager {
         setupNavBtn('save-draft', () => this.saveDraft());
         setupNavBtn('save-complete', () => this.saveAndContinue());
 
+        // Real-time error clearing for mandatory fields 302, 305, 306
+        const mandatoryIds = [
+            'q302a', 'q302b', 'q302c', 'q302d', 'q302e', 'q302f',
+            'q305a_maklun_nilai', 'q305b_maklun_pct', 'q305_online'
+        ];
+        mandatoryIds.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('input', () => this.clearFieldError(id));
+            }
+        });
+
         // Global Event Delegation for Inputs (AutoSave & Calc)
         this.form.addEventListener('input', (e) => this.handleInput(e));
         // Format on blur for display inputs
@@ -180,6 +192,9 @@ class SurveyBlok3aManager {
         const productData = data || {
             jenis_barang: '',
             satuan: '',
+            kbli_5digit: '',
+            persen_ekspor: '',
+            negara_ekspor: '',
             banyaknya: {},
             nilai: {},
             harga_satuan: {}
@@ -305,10 +320,41 @@ class SurveyBlok3aManager {
                            value="${data.satuan || ''}"
                            class="form-control unit-input"
                            placeholder="Contoh: kg, ton, pcs">
+                    <p class="form-hint" style="margin-top:0.3rem;font-size:0.78rem;color:#6b7280;">Catatan: Bila satuan yang digunakan tidak standar seperti 'botol' atau 'kaleng', agar dikonversikan ke satuan metrik seperti liter, M3, dsb.</p>
                 </div>
-                
+
+                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">KBLI 5 Digit</label>
+                        <input type="text" name="blok3a_products[${index}][kbli_5digit]"
+                               value="${data.kbli_5digit || ''}"
+                               class="form-control kbli5digit-input"
+                               maxlength="5"
+                               pattern="[0-9]{5}"
+                               placeholder="Contoh: 10610">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Persentase yang diekspor (*)</label>
+                        <div style="position:relative;">
+                            <input type="number" name="blok3a_products[${index}][persen_ekspor]"
+                                   value="${data.persen_ekspor || ''}"
+                                   class="form-control persen-ekspor-input"
+                                   min="0" max="100" step="0.01"
+                                   placeholder="0">
+                            <span style="position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);color:#6b7280;font-size:0.875rem;pointer-events:none;">%</span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Negara tujuan utama ekspor (**)</label>
+                        <input type="text" name="blok3a_products[${index}][negara_ekspor]"
+                               value="${data.negara_ekspor || ''}"
+                               class="form-control negara-ekspor-input"
+                               placeholder="Contoh: Amerika Serikat">
+                    </div>
+                </div>
+
                 <div class="form-group">
-                    <label class="form-label">Uraian Data Bulanan</label>
+                    <label class="form-label">Uraian Data Bulanan/Triwulanan</label>
                     <div class="quarter-tabs" role="tablist" aria-label="Pilih Triwulan untuk Produk">
                         <button type="button" class="quarter-tab active" data-quarter="dec2024">Des 2024</button>
                         <button type="button" class="quarter-tab" data-quarter="q1">Triwulan I</button>
@@ -490,11 +536,11 @@ class SurveyBlok3aManager {
 
     // Better implementation for Static Sections
     generateStaticQuarterGridsV2(type, data) {
-        // We will replace the innerHTML of the container. 
+        // We will replace the innerHTML of the container.
         // The container should NOT be a grid itself if we want to toggle whole blocks.
         // I will remove `quarter-grid` and `data-grid` from parent in init if present.
-        this.lainnyaContainer.className = '';
-        this.totalContainer.className = '';
+        if (this.lainnyaContainer) this.lainnyaContainer.className = '';
+        if (this.totalContainer) this.totalContainer.className = '';
 
         let html = '';
         for (const [qKey, qConf] of Object.entries(this.quarterConf)) {
@@ -831,16 +877,7 @@ class SurveyBlok3aManager {
             html += `</tr>`;
         });
 
-        // Lainnya (302) — only Nilai row is applicable
-        const lainnyaValues = months.map(m => {
-            const v = document.querySelector(`.lainnya-nilai-input[data-month=\"${m}\"]`);
-            return v ? (parseFloat(v.value) || 0) : 0;
-        });
-        html += `<tr>`;
-        html += `<td class="sticky-col"><div class="code">302.</div><div class="name">Lainnya</div></td>`;
-        html += `<td>Nilai</td>`;
-        lainnyaValues.forEach(v => html += `<td class="num">${this.formatNumber(v)}</td>`);
-        html += `</tr>`;
+        // Note: 302. Pendapatan lainnya is now a separate annual section (not monthly), so no preview row here.
 
         // Total (303) — only Nilai row is applicable
         const totalValues = months.map(m => {
@@ -909,6 +946,95 @@ class SurveyBlok3aManager {
         return (str || '').replace(/[&<>"]|'/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[s]));
     }
 
+    // Validation helpers for mandatory fields 302, 305, 306
+    validateMandatoryFields() {
+        const requiredFields = [
+            { id: 'q302a', label: '302a. Keuntungan/kerugian penjualan barang dalam bentuk yang sama' },
+            { id: 'q302b', label: '302b. Penjualan kekayaan intelektual' },
+            { id: 'q302c', label: '302c. Nilai jasa yang tidak berkaitan dengan proses produksi' },
+            { id: 'q302d', label: '302d. Tenaga listrik yang dijual' },
+            { id: 'q302e', label: '302e. Pendapatan non operasional' },
+            { id: 'q302f', label: '302f. Lainnya (pendapatan lainnya)' },
+            { id: 'q305a_maklun_nilai', label: '305a. Nilai pendapatan dari jasa industri (maklun)' },
+            { id: 'q305b_maklun_pct', label: '305b. Persentase nilai pendapatan jasa industri luar negeri' },
+            { id: 'q305_online', label: '306. Persentase pendapatan dari usaha online' },
+        ];
+
+        let errors = [];
+        let firstErrorField = null;
+
+        // Remove previous validation summary
+        const existingSummary = document.getElementById('blok3a-validation-summary');
+        if (existingSummary) existingSummary.remove();
+
+        // Clear previous field-level error states
+        requiredFields.forEach(({ id }) => {
+            const input = document.getElementById(id);
+            if (input) input.classList.remove('field-error');
+            const errSpan = document.getElementById('err-' + id);
+            if (errSpan) errSpan.style.display = 'none';
+        });
+
+        // Check each field
+        requiredFields.forEach(({ id, label }) => {
+            const input = document.getElementById(id);
+            if (!input) return;
+            if (input.value === '' || input.value === null || input.value === undefined) {
+                errors.push(label);
+                input.classList.add('field-error');
+                const errSpan = document.getElementById('err-' + id);
+                if (errSpan) errSpan.style.display = 'block';
+                if (!firstErrorField) firstErrorField = input;
+            }
+        });
+
+        if (errors.length > 0) {
+            // Build and inject validation summary before form actions
+            const summaryHTML = `
+            <div id="blok3a-validation-summary" class="validation-summary" style="margin:1rem 1.5rem;">
+                <div class="validation-summary-header">
+                    <span class="validation-summary-icon">&#9888;</span>
+                    <h4 class="validation-summary-title">Data belum lengkap</h4>
+                </div>
+                <p style="margin-bottom:0.5rem;color:#991b1b;font-size:0.875rem;">Mohon lengkapi bidang berikut sebelum menyimpan:</p>
+                <ul class="validation-summary-list">
+                    ${errors.map(e => `<li class="validation-summary-item">${e}</li>`).join('')}
+                </ul>
+            </div>`;
+            const formActions = this.form.querySelector('.form-actions');
+            if (formActions) {
+                formActions.insertAdjacentHTML('beforebegin', summaryHTML);
+            }
+            // Scroll to and focus the first invalid field
+            if (firstErrorField) {
+                firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => firstErrorField.focus(), 400);
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    clearFieldError(fieldId) {
+        const input = document.getElementById(fieldId);
+        if (input) input.classList.remove('field-error');
+        const errSpan = document.getElementById('err-' + fieldId);
+        if (errSpan) errSpan.style.display = 'none';
+        // Remove summary if all mandatory fields are now filled
+        const summary = document.getElementById('blok3a-validation-summary');
+        if (summary) {
+            const anyStillEmpty = [
+                'q302a', 'q302b', 'q302c', 'q302d', 'q302e', 'q302f',
+                'q305a_maklun_nilai', 'q305b_maklun_pct', 'q305_online'
+            ].some(id => {
+                const el = document.getElementById(id);
+                return el && el.value === '';
+            });
+            if (!anyStillEmpty) summary.remove();
+        }
+    }
+
     // Actions
     saveDraft() {
         // Collect form data and submit
@@ -943,6 +1069,11 @@ class SurveyBlok3aManager {
     }
 
     saveAndContinue() {
+        // Validate mandatory fields before proceeding
+        if (!this.validateMandatoryFields()) {
+            return;
+        }
+
         const data = new FormData(this.form);
         // Mark completion so backend can compute next_block correctly
         data.append('is_completed', 'true');

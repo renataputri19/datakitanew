@@ -35,7 +35,7 @@ class SurveyBlok4Manager {
                 e.preventDefault();
                 const prefix = window.surveyData?.kbliPrefix;
                 const isIndustri = typeof prefix === 'number' && prefix >= 10 && prefix <= 33;
-                const target = isIndustri ? window.surveyRoutes?.backToBlok3bIndustri : window.surveyRoutes?.backToBlok3bNonIndustri;
+                const target = isIndustri ? window.surveyRoutes?.backToBlok3cIndustri : window.surveyRoutes?.backToBlok3bNonIndustri;
                 if (target) {
                     window.location.href = target;
                 }

@@ -156,17 +156,18 @@
                     <div class="v">{{ nf_plain($surveyResponse->jumlah_bulan_aktif_2025 ?? null) }}</div>
                     <div class="k">206. Rata-rata hari kerja/bulan 2025</div>
                     <div class="v">{{ nf_plain($surveyResponse->rata_hari_kerja_bulanan_2025 ?? null) }}</div>
-                    <div class="k">207a. Jam kerja/hari</div>
-                    <div class="v">{{ nf_plain($surveyResponse->rata_jam_kerja_per_hari_2025 ?? null) }}</div>
-                    <div class="k">207b. Jumlah shift/hari</div>
-                    <div class="v">{{ nf_plain($surveyResponse->rata_shift_per_hari_2025 ?? null) }}</div>
-
-                    <div class="k">208a. Pekerja laki-laki</div><div class="v">{{ nf_plain($surveyResponse->tenaga_kerja_laki_laki ?? null) }}</div>
-                    <div class="k">208a. Pekerja perempuan</div><div class="v">{{ nf_plain($surveyResponse->tenaga_kerja_perempuan ?? null) }}</div>
-                    <div class="k">208b. Pekerja produksi</div><div class="v">{{ nf_plain($surveyResponse->tenaga_kerja_produksi ?? null) }}</div>
-                    <div class="k">208b. Pekerja lainnya</div><div class="v">{{ nf_plain($surveyResponse->tenaga_kerja_lainnya ?? null) }}</div>
-                    <div class="k">208c. Tenaga kerja asing</div><div class="v">{{ nf_plain($surveyResponse->tenaga_kerja_asing ?? null) }}</div>
-                    <div class="k">208d. Tenaga kerja outsourcing</div><div class="v">{{ nf_plain($surveyResponse->tenaga_kerja_outsourcing ?? null) }}</div>
+                    @if(($surveyResponse->triwulan ?? 0) == 0)
+                    <div class="k">207a. Jumlah seluruh pekerja</div><div class="v">{{ nf_plain($surveyResponse->jumlah_seluruh_pekerja ?? null) }}</div>
+                    <div class="k">207b.1. Pekerja laki-laki</div><div class="v">{{ nf_plain($surveyResponse->tenaga_kerja_laki_laki ?? null) }}</div>
+                    <div class="k">207b.2. Pekerja perempuan</div><div class="v">{{ nf_plain($surveyResponse->tenaga_kerja_perempuan ?? null) }}</div>
+                    <div class="k">207c.1. Bukan outsourcing produksi</div><div class="v">{{ nf_plain($surveyResponse->pekerja_bukan_outsourcing_produksi ?? null) }}</div>
+                    <div class="k">207c.2. Bukan outsourcing lainnya</div><div class="v">{{ nf_plain($surveyResponse->pekerja_bukan_outsourcing_lainnya ?? null) }}</div>
+                    <div class="k">207d.1. Outsourcing produksi</div><div class="v">{{ nf_plain($surveyResponse->pekerja_outsourcing_produksi ?? null) }}</div>
+                    <div class="k">207d.2. Outsourcing lainnya</div><div class="v">{{ nf_plain($surveyResponse->pekerja_outsourcing_lainnya ?? null) }}</div>
+                    <div class="k">207e. Pekerja asing</div><div class="v">{{ nf_plain($surveyResponse->tenaga_kerja_asing ?? null) }}</div>
+                    @else
+                    <div class="k">203. Rata-rata tenaga kerja (triwulan)</div><div class="v">{{ nf_plain($surveyResponse->rata_rata_tenaga_kerja ?? null) }}</div>
+                    @endif
 
                     <div class="k">208e. Uraian kegiatan utama</div><div class="v">{{ nf_plain($surveyResponse->kegiatan_utama_perusahaan ?? null) }}</div>
                     <div class="k">208f. KBLI utama</div><div class="v">{{ nf_plain($surveyResponse->kbli_utama ?? null) }} @if(!empty($kbliPrefix)) <span class="badge">{{ ($kbliPrefix >= 10 && $kbliPrefix <= 33) ? 'Industri' : 'Non-Industri' }}</span> @endif</div>

@@ -20,6 +20,8 @@ class SurveyResponse extends Model
         'user_id',
         'survey_type',
         'survey_section',
+        'tahun',
+        'triwulan',
         'kip',
         'idsbr',
         'nama_perusahaan',
@@ -66,10 +68,29 @@ class SurveyResponse extends Model
         'tenaga_kerja_lainnya',
         'tenaga_kerja_asing',
         'tenaga_kerja_outsourcing',
+        // Q207 Tahunan 2025 — detailed worker breakdown (new fields)
+        'jumlah_seluruh_pekerja',
+        'pekerja_bukan_outsourcing_produksi',
+        'pekerja_bukan_outsourcing_lainnya',
+        'pekerja_outsourcing_produksi',
+        'pekerja_outsourcing_lainnya',
+        'produk_utama_perusahaan',
         'memproduksi_barang_sendiri',
         'menyediakan_layanan_makan_minum',
         'penjualan_barang_pihak_lain',
         'aktivitas_jasa',
+        // Q212: Sertifikasi produk
+        'sertifikasi_keamanan_produk',
+        'sertifikasi_kesehatan_keberlanjutan',
+        'sertifikasi_kualitas_manajemen',
+        'sertifikasi_tidak_ada',
+        'sertifikasi_lainnya',
+        // Q213: Model industri manufaktur
+        'model_industri_oem',
+        'model_industri_odm',
+        'model_industri_obm',
+        'model_industri_tidak_ada',
+        'model_industri_lainnya',
         'penggunaan_internet',
         'internet_a1_menerima_pesanan',
         'internet_a2_produksi',
@@ -87,6 +108,13 @@ class SurveyResponse extends Model
         'blok3a_products',
         'blok3a_lainnya',
         'blok3a_totals',
+        'blok3a_pendapatan_lainnya',
+        'blok3a_q305_online',
+        'blok3a_q305a_maklun_nilai',
+        'blok3a_q305b_maklun_pct',
+        // Blok IIIA-2 / IIIC fields
+        'blok3a2_materials',
+        'blok3a2_completed',
         // Blok IIIB Industri fields
         'blok3b_industri_data',
         'blok3b_industri_completed',
@@ -111,6 +139,8 @@ class SurveyResponse extends Model
     protected $casts = [
         'last_saved_at' => 'datetime',
         'is_completed' => 'boolean',
+        'tahun' => 'integer',
+        'triwulan' => 'integer',
         // Blok I numeric fields
         'tahun_mulai_beroperasi' => 'integer',
         // Blok II numeric fields
@@ -126,9 +156,20 @@ class SurveyResponse extends Model
         'tenaga_kerja_lainnya' => 'integer',
         'tenaga_kerja_asing' => 'integer',
         'tenaga_kerja_outsourcing' => 'integer',
+        'jumlah_seluruh_pekerja' => 'integer',
+        'pekerja_bukan_outsourcing_produksi' => 'integer',
+        'pekerja_bukan_outsourcing_lainnya' => 'integer',
+        'pekerja_outsourcing_produksi' => 'integer',
+        'pekerja_outsourcing_lainnya' => 'integer',
         'blok3a_products' => 'array',
         'blok3a_lainnya' => 'array',
         'blok3a_totals' => 'array',
+        'blok3a_pendapatan_lainnya' => 'array',
+        'blok3a_q305_online' => 'decimal:2',
+        'blok3a_q305a_maklun_nilai' => 'decimal:2',
+        'blok3a_q305b_maklun_pct' => 'decimal:2',
+        'blok3a2_materials' => 'array',
+        'blok3a2_completed' => 'boolean',
         'blok3b_industri_data' => 'array',
         'blok3b_industri_completed' => 'boolean',
         'blok3b_nonindustri_data' => 'array',
@@ -174,29 +215,69 @@ class SurveyResponse extends Model
     }
 
     /**
-     * Get or create a unified survey response for the given user and survey type.
-     * This method ensures only ONE row per (user_id, survey_type) is used/created,
-     * and updates the current section marker without creating duplicates.
+     * Check whether the 2025 annual Q207 detailed worker breakdown is fully filled.
+     * Used to gate Triwulanan 2026 access for existing users.
      */
-    public static function getOrCreateForUser($userId, $surveyType = 'sibstr', $section = 'blok1')
+    public function isQ207TahunanComplete(): bool
     {
-        // Always work with the latest record for this user+survey type
+        $required = [
+            'jumlah_seluruh_pekerja',
+            'tenaga_kerja_laki_laki',
+            'tenaga_kerja_perempuan',
+            'pekerja_bukan_outsourcing_produksi',
+            'pekerja_bukan_outsourcing_lainnya',
+            'pekerja_outsourcing_produksi',
+            'pekerja_outsourcing_lainnya',
+            'tenaga_kerja_asing',
+        ];
+        foreach ($required as $field) {
+            if (is_null($this->{$field})) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Static helper — returns true when the given user's 2025 tahunan row is
+     * completed AND all Q207 worker-detail fields are filled.
+     */
+    public static function isTahunanQ207CompleteForUser(int|string $userId): bool
+    {
+        $row = static::where('user_id', $userId)
+            ->where('survey_type', 'sibstr')
+            ->where('tahun', 2025)
+            ->where('triwulan', 0)
+            ->where('is_completed', true)
+            ->first();
+
+        return $row ? $row->isQ207TahunanComplete() : false;
+    }
+
+    /**
+     * Get or create a survey response for the given user, type, and period.
+     * tahun defaults to 2025. triwulan=0 means annual/legacy; 1–4 means quarterly.
+     */
+    public static function getOrCreateForUser($userId, $surveyType = 'sibstr', $section = 'blok1', $tahun = 2025, $triwulan = 0)
+    {
         $existing = static::where('user_id', $userId)
             ->where('survey_type', $surveyType)
-            ->orderBy('updated_at', 'desc')
+            ->where('tahun', $tahun)
+            ->where('triwulan', $triwulan)
             ->first();
 
         if (!$existing) {
             $existing = static::create([
-                'user_id' => $userId,
-                'survey_type' => $surveyType,
+                'user_id'        => $userId,
+                'survey_type'    => $surveyType,
                 'survey_section' => $section,
-                'last_saved_at' => now(),
+                'tahun'          => $tahun,
+                'triwulan'       => $triwulan,
+                'last_saved_at'  => now(),
             ]);
         } else {
-            // Update the current section marker and timestamp without creating a new row
             $existing->survey_section = $section;
-            $existing->last_saved_at = now();
+            $existing->last_saved_at  = now();
             $existing->save();
         }
 
@@ -204,14 +285,15 @@ class SurveyResponse extends Model
     }
 
     /**
-     * Build a unified view of a user's survey response by merging values
-     * from any duplicate rows (preferring latest updated_at values).
-     * Returns the latest record instance with merged attributes for display.
+     * Build a unified view of a user's survey response for a specific period.
+     * triwulan=0 = annual/legacy; 1–4 = quarterly.
      */
-    public static function unifiedForUser(int|string $userId, string $surveyType = 'sibstr'): ?self
+    public static function unifiedForUser(int|string $userId, string $surveyType = 'sibstr', int $tahun = 2025, int $triwulan = 0): ?self
     {
         $responses = static::where('user_id', $userId)
             ->where('survey_type', $surveyType)
+            ->where('tahun', $tahun)
+            ->where('triwulan', $triwulan)
             ->orderBy('updated_at', 'desc')
             ->get();
 
@@ -277,13 +359,87 @@ class SurveyResponse extends Model
 
         // If Blok IIIA data changes, recompute totals server-side to ensure accuracy
         $keys = array_keys($data);
-        $shouldRecalcTotals = array_intersect($keys, ['blok3a_products', 'blok3a_lainnya', 'blok3a_totals']);
+        $shouldRecalcTotals = array_intersect($keys, ['blok3a_products', 'blok3a_totals']);
         if (!empty($shouldRecalcTotals)) {
             $this->blok3a_totals = $this->calculateBlok3aTotals();
         }
 
         $this->save();
         return $this;
+    }
+
+    /**
+     * Determine the current available triwulan number based on the current month.
+     * A quarter is available for data entry once it has ended.
+     * Month 4–6  → TW1 is available (TW1 ended in March)
+     * Month 7–9  → TW1 + TW2 available
+     * Month 10–12 → TW1 + TW2 + TW3 available
+     * Month 1–3 of next year → TW4 of previous year available (handled by caller).
+     *
+     * Returns an array of available triwulan numbers (1–4) for the given year.
+     */
+    public static function availableTriwulan(int $tahun): array
+    {
+        // Triwulanan reporting is only available starting from 2026.
+        if ($tahun < 2026) {
+            return [];
+        }
+
+        $now = now();
+        $currentYear  = (int) $now->format('Y');
+        $currentMonth = (int) $now->format('n');
+
+        if ($tahun < $currentYear) {
+            return [1, 2, 3, 4];
+        }
+
+        if ($tahun > $currentYear) {
+            return [];
+        }
+
+        // Same year — return quarters whose last month < current month
+        $available = [];
+        if ($currentMonth >= 4)  { $available[] = 1; }
+        if ($currentMonth >= 7)  { $available[] = 2; }
+        if ($currentMonth >= 10) { $available[] = 3; }
+        // TW4 becomes available from January of the next year
+
+        return $available;
+    }
+
+    /**
+     * Return the triwulan label string.
+     */
+    public static function triwulanLabel(int $triwulan): string
+    {
+        return match ($triwulan) {
+            1 => 'Triwulan I (Jan–Mar)',
+            2 => 'Triwulan II (Apr–Jun)',
+            3 => 'Triwulan III (Jul–Sep)',
+            4 => 'Triwulan IV (Okt–Des)',
+            default => 'Tahunan',
+        };
+    }
+
+    /**
+     * Return the 3 calendar months (as ['YYYY_mmm' => 'Label'] pairs)
+     * that belong to a triwulan, using the same key format as blok3a_products.
+     */
+    public static function triwulanMonthKeys(int $tahun, int $triwulan): array
+    {
+        $monthMap = [
+            1 => ['jan' => 'Jan', 'feb' => 'Feb', 'mar' => 'Mar'],
+            2 => ['apr' => 'Apr', 'mei' => 'Mei', 'jun' => 'Jun'],
+            3 => ['jul' => 'Jul', 'agu' => 'Agu', 'sep' => 'Sep'],
+            4 => ['okt' => 'Okt', 'nov' => 'Nov', 'des' => 'Des'],
+        ];
+
+        $months = $monthMap[$triwulan] ?? [];
+        $result = [];
+        foreach ($months as $abbr => $label) {
+            $result["{$tahun}_{$abbr}"] = "{$label} {$tahun}";
+        }
+        return $result;
     }
 
     /**
@@ -315,6 +471,9 @@ class SurveyResponse extends Model
                     'jenis_barang' => '',
                     'uraian' => '',
                     'satuan' => '',
+                    'kbli_5digit' => '',
+                    'persen_ekspor' => '',
+                    'negara_ekspor' => '',
                     'banyaknya' => array_fill_keys(['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'], ''),
                     'nilai' => array_fill_keys(['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'], ''),
                     'harga_satuan' => array_fill_keys(['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'], ''),
@@ -382,12 +541,8 @@ class SurveyResponse extends Model
             }
         }
 
-        // Add lainnya nilai values
-        if (isset($lainnya['nilai']) && is_array($lainnya['nilai'])) {
-            foreach ($lainnya['nilai'] as $month => $value) {
-                $totals[$month] += (float) ($value ?: 0);
-            }
-        }
+        // Note: blok3a_lainnya (old Rincian 302 monthly) removed; new blok3a_pendapatan_lainnya
+        // fields are annual totals independent of the preview/totals logic.
 
         return $totals;
     }

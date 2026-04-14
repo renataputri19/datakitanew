@@ -14,16 +14,56 @@ class SibstrEditController extends Controller
     }
 
     /**
+     * Read the active survey period from the current request or session.
+     * Priority: (1) route params {year}/{period}, (2) query/body params, (3) session.
+     * Returns ['tahun' => int, 'triwulan' => int, 'period' => string].
+     */
+    private function getPeriod(): array
+    {
+        $req = request();
+
+        // Priority 1: hierarchical route parameters ({year}/{period} in URL)
+        $routeYear   = $req->route('year');
+        $routePeriod = $req->route('period');
+
+        if ($routeYear !== null && $routePeriod !== null) {
+            $tahun    = (int) $routeYear;
+            $triwulan = $routePeriod === 'tahunan' ? 0 : (int) $routePeriod;
+            $period   = $routePeriod;
+            session(['sibstr.tahun' => $tahun, 'sibstr.triwulan' => $triwulan]);
+            return compact('tahun', 'triwulan', 'period');
+        }
+
+        // Priority 2: query-string / request body (legacy fallback)
+        if ($req->has('tahun') || $req->has('triwulan')) {
+            $tahun    = (int) $req->input('tahun', 2025);
+            $triwulan = (int) $req->input('triwulan', 0);
+            $period   = $triwulan === 0 ? 'tahunan' : (string) $triwulan;
+            session(['sibstr.tahun' => $tahun, 'sibstr.triwulan' => $triwulan]);
+            return compact('tahun', 'triwulan', 'period');
+        }
+
+        // Priority 3: session
+        $tahun    = (int) session('sibstr.tahun', 2025);
+        $triwulan = (int) session('sibstr.triwulan', 0);
+        $period   = $triwulan === 0 ? 'tahunan' : (string) $triwulan;
+        return compact('tahun', 'triwulan', 'period');
+    }
+
+    /**
      * Get the existing survey response for the authenticated user.
      * Only allow edit when the survey is completed (is_completed = true).
-     * If not completed, return a RedirectResponse to the corresponding
-     * non-edit survey route with a message.
+     * Period is resolved from route params {year}/{period} first, then session.
      */
     private function getExistingSurveyResponse()
     {
         $user = Auth::user();
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
+
         $response = SurveyResponse::where('user_id', $user->id)
             ->where('survey_type', 'sibstr')
+            ->where('tahun', $tahun)
+            ->where('triwulan', $triwulan)
             ->where('is_completed', true)
             ->first();
 
@@ -31,16 +71,75 @@ class SibstrEditController extends Controller
             return $response;
         }
 
-        // Determine corresponding non-edit route name for this request.
+        // Redirect to the matching non-edit route (same block, same period) so the
+        // user can fill in the survey that hasn't been completed yet.
+        $year        = request()->route('year');
+        $routePeriod = request()->route('period');
         $currentName = optional(request()->route())->getName();
-        $fallbackRoute = 'survey.sibstr.blok1';
-        if ($currentName && str_contains($currentName, '.edit.')) {
-            $fallbackRoute = str_replace('.edit.', '.', $currentName);
+
+        if ($currentName && str_contains($currentName, '.edit.') && $year && $routePeriod) {
+            $fallbackRoute  = str_replace('.edit.', '.', $currentName);
+            $fallbackParams = ['year' => $year, 'period' => $routePeriod];
+        } else {
+            $fallbackRoute  = 'survey.sibstr.entry';
+            $fallbackParams = [];
         }
 
         return redirect()
-            ->route($fallbackRoute)
+            ->route($fallbackRoute, $fallbackParams)
             ->with('warning', 'Hanya survei yang sudah selesai dapat diedit. Anda dialihkan ke halaman survei.');
+    }
+
+    /**
+     * Fetch the immediately preceding period's survey response for reference comparison.
+     */
+    private function getPreviousPeriodResponse(int|string $userId, int $tahun, int $triwulan): ?SurveyResponse
+    {
+        if ($triwulan === 0) {
+            return SurveyResponse::where('user_id', $userId)
+                ->where('survey_type', 'sibstr')
+                ->where('tahun', $tahun - 1)
+                ->where('triwulan', 0)
+                ->first();
+        }
+
+        if ($triwulan > 1) {
+            return SurveyResponse::where('user_id', $userId)
+                ->where('survey_type', 'sibstr')
+                ->where('tahun', $tahun)
+                ->where('triwulan', $triwulan - 1)
+                ->first();
+        }
+
+        $prevTw4 = SurveyResponse::where('user_id', $userId)
+            ->where('survey_type', 'sibstr')
+            ->where('tahun', $tahun - 1)
+            ->where('triwulan', 4)
+            ->first();
+
+        return $prevTw4 ?? SurveyResponse::where('user_id', $userId)
+            ->where('survey_type', 'sibstr')
+            ->where('tahun', $tahun - 1)
+            ->where('triwulan', 0)
+            ->first();
+    }
+
+    /**
+     * Fetch all prior-period survey responses for the given user (newest first).
+     */
+    private function getHistoricalResponses(int|string $userId, int $tahun, int $triwulan)
+    {
+        return SurveyResponse::where('user_id', $userId)
+            ->where('survey_type', 'sibstr')
+            ->where(function ($q) use ($tahun, $triwulan) {
+                $q->where('tahun', '<', $tahun)
+                  ->orWhere(function ($q2) use ($tahun, $triwulan) {
+                      $q2->where('tahun', $tahun)->where('triwulan', '<', $triwulan);
+                  });
+            })
+            ->orderBy('tahun', 'desc')
+            ->orderBy('triwulan', 'desc')
+            ->get();
     }
 
     /**
@@ -61,108 +160,148 @@ class SibstrEditController extends Controller
     //  PER-TEMPLATE EDIT ROUTES
     //  Each returns the exact same keys the original
     //  window.surveyRoutes object uses for that block.
+    //  All routes carry {year}/{period} params.
     // ──────────────────────────────────────────────
 
-    private function editRoutesBlok1(): array
+    private function editRoutesBlok1(int $tahun, int $triwulan): array
     {
+        $period = $triwulan === 0 ? 'tahunan' : (string) $triwulan;
+        $p = ['year' => $tahun, 'period' => $period];
         return [
-            'autoSave' => route('survey.sibstr.edit.autosave'),
-            'saveAll'  => route('survey.sibstr.edit.save'),
-            'status'   => route('survey.sibstr.edit.status'),
-            'nextBlok' => route('survey.sibstr.edit.blok2'),
+            'autoSave' => route('survey.sibstr.edit.autosave', $p),
+            'saveAll'  => route('survey.sibstr.edit.save', $p),
+            'status'   => route('survey.sibstr.edit.status', $p),
+            'nextBlok' => route('survey.sibstr.edit.blok2', $p),
         ];
     }
 
-    private function editRoutesBlok2(): array
+    private function editRoutesBlok2(int $tahun, int $triwulan): array
     {
+        $period = $triwulan === 0 ? 'tahunan' : (string) $triwulan;
+        $p = ['year' => $tahun, 'period' => $period];
         return [
-            'autoSave'            => route('survey.sibstr.edit.blok2.autosave'),
-            'saveAll'             => route('survey.sibstr.edit.blok2.save'),
-            'status'              => route('survey.sibstr.edit.blok2.status'),
-            'backToBlok1'         => route('survey.sibstr.edit.blok1'),
-            'nextBlok'            => route('survey.sibstr.edit.blok3a'),
-            'blok3a'              => route('survey.sibstr.edit.blok3a'),
-            'blok6'               => route('survey.sibstr.edit.blok6'),
-            'blok3b_industri'     => route('survey.sibstr.edit.blok3b.industri'),
-            'blok3b_nonindustri'  => route('survey.sibstr.edit.blok3b.nonindustri'),
+            'autoSave'            => route('survey.sibstr.edit.blok2.autosave', $p),
+            'saveAll'             => route('survey.sibstr.edit.blok2.save', $p),
+            'status'              => route('survey.sibstr.edit.blok2.status', $p),
+            'backToBlok1'         => route('survey.sibstr.edit.blok1', $p),
+            'nextBlok'            => route('survey.sibstr.edit.blok3a', $p),
+            'blok3a'              => route('survey.sibstr.edit.blok3a', $p),
+            'blok6'               => route('survey.sibstr.edit.blok6', $p),
+            'blok3b_industri'     => route('survey.sibstr.edit.blok3b.industri', $p),
+            'blok3b_nonindustri'  => route('survey.sibstr.edit.blok3b.nonindustri', $p),
         ];
     }
 
-    private function editRoutesBlok3a($kbliPrefix): array
+    private function editRoutesBlok3a(int $tahun, int $triwulan, $kbliPrefix): array
     {
-        $fallbackNext = ($kbliPrefix !== null && $kbliPrefix >= 10 && $kbliPrefix <= 33)
-            ? route('survey.sibstr.edit.blok3b.industri')
-            : route('survey.sibstr.edit.blok3b.nonindustri');
+        $period = $triwulan === 0 ? 'tahunan' : (string) $triwulan;
+        $p = ['year' => $tahun, 'period' => $period];
+
+        $nextBlok = ($kbliPrefix !== null && $kbliPrefix >= 10 && $kbliPrefix <= 33)
+            ? route('survey.sibstr.edit.blok3b.industri', $p)
+            : route('survey.sibstr.edit.blok3b.nonindustri', $p);
 
         return [
-            'autoSave'            => route('survey.sibstr.edit.blok3a.autosave'),
-            'saveAll'             => route('survey.sibstr.edit.blok3a.save'),
-            'status'              => route('survey.sibstr.edit.blok3a.status'),
-            'backToBlok2'         => route('survey.sibstr.edit.blok2'),
-            'nextBlok'            => $fallbackNext,
-            'blok6'               => route('survey.sibstr.edit.blok6'),
-            'blok3b_industri'     => route('survey.sibstr.edit.blok3b.industri'),
-            'blok3b_nonindustri'  => route('survey.sibstr.edit.blok3b.nonindustri'),
+            'autoSave'            => route('survey.sibstr.edit.blok3a.autosave', $p),
+            'saveAll'             => route('survey.sibstr.edit.blok3a.save', $p),
+            'status'              => route('survey.sibstr.edit.blok3a.status', $p),
+            'backToBlok2'         => route('survey.sibstr.edit.blok2', $p),
+            'nextBlok'            => $nextBlok,
+            'blok6'               => route('survey.sibstr.edit.blok6', $p),
+            'blok3b_industri'     => route('survey.sibstr.edit.blok3b.industri', $p),
+            'blok3b_nonindustri'  => route('survey.sibstr.edit.blok3b.nonindustri', $p),
         ];
     }
 
-    private function editRoutesBlok3bIndustri(): array
+    private function editRoutesBlok3a2(int $tahun, int $triwulan, $kbliPrefix): array
     {
+        // Legacy alias → same as blok3c-industri
+        return $this->editRoutesBlok3cIndustri($tahun, $triwulan, $kbliPrefix);
+    }
+
+    private function editRoutesBlok3cIndustri(int $tahun, int $triwulan, $kbliPrefix): array
+    {
+        $period = $triwulan === 0 ? 'tahunan' : (string) $triwulan;
+        $p = ['year' => $tahun, 'period' => $period];
+
         return [
-            'autoSave'    => route('survey.sibstr.edit.blok3b.industri.autosave'),
-            'saveAll'     => route('survey.sibstr.edit.blok3b.industri.save'),
-            'status'      => route('survey.sibstr.edit.blok3b.industri.status'),
-            'backToBlok3a'=> route('survey.sibstr.edit.blok3a'),
-            'nextBlok'    => route('survey.sibstr.edit.blok4'),
+            'autoSave'           => route('survey.sibstr.edit.blok3c.industri.autosave', $p),
+            'saveAll'            => route('survey.sibstr.edit.blok3c.industri.save', $p),
+            'status'             => route('survey.sibstr.edit.blok3c.industri.status', $p),
+            'backToBlok3b'       => route('survey.sibstr.edit.blok3b.industri', $p),
+            'nextBlok'           => route('survey.sibstr.edit.blok4', $p),
+            'blok3b_industri'    => route('survey.sibstr.edit.blok3b.industri', $p),
         ];
     }
 
-    private function editRoutesBlok3bNonIndustri(): array
+    private function editRoutesBlok3bIndustri(int $tahun, int $triwulan): array
     {
+        $period = $triwulan === 0 ? 'tahunan' : (string) $triwulan;
+        $p = ['year' => $tahun, 'period' => $period];
         return [
-            'autoSave'            => route('survey.sibstr.edit.blok3b.nonindustri.autosave'),
-            'saveAll'             => route('survey.sibstr.edit.blok3b.nonindustri.save'),
-            'status'              => route('survey.sibstr.edit.blok3b.nonindustri.status'),
-            'backToBlok2'         => route('survey.sibstr.edit.blok2'),
-            'nextBlok'            => route('survey.sibstr.edit.blok4'),
-            'blok3b_nonindustri'  => route('survey.sibstr.edit.blok3b.nonindustri'),
+            'autoSave'       => route('survey.sibstr.edit.blok3b.industri.autosave', $p),
+            'saveAll'        => route('survey.sibstr.edit.blok3b.industri.save', $p),
+            'status'         => route('survey.sibstr.edit.blok3b.industri.status', $p),
+            'backToBlok3a'   => route('survey.sibstr.edit.blok3a', $p),
+            'nextBlok'       => route('survey.sibstr.edit.blok3c.industri', $p),
+            'blok3b_industri'=> route('survey.sibstr.edit.blok3b.industri', $p),
         ];
     }
 
-    private function editRoutesBlok4(): array
+    private function editRoutesBlok3bNonIndustri(int $tahun, int $triwulan): array
     {
+        $period = $triwulan === 0 ? 'tahunan' : (string) $triwulan;
+        $p = ['year' => $tahun, 'period' => $period];
         return [
-            'autoSave'                => route('survey.sibstr.edit.blok4.autosave'),
-            'saveAll'                 => route('survey.sibstr.edit.blok4.save'),
-            'status'                  => route('survey.sibstr.edit.blok4.status'),
-            'backToBlok3bIndustri'    => route('survey.sibstr.edit.blok3b.industri'),
-            'backToBlok3bNonIndustri' => route('survey.sibstr.edit.blok3b.nonindustri'),
-            'blok5'                   => route('survey.sibstr.edit.blok5'),
-            'nextBlok'                => route('survey.sibstr.edit.blok5'),
+            'autoSave'           => route('survey.sibstr.edit.blok3b.nonindustri.autosave', $p),
+            'saveAll'            => route('survey.sibstr.edit.blok3b.nonindustri.save', $p),
+            'status'             => route('survey.sibstr.edit.blok3b.nonindustri.status', $p),
+            'backToBlok2'        => route('survey.sibstr.edit.blok3a', $p),
+            'nextBlok'           => route('survey.sibstr.edit.blok4', $p),
+            'blok3b_nonindustri' => route('survey.sibstr.edit.blok3b.nonindustri', $p),
         ];
     }
 
-    private function editRoutesBlok5(): array
+    private function editRoutesBlok4(int $tahun, int $triwulan): array
     {
+        $period = $triwulan === 0 ? 'tahunan' : (string) $triwulan;
+        $p = ['year' => $tahun, 'period' => $period];
         return [
-            'autoSave'   => route('survey.sibstr.edit.blok5.autosave'),
-            'saveAll'     => route('survey.sibstr.edit.blok5.save'),
-            'status'      => route('survey.sibstr.edit.blok5.status'),
-            'backToBlok4' => route('survey.sibstr.edit.blok4'),
-            'blok6'       => route('survey.sibstr.edit.blok6'),
-            'nextBlok'    => route('survey.sibstr.edit.blok6'),
+            'autoSave'                => route('survey.sibstr.edit.blok4.autosave', $p),
+            'saveAll'                 => route('survey.sibstr.edit.blok4.save', $p),
+            'status'                  => route('survey.sibstr.edit.blok4.status', $p),
+            'backToBlok3cIndustri'    => route('survey.sibstr.edit.blok3c.industri', $p),
+            'backToBlok3bNonIndustri' => route('survey.sibstr.edit.blok3b.nonindustri', $p),
+            'blok5'                   => route('survey.sibstr.edit.blok5', $p),
+            'nextBlok'                => route('survey.sibstr.edit.blok5', $p),
         ];
     }
 
-    private function editRoutesBlok6(): array
+    private function editRoutesBlok5(int $tahun, int $triwulan): array
     {
+        $period = $triwulan === 0 ? 'tahunan' : (string) $triwulan;
+        $p = ['year' => $tahun, 'period' => $period];
         return [
-            'autoSave'     => route('survey.sibstr.edit.blok6.autosave'),
-            'saveAll'      => route('survey.sibstr.edit.blok6.save'),
-            'status'       => route('survey.sibstr.edit.blok6.status'),
-            'backToBlok5'  => route('survey.sibstr.edit.blok5'),
-            'backToBlok2'  => route('survey.sibstr.edit.blok2'),
-            'finishSurvey' => route('survey.sibstr.edit.blok6.finish'),
+            'autoSave'    => route('survey.sibstr.edit.blok5.autosave', $p),
+            'saveAll'     => route('survey.sibstr.edit.blok5.save', $p),
+            'status'      => route('survey.sibstr.edit.blok5.status', $p),
+            'backToBlok4' => route('survey.sibstr.edit.blok4', $p),
+            'blok6'       => route('survey.sibstr.edit.blok6', $p),
+            'nextBlok'    => route('survey.sibstr.edit.blok6', $p),
+        ];
+    }
+
+    private function editRoutesBlok6(int $tahun, int $triwulan): array
+    {
+        $period = $triwulan === 0 ? 'tahunan' : (string) $triwulan;
+        $p = ['year' => $tahun, 'period' => $period];
+        return [
+            'autoSave'     => route('survey.sibstr.edit.blok6.autosave', $p),
+            'saveAll'      => route('survey.sibstr.edit.blok6.save', $p),
+            'status'       => route('survey.sibstr.edit.blok6.status', $p),
+            'backToBlok5'  => route('survey.sibstr.edit.blok5', $p),
+            'backToBlok2'  => route('survey.sibstr.edit.blok2', $p),
+            'finishSurvey' => route('survey.sibstr.edit.blok6.finish', $p),
         ];
     }
 
@@ -177,13 +316,17 @@ class SibstrEditController extends Controller
             return $result;
         }
         $surveyResponse = $result;
+
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
+
         $jenisKawasanOptions = SurveyResponse::getJenisKawasanOptions();
-        $bpsRiData = $this->bpsRiData();
+        $bpsRiData  = $this->bpsRiData();
         $isEditMode = true;
-        $editRoutes = $this->editRoutesBlok1();
+        $editRoutes = $this->editRoutesBlok1($tahun, $triwulan);
 
         return view('survey.sibstr.blok1', compact(
-            'surveyResponse', 'jenisKawasanOptions', 'bpsRiData', 'isEditMode', 'editRoutes'
+            'surveyResponse', 'jenisKawasanOptions', 'bpsRiData',
+            'isEditMode', 'editRoutes', 'tahun', 'triwulan', 'period'
         ));
     }
 
@@ -194,10 +337,17 @@ class SibstrEditController extends Controller
             return $result;
         }
         $surveyResponse = $result;
-        $isEditMode = true;
-        $editRoutes = $this->editRoutesBlok2();
 
-        return view('survey.sibstr.blok2', compact('surveyResponse', 'isEditMode', 'editRoutes'));
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
+
+        $isEditMode        = true;
+        $editRoutes        = $this->editRoutesBlok2($tahun, $triwulan);
+        $referenceResponse = $this->getPreviousPeriodResponse($surveyResponse->user_id, $tahun, $triwulan);
+
+        return view('survey.sibstr.blok2', compact(
+            'surveyResponse', 'isEditMode', 'editRoutes',
+            'tahun', 'triwulan', 'period', 'referenceResponse'
+        ));
     }
 
     public function blok3a()
@@ -213,10 +363,47 @@ class SibstrEditController extends Controller
             $kbliPrefix = (int) $m[1];
         }
 
-        $isEditMode = true;
-        $editRoutes = $this->editRoutesBlok3a($kbliPrefix);
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
 
-        return view('survey.sibstr.blok3a', compact('surveyResponse', 'kbliPrefix', 'isEditMode', 'editRoutes'));
+        $isEditMode          = true;
+        $editRoutes          = $this->editRoutesBlok3a($tahun, $triwulan, $kbliPrefix);
+        $historicalResponses = $this->getHistoricalResponses($surveyResponse->user_id, $tahun, $triwulan);
+
+        return view('survey.sibstr.blok3a', compact(
+            'surveyResponse', 'kbliPrefix', 'isEditMode', 'editRoutes',
+            'tahun', 'triwulan', 'period', 'historicalResponses'
+        ));
+    }
+
+    public function blok3a2()
+    {
+        // Legacy alias → redirect to blok3c-industri
+        return $this->blok3cIndustri();
+    }
+
+    public function blok3cIndustri()
+    {
+        $result = $this->getExistingSurveyResponse();
+        if ($result instanceof \Illuminate\Http\RedirectResponse) {
+            return $result;
+        }
+        $surveyResponse = $result;
+
+        $kbliPrefix = null;
+        if ($surveyResponse->kbli_utama && preg_match('/^(\d{2})/', $surveyResponse->kbli_utama, $m)) {
+            $kbliPrefix = (int) $m[1];
+        }
+
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
+
+        $isEditMode          = true;
+        $editRoutes          = $this->editRoutesBlok3cIndustri($tahun, $triwulan, $kbliPrefix);
+        $historicalResponses = $this->getHistoricalResponses($surveyResponse->user_id, $tahun, $triwulan);
+
+        return view('survey.sibstr.blok3c-industri', compact(
+            'surveyResponse', 'kbliPrefix', 'isEditMode', 'editRoutes',
+            'tahun', 'triwulan', 'period', 'historicalResponses'
+        ));
     }
 
     public function blok3bIndustri()
@@ -226,10 +413,17 @@ class SibstrEditController extends Controller
             return $result;
         }
         $surveyResponse = $result;
-        $isEditMode = true;
-        $editRoutes = $this->editRoutesBlok3bIndustri();
 
-        return view('survey.sibstr.blok3b-industri', compact('surveyResponse', 'isEditMode', 'editRoutes'));
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
+
+        $isEditMode          = true;
+        $editRoutes          = $this->editRoutesBlok3bIndustri($tahun, $triwulan);
+        $historicalResponses = $this->getHistoricalResponses($surveyResponse->user_id, $tahun, $triwulan);
+
+        return view('survey.sibstr.blok3b-industri', compact(
+            'surveyResponse', 'isEditMode', 'editRoutes',
+            'tahun', 'triwulan', 'period', 'historicalResponses'
+        ));
     }
 
     public function blok3bNonIndustri()
@@ -239,10 +433,17 @@ class SibstrEditController extends Controller
             return $result;
         }
         $surveyResponse = $result;
-        $isEditMode = true;
-        $editRoutes = $this->editRoutesBlok3bNonIndustri();
 
-        return view('survey.sibstr.blok3b-nonindustri', compact('surveyResponse', 'isEditMode', 'editRoutes'));
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
+
+        $isEditMode          = true;
+        $editRoutes          = $this->editRoutesBlok3bNonIndustri($tahun, $triwulan);
+        $historicalResponses = $this->getHistoricalResponses($surveyResponse->user_id, $tahun, $triwulan);
+
+        return view('survey.sibstr.blok3b-nonindustri', compact(
+            'surveyResponse', 'isEditMode', 'editRoutes',
+            'tahun', 'triwulan', 'period', 'historicalResponses'
+        ));
     }
 
     public function blok4()
@@ -258,10 +459,16 @@ class SibstrEditController extends Controller
             $kbliPrefix = (int) $m[1];
         }
 
-        $isEditMode = true;
-        $editRoutes = $this->editRoutesBlok4();
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
 
-        return view('survey.sibstr.blok4', compact('surveyResponse', 'kbliPrefix', 'isEditMode', 'editRoutes'));
+        $isEditMode        = true;
+        $editRoutes        = $this->editRoutesBlok4($tahun, $triwulan);
+        $referenceResponse = $this->getPreviousPeriodResponse($surveyResponse->user_id, $tahun, $triwulan);
+
+        return view('survey.sibstr.blok4', compact(
+            'surveyResponse', 'kbliPrefix', 'isEditMode', 'editRoutes',
+            'tahun', 'triwulan', 'period', 'referenceResponse'
+        ));
     }
 
     public function blok5()
@@ -271,10 +478,17 @@ class SibstrEditController extends Controller
             return $result;
         }
         $surveyResponse = $result;
-        $isEditMode = true;
-        $editRoutes = $this->editRoutesBlok5();
 
-        return view('survey.sibstr.blok5', compact('surveyResponse', 'isEditMode', 'editRoutes'));
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
+
+        $isEditMode        = true;
+        $editRoutes        = $this->editRoutesBlok5($tahun, $triwulan);
+        $referenceResponse = $this->getPreviousPeriodResponse($surveyResponse->user_id, $tahun, $triwulan);
+
+        return view('survey.sibstr.blok5', compact(
+            'surveyResponse', 'isEditMode', 'editRoutes',
+            'tahun', 'triwulan', 'period', 'referenceResponse'
+        ));
     }
 
     public function blok6()
@@ -285,14 +499,18 @@ class SibstrEditController extends Controller
         }
         $surveyResponse = $result;
 
-        $kondisiPerusahaan = $surveyResponse->kondisi_perusahaan;
+        $kondisiPerusahaan    = $surveyResponse->kondisi_perusahaan;
         $jaringanUnitKegiatan = $surveyResponse->jaringan_unit_kegiatan;
 
-        $isEditMode = true;
-        $editRoutes = $this->editRoutesBlok6();
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
+
+        $isEditMode        = true;
+        $editRoutes        = $this->editRoutesBlok6($tahun, $triwulan);
+        $referenceResponse = $this->getPreviousPeriodResponse($surveyResponse->user_id, $tahun, $triwulan);
 
         return view('survey.sibstr.blok6', compact(
-            'surveyResponse', 'kondisiPerusahaan', 'jaringanUnitKegiatan', 'isEditMode', 'editRoutes'
+            'surveyResponse', 'kondisiPerusahaan', 'jaringanUnitKegiatan',
+            'isEditMode', 'editRoutes', 'tahun', 'triwulan', 'period', 'referenceResponse'
         ));
     }
 
@@ -324,6 +542,17 @@ class SibstrEditController extends Controller
     public function saveAllBlok3a(Request $request)
     {
         return $this->editSaveAll($request, 'saveAllBlok3a');
+    }
+
+    public function saveAllBlok3a2(Request $request)
+    {
+        // Legacy alias → blok3c-industri
+        return $this->saveAllBlok3cIndustri($request);
+    }
+
+    public function saveAllBlok3cIndustri(Request $request)
+    {
+        return $this->editSaveAll($request, 'saveAllBlok3cIndustri');
     }
 
     public function saveAllBlok3bIndustri(Request $request)

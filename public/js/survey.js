@@ -655,6 +655,10 @@ class SurveyManager {
                             // Generic mapping: if the route key exists, use it
                             nextUrl = window.surveyRoutes[result.next_block];
                         }
+                        // Final fallback: server gave a next_block but no matching route key found — use nextBlok
+                        if (!nextUrl && window.surveyRoutes?.nextBlok) {
+                            nextUrl = window.surveyRoutes.nextBlok;
+                        }
                     } else if (window.surveyRoutes?.nextBlok) {
                         // Fallback to default next block
                         nextUrl = window.surveyRoutes.nextBlok;

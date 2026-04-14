@@ -22,8 +22,32 @@
             BLOK IIIB. NON-INDUSTRI
         </h2>
         <p class="survey-description">
-            Pendapatan, persediaan, dan pengeluaran perusahaan satu triwulan yang lalu
+            Persediaan stok, barang modal, dan pengeluaran perusahaan tahun 2025
         </p>
+
+        @if(!empty($historicalResponses) && $historicalResponses->isNotEmpty())
+        <div style="margin-top:1rem;">
+            <button type="button"
+                    onclick="openHistDrawer()"
+                    style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
+                           border-radius:0.625rem;border:2px solid #fbbf24;
+                           background:rgba(254,243,199,0.85);color:#92400e;
+                           font-size:0.8125rem;font-weight:700;cursor:pointer;
+                           transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;
+                           box-shadow:0 1px 4px rgba(251,191,36,0.25);"
+                    aria-label="Buka panel data historis untuk referensi">
+                <svg style="width:1rem;height:1rem;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Lihat Data Historis
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:1.2rem;height:1.2rem;
+                             border-radius:9999px;background:#fbbf24;color:#7c2d12;font-size:0.7rem;font-weight:800;">
+                    {{ $historicalResponses->count() }}
+                </span>
+            </button>
+        </div>
+        @endif
     </div>
 
     @if(session('warning'))
@@ -166,44 +190,34 @@
             </div>
         </div>
 
-        <!-- PERSEDIAAN (INVENTORI) -->
+        <!-- PERSEDIAAN (INVENTORI) - TAHUNAN 2025 -->
         <div class="form-section">
             <div class="section-header">
                 <h3 class="section-title">PERSEDIAAN (INVENTORI)</h3>
-                <p class="section-subtitle">Barang yang ditahan untuk digunakan, dijual, atau diberikan mendatang</p>
+                <p class="section-subtitle">Nilai persediaan per 1 Januari 2025 dan 31 Desember 2025</p>
             </div>
             <div class="form-grid">
-                <!-- Q306 -->
+                <!-- Q307 -->
                 <div class="form-row">
                     <label class="form-label required">
                         <span class="question-number">307.</span>
-                        <span>Nilai persediaan bahan baku, bahan bakar, dan sebagainya satu triwulan yang lalu (rupiah)</span>
+                        <span>Nilai stok bahan baku, bahan penolong, bahan bakar, bahan pembungkus, dan lain-lain (rupiah)</span>
                     </label>
                     <div class="form-subgrid">
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q306_awal_display">a. Persediaan Awal Periode (<span id="q1_awal_label">1 ...</span>)</label>
-                            <input type="text" id="q306_awal_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q306a]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q306a]" id="q306_awal" value="{{ $surveyResponse->blok3b_nonindustri_data['q306a'] ?? '' }}">
+                            <label class="form-sublabel" for="q307a_display">a. Kondisi 1 Januari 2025 (Rp)</label>
+                            <input type="text" id="q307a_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q306_year_awal]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q306_year_awal]" id="q307a" value="{{ $surveyResponse->blok3b_nonindustri_data['q306_year_awal'] ?? '' }}">
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q306_akhir_display">b. Persediaan Akhir Periode (<span id="q1_akhir_label">31 ...</span>)</label>
-                            <input type="text" id="q306_akhir_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q306b]" required>
-                    <input type="hidden" name="blok3b_nonindustri[q306b]" id="q306_akhir" value="{{ $surveyResponse->blok3b_nonindustri_data['q306b'] ?? '' }}">
-                </div>
-                        <div class="form-subrow">
-                            <label class="form-sublabel" for="q306_year_awal_display">c. Tahun 2025 - Persediaan Awal Periode (<span id="q1_year_awal_label">1 Jan 2025</span>)</label>
-                            <input type="text" id="q306_year_awal_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q306_year_awal]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q306_year_awal]" id="q306_year_awal" value="{{ $surveyResponse->blok3b_nonindustri_data['q306_year_awal'] ?? '' }}">
-                        </div>
-                        <div class="form-subrow">
-                            <label class="form-sublabel" for="q306_year_akhir_display">d. Tahun 2025 - Persediaan Akhir Periode (<span id="q1_year_akhir_label">31 Des 2025</span>)</label>
-                            <input type="text" id="q306_year_akhir_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q306_year_akhir]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q306_year_akhir]" id="q306_year_akhir" value="{{ $surveyResponse->blok3b_nonindustri_data['q306_year_akhir'] ?? '' }}">
+                            <label class="form-sublabel" for="q307b_display">b. Kondisi 31 Desember 2025 (Rp)</label>
+                            <input type="text" id="q307b_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q306_year_akhir]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q306_year_akhir]" id="q307b" value="{{ $surveyResponse->blok3b_nonindustri_data['q306_year_akhir'] ?? '' }}">
                         </div>
                     </div>
                     <div class="form-errors"></div>
                     <div class="form-hint">
-                <div class="hint-grid">
+                        <div class="hint-grid">
                             <div class="hint-col">
                                 <div class="hint-heading">Termasuk:</div>
                                 <ul class="hint-list">
@@ -218,42 +232,32 @@
                                     <li>⮾ Bahan bakar untuk dijual</li>
                                 </ul>
                             </div>
+                        </div>
+                        <div class="hint-note text-muted">Tidak bisa negatif.</div>
+                    </div>
                 </div>
-                <div class="hint-note text-muted"><!-- Tidak bisa negatif. --> Periode muncul otomatis sesuai triwulan.</div>
-            </div>
-        </div>
 
                 <!-- Q308 -->
                 <div class="form-row">
                     <label class="form-label required">
                         <span class="question-number">308.</span>
-                        <span>Nilai persediaan barang dalam proses satu triwulan yang lalu (rupiah)</span>
+                        <span>Nilai stok barang produksi setengah jadi (rupiah)</span>
                     </label>
                     <div class="form-subgrid">
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q307_awal_display">a. Persediaan Awal Periode (<span id="q2_awal_label">1 ...</span>)</label>
-                            <input type="text" id="q307_awal_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q307a]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q307a]" id="q307_awal" value="{{ $surveyResponse->blok3b_nonindustri_data['q307a'] ?? '' }}">
+                            <label class="form-sublabel" for="q308a_display">a. Kondisi 1 Januari 2025 (Rp)</label>
+                            <input type="text" id="q308a_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q307_year_awal]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q307_year_awal]" id="q308a" value="{{ $surveyResponse->blok3b_nonindustri_data['q307_year_awal'] ?? '' }}">
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q307_akhir_display">b. Persediaan Akhir Periode (<span id="q2_akhir_label">31 ...</span>)</label>
-                            <input type="text" id="q307_akhir_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q307b]" required>
-                    <input type="hidden" name="blok3b_nonindustri[q307b]" id="q307_akhir" value="{{ $surveyResponse->blok3b_nonindustri_data['q307b'] ?? '' }}">
-                </div>
-                        <div class="form-subrow">
-                            <label class="form-sublabel" for="q307_year_awal_display">c. Tahun 2025 - Persediaan Awal Periode (<span id="q2_year_awal_label">1 Jan 2025</span>)</label>
-                            <input type="text" id="q307_year_awal_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q307_year_awal]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q307_year_awal]" id="q307_year_awal" value="{{ $surveyResponse->blok3b_nonindustri_data['q307_year_awal'] ?? '' }}">
-                        </div>
-                        <div class="form-subrow">
-                            <label class="form-sublabel" for="q307_year_akhir_display">d. Tahun 2025 - Persediaan Akhir Periode (<span id="q2_year_akhir_label">31 Des 2025</span>)</label>
-                            <input type="text" id="q307_year_akhir_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q307_year_akhir]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q307_year_akhir]" id="q307_year_akhir" value="{{ $surveyResponse->blok3b_nonindustri_data['q307_year_akhir'] ?? '' }}">
+                            <label class="form-sublabel" for="q308b_display">b. Kondisi 31 Desember 2025 (Rp)</label>
+                            <input type="text" id="q308b_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q307_year_akhir]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q307_year_akhir]" id="q308b" value="{{ $surveyResponse->blok3b_nonindustri_data['q307_year_akhir'] ?? '' }}">
                         </div>
                     </div>
                     <div class="form-errors"></div>
                     <div class="form-hint">
-                <div class="hint-grid">
+                        <div class="hint-grid">
                             <div class="hint-col">
                                 <div class="hint-heading">Termasuk:</div>
                                 <ul class="hint-list">
@@ -266,42 +270,32 @@
                                     <li>⮾ Penerimaan Pembayaran</li>
                                 </ul>
                             </div>
+                        </div>
+                        <div class="hint-note text-muted">Tidak bisa negatif.</div>
+                    </div>
                 </div>
-                <div class="hint-note text-muted"><!-- Tidak bisa negatif. --> Periode muncul otomatis sesuai triwulan.</div>
-            </div>
-        </div>
 
                 <!-- Q309 -->
                 <div class="form-row">
                     <label class="form-label required">
                         <span class="question-number">309.</span>
-                        <span>Nilai persediaan barang jadi (termasuk untuk dijual kembali) satu triwulan yang lalu (rupiah)</span>
+                        <span>Nilai stok barang jadi yang dihasilkan (rupiah)</span>
                     </label>
                     <div class="form-subgrid">
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q308_awal_display">a. Persediaan Awal Periode (<span id="q3_awal_label">1 ...</span>)</label>
-                            <input type="text" id="q308_awal_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q308a]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q308a]" id="q308_awal" value="{{ $surveyResponse->blok3b_nonindustri_data['q308a'] ?? '' }}">
+                            <label class="form-sublabel" for="q309a_display">a. Kondisi 1 Januari 2025 (Rp)</label>
+                            <input type="text" id="q309a_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q308_year_awal]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q308_year_awal]" id="q309a" value="{{ $surveyResponse->blok3b_nonindustri_data['q308_year_awal'] ?? '' }}">
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q308_akhir_display">b. Persediaan Akhir Periode (<span id="q3_akhir_label">31 ...</span>)</label>
-                            <input type="text" id="q308_akhir_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q308b]" required>
-                    <input type="hidden" name="blok3b_nonindustri[q308b]" id="q308_akhir" value="{{ $surveyResponse->blok3b_nonindustri_data['q308b'] ?? '' }}">
-                </div>
-                        <div class="form-subrow">
-                            <label class="form-sublabel" for="q308_year_awal_display">c. Tahun 2025 - Persediaan Awal Periode (<span id="q3_year_awal_label">1 Jan 2025</span>)</label>
-                            <input type="text" id="q308_year_awal_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q308_year_awal]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q308_year_awal]" id="q308_year_awal" value="{{ $surveyResponse->blok3b_nonindustri_data['q308_year_awal'] ?? '' }}">
-                        </div>
-                        <div class="form-subrow">
-                            <label class="form-sublabel" for="q308_year_akhir_display">d. Tahun 2025 - Persediaan Akhir Periode (<span id="q3_year_akhir_label">31 Des 2025</span>)</label>
-                            <input type="text" id="q308_year_akhir_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q308_year_akhir]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q308_year_akhir]" id="q308_year_akhir" value="{{ $surveyResponse->blok3b_nonindustri_data['q308_year_akhir'] ?? '' }}">
+                            <label class="form-sublabel" for="q309b_display">b. Kondisi 31 Desember 2025 (Rp)</label>
+                            <input type="text" id="q309b_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q308_year_akhir]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q308_year_akhir]" id="q309b" value="{{ $surveyResponse->blok3b_nonindustri_data['q308_year_akhir'] ?? '' }}">
                         </div>
                     </div>
                     <div class="form-errors"></div>
                     <div class="form-hint">
-                <div class="hint-grid">
+                        <div class="hint-grid">
                             <div class="hint-col">
                                 <div class="hint-heading">Termasuk:</div>
                                 <ul class="hint-list">
@@ -316,44 +310,52 @@
                                     <li>⮾ Gedung dan barang yang disewa dan disewakan</li>
                                 </ul>
                             </div>
+                        </div>
+                        <div class="hint-note text-muted">Tidak bisa negatif.</div>
+                    </div>
                 </div>
-                <div class="hint-note text-muted"><!-- Tidak bisa negatif. --> Periode muncul otomatis sesuai triwulan.</div>
-            </div>
-        </div>
 
-                <!-- Q310 totals -->
+                <!-- Q310 -->
                 <div class="form-row">
                     <label class="form-label required">
                         <span class="question-number">310.</span>
-                        <span>Total persediaan (rupiah)</span>
+                        <span>Nilai pembelian/penambahan dan pembuatan/perbaikan besar seluruh barang modal tetap (tanah, gedung, mesin, perlengkapan, kendaraan, software/database, dan lainnya) pada tahun 2025 (Rp)</span>
                     </label>
-            <div class="form-subgrid">
-                <div class="form-subrow">
-                            <label class="form-sublabel" for="q309_awal_display">a. Satu triwulan yang lalu - Persediaan Awal Periode (jumlah 307.a + 308.a + 309.a)</label>
-                            <input type="text" id="q309_awal_display" class="form-control currency-display readonly" placeholder="0" data-target-name="blok3b_nonindustri[q309a]" readonly disabled style="background-color:#e9ecef">
-                            <input type="hidden" name="blok3b_nonindustri[q309a]" id="q309_awal" value="{{ $surveyResponse->blok3b_nonindustri_data['q309a'] ?? '' }}">
-                        </div>
-                        <div class="form-subrow">
-                            <label class="form-sublabel" for="q309_akhir_display">b. Satu triwulan yang lalu - Persediaan Akhir Periode (jumlah 307.b + 308.b + 309.b)</label>
-                            <input type="text" id="q309_akhir_display" class="form-control currency-display readonly" placeholder="0" data-target-name="blok3b_nonindustri[q309b]" readonly disabled style="background-color:#e9ecef">
-                            <input type="hidden" name="blok3b_nonindustri[q309b]" id="q309_akhir" value="{{ $surveyResponse->blok3b_nonindustri_data['q309b'] ?? '' }}">
+                    <input type="text" id="q310_beli_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q310_beli_modal]">
+                    <input type="hidden" name="blok3b_nonindustri[q310_beli_modal]" id="q310_beli_modal" value="{{ $surveyResponse->blok3b_nonindustri_data['q310_beli_modal'] ?? '' }}" required>
+                    <div class="form-errors"></div>
+                    <div class="form-hint">
+                        <div class="hint-note text-muted">Tidak bisa negatif.</div>
+                    </div>
                 </div>
-                        <div class="form-subrow">
-                            <label class="form-sublabel" for="q310b_awal_display">c. Tahun 2025 - Persediaan Awal Periode (jumlah 307.c + 308.c + 309.c)</label>
-                            <input type="text" id="q310b_awal_display" class="form-control currency-display readonly" placeholder="0" data-target-name="blok3b_nonindustri[q310b_awal]" readonly style="background-color:#e9ecef">
-                            <input type="hidden" name="blok3b_nonindustri[q310b_awal]" id="q310b_awal" value="{{ $surveyResponse->blok3b_nonindustri_data['q310b_awal'] ?? '' }}">
-                        </div>
-                        <div class="form-subrow">
-                            <label class="form-sublabel" for="q310b_akhir_display">d. Tahun 2025 - Persediaan Akhir Periode (jumlah 307.d + 308.d + 309.d)</label>
-                            <input type="text" id="q310b_akhir_display" class="form-control currency-display readonly" placeholder="0" data-target-name="blok3b_nonindustri[q310b_akhir]" readonly style="background-color:#e9ecef">
-                            <input type="hidden" name="blok3b_nonindustri[q310b_akhir]" id="q310b_akhir" value="{{ $surveyResponse->blok3b_nonindustri_data['q310b_akhir'] ?? '' }}">
-                        </div>
-            </div>
-            <div class="form-errors"></div>
-            <div class="form-hint">
-                <div class="hint-note text-muted">Otomatis terisi dari penjumlahan di atasnya (triwulan dan tahunan).</div>
-            </div>
-        </div>
+
+                <!-- Q311 -->
+                <div class="form-row">
+                    <label class="form-label required">
+                        <span class="question-number">311.</span>
+                        <span>Nilai penjualan/pengurangan seluruh barang modal tetap (tanah, gedung, mesin, perlengkapan, kendaraan, software/database, dan lainnya) pada tahun 2025 (Rp)</span>
+                    </label>
+                    <input type="text" id="q311_jual_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q311_jual_modal]">
+                    <input type="hidden" name="blok3b_nonindustri[q311_jual_modal]" id="q311_jual_modal" value="{{ $surveyResponse->blok3b_nonindustri_data['q311_jual_modal'] ?? '' }}" required>
+                    <div class="form-errors"></div>
+                    <div class="form-hint">
+                        <div class="hint-note text-muted">Tidak bisa negatif.</div>
+                    </div>
+                </div>
+
+                <!-- Q312 -->
+                <div class="form-row">
+                    <label class="form-label required">
+                        <span class="question-number">312.</span>
+                        <span>Nilai taksiran seluruh barang modal tetap (tanah, gedung, mesin, perlengkapan, kendaraan, software/database, dan lainnya) menurut harga berlaku per 31 Desember 2025 (Rp)</span>
+                    </label>
+                    <input type="text" id="q312_taksir_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q312_taksir_modal]">
+                    <input type="hidden" name="blok3b_nonindustri[q312_taksir_modal]" id="q312_taksir_modal" value="{{ $surveyResponse->blok3b_nonindustri_data['q312_taksir_modal'] ?? '' }}" required>
+                    <div class="form-errors"></div>
+                    <div class="form-hint">
+                        <div class="hint-note text-muted">Tidak bisa negatif.</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -366,71 +368,116 @@
             <div class="form-grid">
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">311.</span>
-                        <span>Total upah dan gaji, serta jaminan sosial pegawai (rupiah)</span>
+                        <span class="question-number">313.</span>
+                        <span>Pengeluaran untuk pekerja/karyawan (tidak termasuk pekerja outsourcing) (rupiah)</span>
                     </label>
                     <div class="form-subgrid">
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q311a_display">a. Total upah dan gaji, serta jaminan sosial pegawai selama satu triwulan yang lalu</label>
-                            <input type="text" id="q311a_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q311a]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q311a]" id="q311a" value="{{ $surveyResponse->blok3b_nonindustri_data['q311a'] ?? '' }}" required>
+                            <label class="form-sublabel" for="q313_a1_display">a.1 Upah/gaji, lembur, dan tunjangan pekerja produksi (Rp)</label>
+                            <input type="text" id="q313_a1_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q313_a1]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q313_a1]" id="q313_a1" value="{{ $surveyResponse->blok3b_nonindustri_data['q313_a1'] ?? '' }}">
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q311b_display">b. Total upah dan gaji, serta jaminan sosial pegawai selama tahun 2025</label>
-                            <input type="text" id="q311b_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q311b]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q311b]" id="q311b" value="{{ $surveyResponse->blok3b_nonindustri_data['q311b'] ?? '' }}" required>
+                            <label class="form-sublabel" for="q313_a2_display">a.2 Pengeluaran lain untuk pekerja produksi (Rp)</label>
+                            <input type="text" id="q313_a2_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q313_a2]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q313_a2]" id="q313_a2" value="{{ $surveyResponse->blok3b_nonindustri_data['q313_a2'] ?? '' }}">
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q311b1_display">b.1 Total upah dan gaji, serta jaminan sosial pegawai <strong>produksi</strong> selama tahun 2025</label>
-                            <input type="text" id="q311b1_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q311b1]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q311b1]" id="q311b1" value="{{ $surveyResponse->blok3b_nonindustri_data['q311b1'] ?? '' }}" required>
+                            <label class="form-sublabel" for="q313_b1_display">b.1 Upah/gaji, lembur, dan tunjangan pekerja lainnya (Rp)</label>
+                            <input type="text" id="q313_b1_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q313_b1]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q313_b1]" id="q313_b1" value="{{ $surveyResponse->blok3b_nonindustri_data['q313_b1'] ?? '' }}">
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q311b2_display">b.2 Total upah dan gaji, serta jaminan sosial <strong>selain pegawai produksi</strong> selama tahun 2025</label>
-                            <input type="text" id="q311b2_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q311b2]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q311b2]" id="q311b2" value="{{ $surveyResponse->blok3b_nonindustri_data['q311b2'] ?? '' }}" required>
+                            <label class="form-sublabel" for="q313_b2_display">b.2 Pengeluaran lain untuk pekerja lainnya (Rp)</label>
+                            <input type="text" id="q313_b2_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q313_b2]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q313_b2]" id="q313_b2" value="{{ $surveyResponse->blok3b_nonindustri_data['q313_b2'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q313_c_display">c. Total (a.1+a.2+b.1+b.2) (Rp)</label>
+                            <input type="text" id="q313_c_display" class="form-control currency-display readonly" placeholder="0" data-target-name="blok3b_nonindustri[q313_c]" readonly style="background-color:#e9ecef">
+                            <input type="hidden" name="blok3b_nonindustri[q313_c]" id="q313_c" value="{{ $surveyResponse->blok3b_nonindustri_data['q313_c'] ?? '' }}">
                         </div>
                     </div>
                     <div class="form-errors"></div>
                     <div class="form-hint">
-                        <div class="hint-grid">
-                            <div class="hint-col">
-                                <div class="hint-heading">Termasuk:</div>
-                                <ul class="hint-list">
-                                    <li>✓ Upah dan gaji pegawai/karyawan yang telah dikeluarkan  ringkasan  pembayarannya (group sertificate)</li>
-                                    <li>✓ Komisi dan tips untuk pegawai/karyawan</li>
-                                    <li>✓ Bonus</li>
-                                    <li>✓ Pembayaran Cuti tahunan dan jenis cuti lainnya</li>
-                                </ul>
-                            </div>
-                            <div class="hint-col">
-                                <div class="hint-heading">Tidak termasuk:</div>
-                                <ul class="hint-list">
-                                    <li>⮾ Upah dan gaji yang dikapitalisasi</li>
-                                    <li>⮾ Pembayaran untuk konsultan dan kontraktor yang  berusaha sendiri (bukan karyawan perusahaan), yang dibayarkan dengan komisi</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <!-- <div class="hint-note text-muted">Tidak bisa negatif.</div> -->
+                        <div class="hint-note text-muted">Termasuk pajak penghasilan untuk pekerja/karyawan, pajak perseorangan. Contoh pengeluaran lainnya: Bonus, hadiah, premi, dll. Tidak bisa negatif. Total (c) terisi otomatis.</div>
                     </div>
                 </div>
-
                 <div class="form-row">
-                    <label class="form-label required">
-                        <span class="question-number">312.</span>
-                        <span>Penambahan aset tetap (kecuali pembelian tanah) satu triwulan yang lalu (rupiah)</span>
+                    <label class="form-label">
+                        <span class="question-number">314.</span>
+                        <span>Pengeluaran untuk pekerja/karyawan Outsourcing (rupiah)</span>
                     </label>
-                    <input type="text" id="q311_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q311]" required>
-                    <input type="hidden" name="blok3b_nonindustri[q311]" id="q311" value="{{ $surveyResponse->blok3b_nonindustri_data['q311'] ?? '' }}">
+                    <div class="form-subgrid">
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q314_a1_display">a.1 Upah/gaji, lembur, dan tunjangan pekerja produksi (Rp)</label>
+                            <input type="text" id="q314_a1_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q314_a1]">
+                            <input type="hidden" name="blok3b_nonindustri[q314_a1]" id="q314_a1" value="{{ $surveyResponse->blok3b_nonindustri_data['q314_a1'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q314_a2_display">a.2 Pengeluaran lain untuk pekerja produksi (Rp)</label>
+                            <input type="text" id="q314_a2_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q314_a2]">
+                            <input type="hidden" name="blok3b_nonindustri[q314_a2]" id="q314_a2" value="{{ $surveyResponse->blok3b_nonindustri_data['q314_a2'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q314_b1_display">b.1 Upah/gaji, lembur, dan tunjangan pekerja lainnya (Rp)</label>
+                            <input type="text" id="q314_b1_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q314_b1]">
+                            <input type="hidden" name="blok3b_nonindustri[q314_b1]" id="q314_b1" value="{{ $surveyResponse->blok3b_nonindustri_data['q314_b1'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q314_b2_display">b.2 Pengeluaran lain untuk pekerja lainnya (Rp)</label>
+                            <input type="text" id="q314_b2_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q314_b2]">
+                            <input type="hidden" name="blok3b_nonindustri[q314_b2]" id="q314_b2" value="{{ $surveyResponse->blok3b_nonindustri_data['q314_b2'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q314_c_display">c. Total (a.1+a.2+b.1+b.2) (Rp)</label>
+                            <input type="text" id="q314_c_display" class="form-control currency-display readonly" placeholder="0" data-target-name="blok3b_nonindustri[q314_c]" readonly style="background-color:#e9ecef">
+                            <input type="hidden" name="blok3b_nonindustri[q314_c]" id="q314_c" value="{{ $surveyResponse->blok3b_nonindustri_data['q314_c'] ?? '' }}">
+                        </div>
+                    </div>
                     <div class="form-errors"></div>
                     <div class="form-hint">
-                        <div class="hint-note text-muted">Catatan: Penambahan aset tetap mencakup: Pembelian, barter, produksi sendiri, dan sewa beli (financial lease) aset tetap; Pemberian/transfer/hibah dari pihak lain; Perbaikan besar aset tetap guna meningkatkan kapasitas produksi dan usia pakai; dan Biaya alih kepemilikan atas aset nonfinansial yang tidak diproduksi.</div>
+                        <div class="hint-note text-muted">Tidak bisa negatif. Total (c) terisi otomatis.</div>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">313.</span>
+                        <span class="question-number">315.</span>
+                        <span>Penggunaan listrik yang dipakai oleh perusahaan</span>
+                    </label>
+                    <div class="form-subgrid">
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q315_a">a. Daya tersambung dari PLN yang dipakai oleh perusahaan (VA)</label>
+                            <input type="number" id="q315_a" name="blok3b_nonindustri[q315_a]" class="form-control" placeholder="0" min="0" step="1" value="{{ $surveyResponse->blok3b_nonindustri_data['q315_a'] ?? '' }}" required>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q315_b">b. Daya tersambung dari Non PLN yang dipakai oleh perusahaan (VA)</label>
+                            <input type="number" id="q315_b" name="blok3b_nonindustri[q315_b]" class="form-control" placeholder="0" min="0" step="1" value="{{ $surveyResponse->blok3b_nonindustri_data['q315_b'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q315_c">c. Banyaknya penggunaan listrik dari PLN (kWh)</label>
+                            <input type="number" id="q315_c" name="blok3b_nonindustri[q315_c]" class="form-control" placeholder="0" min="0" step="0.01" value="{{ $surveyResponse->blok3b_nonindustri_data['q315_c'] ?? '' }}" required>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q315_d">d. Banyaknya penggunaan listrik dari Non PLN (kWh)</label>
+                            <input type="number" id="q315_d" name="blok3b_nonindustri[q315_d]" class="form-control" placeholder="0" min="0" step="0.01" value="{{ $surveyResponse->blok3b_nonindustri_data['q315_d'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q315_e_display">e. Pengeluaran listrik yang dipakai oleh perusahaan (Rp)</label>
+                            <input type="text" id="q315_e_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q315_e]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q315_e]" id="q315_e" value="{{ $surveyResponse->blok3b_nonindustri_data['q315_e'] ?? '' }}">
+                        </div>
+                    </div>
+                    <div class="form-errors"></div>
+                    <div class="form-hint">
+                        <div class="hint-note text-muted">Tidak bisa negatif.</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label required">
+                        <span class="question-number">316.</span>
                         <span>Biaya produksi (pemakaian bahan baku dan penolong) (rupiah)</span>
                     </label>
                     <div class="form-subgrid">
@@ -475,86 +522,74 @@
 
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">314.</span>
-                        <span>Biaya operasional (air, listrik, gas, pemeliharaan, biaya angkutan) (rupiah)</span>
+                        <span class="question-number">317.</span>
+                        <span>Pengeluaran perusahaan selama tahun 2025 (rupiah)</span>
                     </label>
                     <div class="form-subgrid">
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q313_display">a. Satu triwulan yang lalu</label>
-                            <input type="text" id="q313_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q313]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q313]" id="q313" value="{{ $surveyResponse->blok3b_nonindustri_data['q313'] ?? '' }}">
+                            <label class="form-sublabel" for="q317_a_display">a. Biaya operasional (air, listrik, gas, pemeliharaan, biaya angkutan)</label>
+                            <input type="text" id="q317_a_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_a]" required>
+                            <input type="hidden" name="blok3b_nonindustri[q317_a]" id="q317_a" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_a'] ?? '' }}">
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q313_year_display">b. Selama tahun 2025</label>
-                            <input type="text" id="q313_year_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q313_year]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q313_year]" id="q313_year" value="{{ $surveyResponse->blok3b_nonindustri_data['q313_year'] ?? '' }}">
+                            <label class="form-sublabel" for="q317_b_display">b. Biaya Non operasional (bunga pinjaman, pajak, premi asuransi, nilai hadiah/sumbangan)</label>
+                            <input type="text" id="q317_b_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_b]">
+                            <input type="hidden" name="blok3b_nonindustri[q317_b]" id="q317_b" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_b'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q317_c1_display">c.1 Sewa/kontrak gedung, mesin, serta alat-alat (Rp)</label>
+                            <input type="text" id="q317_c1_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_c1]">
+                            <input type="hidden" name="blok3b_nonindustri[q317_c1]" id="q317_c1" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_c1'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q317_c2_display">c.2 Sewa/kontrak tanah (Rp)</label>
+                            <input type="text" id="q317_c2_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_c2]">
+                            <input type="hidden" name="blok3b_nonindustri[q317_c2]" id="q317_c2" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_c2'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q317_d_display">d. Pajak/Tax (Rp)</label>
+                            <input type="text" id="q317_d_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_d]">
+                            <input type="hidden" name="blok3b_nonindustri[q317_d]" id="q317_d" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_d'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q317_e_display">e. Nilai bunga atas pinjaman (Rp)</label>
+                            <input type="text" id="q317_e_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_e]">
+                            <input type="hidden" name="blok3b_nonindustri[q317_e]" id="q317_e" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_e'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q317_f_display">f. Nilai hadiah, sumbangan, derma dan sejenisnya (Rp)</label>
+                            <input type="text" id="q317_f_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_f]">
+                            <input type="hidden" name="blok3b_nonindustri[q317_f]" id="q317_f" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_f'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q317_g_display">g. Nilai dividen/laba yang dibagikan (Rp)</label>
+                            <input type="text" id="q317_g_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_g]">
+                            <input type="hidden" name="blok3b_nonindustri[q317_g]" id="q317_g" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_g'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q317_h_display">h. Nilai premi asuransi kerugian yang dibayarkan (Rp)</label>
+                            <input type="text" id="q317_h_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_h]">
+                            <input type="hidden" name="blok3b_nonindustri[q317_h]" id="q317_h" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_h'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q317_i_display">i. Nilai jasa industri (maklun) yang dibayarkan ke pihak lain (Rp)</label>
+                            <input type="text" id="q317_i_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_i]">
+                            <input type="hidden" name="blok3b_nonindustri[q317_i]" id="q317_i" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_i'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q317_j_display">j. Air (selain untuk bahan baku dan penolong) (Rp)</label>
+                            <input type="text" id="q317_j_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_j]">
+                            <input type="hidden" name="blok3b_nonindustri[q317_j]" id="q317_j" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_j'] ?? '' }}">
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q317_k_display">k. Pengeluaran lainnya (Rp)</label>
+                            <input type="text" id="q317_k_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q317_k]">
+                            <input type="hidden" name="blok3b_nonindustri[q317_k]" id="q317_k" value="{{ $surveyResponse->blok3b_nonindustri_data['q317_k'] ?? '' }}">
                         </div>
                     </div>
                     <div class="form-errors"></div>
                     <div class="form-hint">
-                        <div class="hint-grid">
-                            <div class="hint-col">
-                                <div class="hint-heading">Catatan:</div>
-                                <div>Mencakup biaya-biaya yang tidak secara langsung dalam proses produksi seperti air, listrik, gas, pemeliharaan, serta biaya angkutan.</div>
-                            </div>
-                        </div>
-                        <div class="hint-grid">
-                            <div class="hint-col">
-                                <div class="hint-heading">Termasuk:</div>
-                                <ul class="hint-list">
-                                    <li>✓ Pengeluaran listrik, bahan bakar dan air</li>
-                                    <li>✓ Pembelian bahan perkantoran umum</li>
-                                    <li>✓ Pembelian komponen dan bahan bakar untuk kendaraan bermotor</li>
-                                    <li>✓ pembayaran ke pihak lain untuk kargo, delivery, dan jasa angkutan</li>
-                                    <li>✓ Pembayaran sewa operasi (dengan atau tanpa operator)</li>
-                                    <li>✓ Biaya lisensi software komputer yang berumur kurang dari satu tahun (termasuk biaya instalasi oleh provider eksternal)</li>
-                                </ul>
-                        </div>
-                        </div>
-                        <!-- <div class="hint-note text-muted">Tidak bisa negatif.</div> -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- QUESTION 315: NON-OPERASIONAL COSTS -->
-        <div class="form-section">
-            <div class="form-grid">
-                <div class="form-row">
-                    <label class="form-label required">
-                        <span class="question-number">315.</span>
-                        <span>Biaya Non operasional (bunga pinjaman, pajak, premi asuransi, nilai hadiah/sumbangan) (rupiah)</span>
-                    </label>
-                    <div class="form-subgrid">
-                        <div class="form-subrow">
-                            <label class="form-sublabel" for="q315a_display">a. Satu triwulan yang lalu</label>
-                            <input type="text" id="q315a_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q315a]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q315a]" id="q315a" value="{{ $surveyResponse->blok3b_nonindustri_data['q315a'] ?? '' }}">
-                        </div>
-                        <div class="form-subrow">
-                            <label class="form-sublabel" for="q315b_display">b. Selama tahun 2025</label>
-                            <input type="text" id="q315b_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_nonindustri[q315b]" required>
-                            <input type="hidden" name="blok3b_nonindustri[q315b]" id="q315b" value="{{ $surveyResponse->blok3b_nonindustri_data['q315b'] ?? '' }}">
-                        </div>
-                    </div>
-                    <div class="form-errors"></div>
-                    <div class="form-hint">
-                        <div class="hint-grid">
-                            <div class="hint-col">
-                                <div class="hint-heading">Catatan:</div>
-                                <div>Semua pengeluaran untuk aktivitas pendanaan, kepemilikan aset, atau kejadian luar biasa lainnya selama tahun 2025, yang tidak terkait langsung dengan proses produksi barang dan jasa</div>
-                            </div>
-                        </div>
-                        <div class="hint-grid">
-                            <div class="hint-col">
-                                <div class="hint-heading">Termasuk:</div>
-                                <ul class="hint-list">
-                                    <li>✓ Biaya pendanaan digital</li>
-                                    <li>✓ Kerugian nilai data atau aset digital karena kebocoran atau kehilangan</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <!-- <div class="hint-note text-muted">Tidak bisa negatif.</div> -->
+                        <div class="hint-note text-muted">Selama tahun 2025. Sub c = sewa/kontrak. Sub d = Termasuk Pajak Badan, PBB, BPHTB, Pajak Kendaraan; tidak termasuk PPh karyawan. Tidak bisa negatif.</div>
                     </div>
                 </div>
             </div>
@@ -568,14 +603,14 @@
             <div class="form-grid">
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">316.</span>
+                        <span class="question-number">319.</span>
                         <span>Berapa persentase nilai produksi yang dijual sebagai produk ekspor luar negeri (%)</span>
                     </label>
                     <input type="number" id="q314" name="blok3b_nonindustri[q314]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_nonindustri_data['q314'] ?? '' }}" placeholder="0" required>
                 </div>
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">317.</span>
+                        <span class="question-number">320.</span>
                         <span>Berapa persentase nilai bahan baku dan bahan penolong yang diperoleh melalui impor luar negeri langsung atau melalui jasa importir (%)</span>
                     </label>
                     <input type="number" id="q315" name="blok3b_nonindustri[q315]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_nonindustri_data['q315'] ?? '' }}" placeholder="0" required>
@@ -595,7 +630,7 @@
             <div class="form-grid">
                 <div class="form-row">
                     <label class="form-label">
-                        <span class="question-number">318.</span>
+                        <span class="question-number">321.</span>
                         <span>Nilai aset pada 31 Desember 2025 (rupiah)</span>
                     </label>
                     <div class="form-subgrid">
@@ -643,7 +678,7 @@
             <div class="form-grid">
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">319.</span>
+                        <span class="question-number">322.</span>
                         <span>Susunan kepemilikan modal pada 31 Desember 2025 (%)</span>
                     </label>
                     <div class="form-subgrid">
@@ -664,17 +699,25 @@
                             <input type="number" id="q319d" name="blok3b_nonindustri[q319d]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_nonindustri_data['q319d'] ?? '' }}" placeholder="0" required>
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q319e">e. Pemerintah</label>
+                            <label class="form-sublabel" for="q319e">e. Pemerintah Pusat</label>
                             <input type="number" id="q319e" name="blok3b_nonindustri[q319e]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_nonindustri_data['q319e'] ?? '' }}" placeholder="0" required>
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q319f">f. Asing</label>
+                            <label class="form-sublabel" for="q319f">f. Pemerintah Daerah</label>
                             <input type="number" id="q319f" name="blok3b_nonindustri[q319f]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_nonindustri_data['q319f'] ?? '' }}" placeholder="0" required>
                         </div>
                         <div class="form-subrow">
-                            <label class="form-sublabel" for="q319g_display">g. Total (otomatis)</label>
-                            <input type="number" id="q319g_display" class="form-control readonly" placeholder="0" readonly style="background-color:#e9ecef">
-                            <input type="hidden" name="blok3b_nonindustri[q319g]" id="q319g" value="{{ $surveyResponse->blok3b_nonindustri_data['q319g'] ?? '' }}">
+                            <label class="form-sublabel" for="q319g">g. Perusahaan Swasta Nasional</label>
+                            <input type="number" id="q319g" name="blok3b_nonindustri[q319g]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_nonindustri_data['q319g'] ?? '' }}" placeholder="0" required>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q319h">h. Asing</label>
+                            <input type="number" id="q319h" name="blok3b_nonindustri[q319h]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_nonindustri_data['q319h'] ?? '' }}" placeholder="0" required>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q319i_display">i. Total (otomatis)</label>
+                            <input type="number" id="q319i_display" class="form-control readonly" placeholder="0" readonly style="background-color:#e9ecef">
+                            <input type="hidden" name="blok3b_nonindustri[q319i]" id="q319i" value="{{ $surveyResponse->blok3b_nonindustri_data['q319i'] ?? '' }}">
                         </div>
                     </div>
                 </div>
@@ -709,11 +752,18 @@
             </div>
 
             <div class="text-sm text-gray-500 dark:text-gray-400">
-                <span>* 310 otomatis dijumlahkan.</span>
+                <span>* Tidak boleh negatif.</span>
             </div>
         </div>
     </form>
 </div>
+
+@if(!empty($historicalResponses))
+@include('survey.sibstr.partials.historical-drawer', [
+    'historicalResponses' => $historicalResponses,
+    'blockKey'            => 'blok3b_nonindustri',
+])
+@endif
 
 @push('scripts')
 <script>
@@ -722,12 +772,12 @@
 window.surveyRoutes = @json($editRoutes);
 @else
 window.surveyRoutes = {
-    autoSave: '{{ route("survey.sibstr.blok3b.nonindustri.autosave") }}',
-    saveAll: '{{ route("survey.sibstr.blok3b.nonindustri.save") }}',
-    status: '{{ route("survey.sibstr.blok3b.nonindustri.status") }}',
-    backToBlok2: '{{ route("survey.sibstr.blok2") }}',
-    nextBlok: '{{ route("survey.sibstr.blok4") }}',
-    blok3b_nonindustri: '{{ route("survey.sibstr.blok3b.nonindustri") }}'
+    autoSave:           '{{ route("survey.sibstr.blok3b.nonindustri.autosave", ["year" => $tahun, "period" => $period]) }}',
+    saveAll:            '{{ route("survey.sibstr.blok3b.nonindustri.save",     ["year" => $tahun, "period" => $period]) }}',
+    status:             '{{ route("survey.sibstr.blok3b.nonindustri.status",   ["year" => $tahun, "period" => $period]) }}',
+    backToBlok2:        '{{ route("survey.sibstr.blok3a",                      ["year" => $tahun, "period" => $period]) }}',
+    nextBlok:           '{{ route("survey.sibstr.blok4",                       ["year" => $tahun, "period" => $period]) }}',
+    blok3b_nonindustri: '{{ route("survey.sibstr.blok3b.nonindustri",          ["year" => $tahun, "period" => $period]) }}'
 };
 @endif
 

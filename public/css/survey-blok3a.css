@@ -228,15 +228,25 @@
 }
 
 .form-label {
-    display: block;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.25rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
     color: var(--gray-800);
-    font-size: 0.95rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    padding-top: 0.5rem;
 }
 
 .dark .form-label {
     color: var(--gray-200);
+}
+
+/* Inside product cards, labels sit above inputs so no top-padding needed */
+.form-group > .form-label {
+    padding-top: 0;
+    font-size: 0.95rem;
 }
 
 /* Data Grid (Instead of Table) */

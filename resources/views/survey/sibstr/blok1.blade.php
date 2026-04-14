@@ -9,9 +9,59 @@
 @endpush
 
 @section('content')
+@php
+    $currentTriwulan = $triwulan ?? $surveyResponse->triwulan ?? 0;
+    $currentTahun    = $tahun    ?? $surveyResponse->tahun    ?? 2025;
+    $currentPeriod   = $period   ?? ($currentTriwulan === 0 ? 'tahunan' : (string) $currentTriwulan);
+    $isReadOnlyMode  = !empty($isEditMode) && $currentTriwulan > 0;
+@endphp
+
+@if($isReadOnlyMode)
+{{-- ── READ-ONLY MODE: historical quarterly data (triwulan > 0) ── --}}
+@include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
+
+<div class="period-indicator mb-4 px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-700 text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">
+    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+    </svg>
+    <span>Tampilan Baca-Saja — <strong>{{ \App\Models\SurveyResponse::triwulanLabel($currentTriwulan) }} {{ $currentTahun }}</strong></span>
+</div>
+
+@include('survey.sibstr.partials.blok1-readonly')
+
+<div style="padding: 1rem 1.5rem 2rem;">
+    <div class="flex items-center gap-4">
+        <a href="{{ route('dashboard.surveys.sibstr.results') }}" class="btn btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9,22 9,12 15,12 15,22"></polyline>
+            </svg>
+            Dashboard
+        </a>
+        <a href="{{ $editRoutes['nextBlok'] ?? route('survey.sibstr.edit.blok2') }}" class="btn btn-primary">
+            Lanjut ke Bab 2
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9,18 15,12 9,6"></polyline>
+            </svg>
+        </a>
+    </div>
+</div>
+
+@else
+{{-- ── ACTIVE FORM MODE ── --}}
 <div class="survey-container">
     @if(!empty($isEditMode))
     @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
+    @endif
+
+    @if(isset($triwulan) && $triwulan > 0)
+    <div class="period-indicator mb-4 px-4 py-2 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-700 text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <span>Mengisi untuk: <strong>{{ \App\Models\SurveyResponse::triwulanLabel($triwulan) }} {{ $tahun }}</strong></span>
+    </div>
     @endif
 
     <!-- Survey Header -->
@@ -25,6 +75,26 @@
         <p class="survey-description">
             Formulir survei untuk pengumpulan data industri besar dan sedang triwulanan sesuai standar BPS
         </p>
+
+        @if(isset($referenceResponse) && $referenceResponse)
+        <div style="margin-top:1rem;">
+            <button type="button"
+                    onclick="openRefDrawer()"
+                    style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
+                           border-radius:0.625rem;border:2px solid #fbbf24;
+                           background:rgba(254,243,199,0.85);color:#92400e;
+                           font-size:0.8125rem;font-weight:700;cursor:pointer;
+                           transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;
+                           box-shadow:0 1px 4px rgba(251,191,36,0.25);"
+                    aria-label="Buka panel data referensi untuk perbandingan">
+                <svg style="width:1rem;height:1rem;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Lihat Data Referensi
+            </button>
+        </div>
+        @endif
     </div>
 
     <!-- Auto-save Status -->
@@ -35,6 +105,8 @@
     <!-- Survey Form -->
     <form id="survey-form" class="survey-form" data-aos="fade-up" data-aos-delay="200">
         @csrf
+        <input type="hidden" name="tahun" value="{{ $tahun ?? 2025 }}">
+        <input type="hidden" name="triwulan" value="{{ $triwulan ?? 0 }}">
 
         <!-- Header Information Section removed: KIP and IDSBR are admin-managed -->
 
@@ -462,16 +534,43 @@
             </div>
         </div>
     </form>
+
+    @if(isset($referenceResponse) && $referenceResponse)
+    @include('survey.sibstr.partials.reference-drawer', [
+        'referenceResponse' => $referenceResponse,
+        'currentTwLabel'    => isset($triwulan) && $triwulan > 0
+                                ? \App\Models\SurveyResponse::triwulanLabel($triwulan) . ' ' . ($tahun ?? 2025)
+                                : 'Tahunan ' . ($tahun ?? 2025),
+        'fields'            => [
+            ['name' => 'nama_perusahaan',       'label' => 'Nama Perusahaan',          'copyable' => true],
+            ['name' => 'alamat_pabrik',         'label' => 'Alamat Pabrik',            'copyable' => true],
+            ['name' => 'kabupaten_kota',        'label' => 'Kabupaten / Kota',         'copyable' => true],
+            ['name' => 'telepon_fax',           'label' => 'Telepon / Fax',            'copyable' => true],
+            ['name' => 'penghubung',            'label' => 'Penghubung',               'copyable' => true],
+            ['name' => 'email',                 'label' => 'Email',                    'copyable' => true],
+            ['name' => 'homepage',              'label' => 'Homepage / Website',       'copyable' => true],
+            ['name' => 'nib',                   'label' => 'NIB',                      'copyable' => true],
+            ['name' => 'jenis_kawasan',         'label' => 'Jenis Kawasan',            'copyable' => true],
+            ['name' => 'nama_kawasan',          'label' => 'Nama Kawasan',             'copyable' => true],
+            ['name' => 'nama_pengelola_kawasan','label' => 'Nama Pengelola Kawasan',   'copyable' => true],
+            ['name' => 'legalisasi_nama',       'label' => 'Nama Penanggung Jawab',    'copyable' => true],
+            ['name' => 'legalisasi_jabatan',    'label' => 'Jabatan Penanggung Jawab', 'copyable' => true],
+        ],
+    ])
+    @endif
 </div>
+@endif
+{{-- end active form / read-only gate --}}
 
 @push('scripts')
+@if(!$isReadOnlyMode)
 <script>
 // Set up survey routes for the JavaScript module
 window.surveyRoutes = @json($editRoutes ?? null) || {
-    autoSave: '{{ route("survey.sibstr.autosave") }}',
-    saveAll: '{{ route("survey.sibstr.save") }}',
-    status: '{{ route("survey.sibstr.status") }}',
-    nextBlok: '{{ route("survey.sibstr.blok2") }}'
+    autoSave: '{{ route("survey.sibstr.autosave", ["year" => $currentTahun, "period" => $currentPeriod]) }}',
+    saveAll:  '{{ route("survey.sibstr.save",     ["year" => $currentTahun, "period" => $currentPeriod]) }}',
+    status:   '{{ route("survey.sibstr.status",   ["year" => $currentTahun, "period" => $currentPeriod]) }}',
+    nextBlok: '{{ route("survey.sibstr.blok2",    ["year" => $currentTahun, "period" => $currentPeriod]) }}'
 };
 
 // Back to dashboard navigation (consistent button behavior)
@@ -485,5 +584,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script src="{{ asset('js/survey.js') }}"></script>
+@endif
 @endpush
 @endsection

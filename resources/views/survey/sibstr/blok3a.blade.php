@@ -29,6 +29,30 @@
         <p class="survey-instruction">
             <strong>Petunjuk:</strong> Mencatat semua pendapatan dari hasil produksi. Klik tombol "Tambah Produk" untuk menambahkan jenis barang.
         </p>
+
+        @if(!empty($historicalResponses) && $historicalResponses->isNotEmpty())
+        <div style="margin-top:1rem;">
+            <button type="button"
+                    onclick="openHistDrawer()"
+                    style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
+                           border-radius:0.625rem;border:2px solid #fbbf24;
+                           background:rgba(254,243,199,0.85);color:#92400e;
+                           font-size:0.8125rem;font-weight:700;cursor:pointer;
+                           transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;
+                           box-shadow:0 1px 4px rgba(251,191,36,0.25);"
+                    aria-label="Buka panel data historis untuk referensi">
+                <svg style="width:1rem;height:1rem;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Lihat Data Historis
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:1.2rem;height:1.2rem;
+                             border-radius:9999px;background:#fbbf24;color:#7c2d12;font-size:0.7rem;font-weight:800;">
+                    {{ $historicalResponses->count() }}
+                </span>
+            </button>
+        </div>
+        @endif
     </div>
 
     <!-- Auto-save Status -->
@@ -47,6 +71,13 @@
             <!-- Cards will be injected here by JS -->
         </div>
 
+        <!-- Footnotes for Section 301 -->
+        <div style="margin-bottom:1.25rem;padding:1rem 1.25rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:0.625rem;font-size:0.8125rem;color:#1e40af;line-height:1.6;">
+            <p><strong>Catatan:</strong> Bila satuan yang digunakan tidak standar seperti &apos;botol&apos; atau &apos;kaleng&apos;, agar dikonversikan ke satuan metrik seperti liter, M3, dsb.</p>
+            <p style="margin-top:0.4rem;"><strong>(*)</strong> Termasuk yang diekspor oleh eksportir umum atau pihak lain.</p>
+            <p style="margin-top:0.4rem;"><strong>(**)</strong> Jika negara tujuan ekspor lebih dari satu, tuliskan negara tujuan ekspor dengan nilai terbesar.</p>
+        </div>
+
         <!-- Add Product Button -->
         <div class="add-product-container">
             <button type="button" id="add-product-btn" class="btn-add">
@@ -56,27 +87,6 @@
                 </svg>
                 Tambah Produk
             </button>
-        </div>
-
-        <!-- Lainnya Section -->
-        <div class="special-section border-l-4 border-yellow-500" id="lainnya-section">
-            <h3 class="special-title">
-                <span class="text-xl">302.</span> Lainnya*)
-            </h3>
-            <!-- Per-section Quarter Tabs -->
-            <div class="quarter-tabs" id="lainnya-tabs" role="tablist" aria-label="Pilih Triwulan untuk Lainnya">
-                <button type="button" class="quarter-tab active" data-quarter="dec2024">Des 2024</button>
-                <button type="button" class="quarter-tab" data-quarter="q1">Triwulan I</button>
-                <button type="button" class="quarter-tab" data-quarter="q2">Triwulan II</button>
-                <button type="button" class="quarter-tab" data-quarter="q3">Triwulan III</button>
-                <button type="button" class="quarter-tab" data-quarter="q4">Triwulan IV</button>
-            </div>
-            <div class="data-grid quarter-grid" id="lainnya-grid-container">
-                <!-- Lainnya inputs will be injected here -->
-            </div>
-            <div class="mt-4 p-4 bg-gray-50 rounded-lg text-sm text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                <strong>*) Keterangan:</strong> Yang termasuk dalam lainnya atau pendapatan lainnya dalam R302 antara lain keuntungan/kerugian dari penjualan barang yang sama, menyewakan gedung/ruangan/tempat, menyewakan gudang, menyewakan kendaraan/mesin/dan peralatan (tanpa operator), pendapatan dari ongkos kirim barang, penjualan energi sampingan (listrik, steam, gas), jasa pengemasan, dan jasa perbaikan kecil.
-            </div>
         </div>
 
         <!-- Total Section -->
@@ -105,13 +115,12 @@
             <div id="blok3a-preview-table">
                 @php
                     $products = $surveyResponse->blok3a_products ?? [];
-                    $lainnya = $surveyResponse->blok3a_lainnya ?? [];
                     $totals = $surveyResponse->blok3a_totals ?? [];
                     $months = ['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'];
                     $monthLabels = ['Des 2024', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
                 @endphp
 
-                @if(count($products) > 0 || !empty($lainnya) || !empty($totals))
+                @if(count($products) > 0 || !empty($totals))
                 <div class="table-responsive" style="overflow-x:auto; padding: 0.5rem 0;">
                     <table class="preview-table-el" style="width:100%; border-collapse: collapse; min-width: 980px;">
                         <thead>
@@ -169,21 +178,6 @@
                                 </tr>
                             @endforeach
 
-                            @if(!empty($lainnya))
-                                <tr style="background:#fefce8;">
-                                    <td class="sticky-col" style="border:1px solid #e5e7eb;">
-                                        <div class="code">302.</div>
-                                        <div class="name">Lainnya</div>
-                                    </td>
-                                    <td style="border:1px solid #e5e7eb;">Nilai</td>
-                                    @foreach($months as $m)
-                                        <td class="num" style="text-align:right; border:1px solid #e5e7eb;">
-                                            {{ isset($lainnya['nilai'][$m]) && $lainnya['nilai'][$m] !== null ? number_format((float)$lainnya['nilai'][$m], 0, ',', '.') : '-' }}
-                                        </td>
-                                    @endforeach
-                                </tr>
-                            @endif
-
                             @if(!empty($totals))
                                 <tr class="total-row" style="background:#f0fdf4; font-weight:600;">
                                     <td class="sticky-col" style="border:1px solid #e5e7eb;">
@@ -207,6 +201,128 @@
             </div>
             <div class="mt-3 text-sm text-gray-600 dark:text-gray-400">
                 Ringkasan ini tidak dapat diedit. Untuk mengubah, silakan isi kartu di atas.
+            </div>
+        </div>
+
+        <!-- Questions 302, 305, 306 — unified section matching Blok 2 layout -->
+        @php $pl = $surveyResponse->blok3a_pendapatan_lainnya ?? []; @endphp
+        <div class="form-section" id="pendapatan-section">
+            <div class="section-header">
+                <h3 class="section-title">Pendapatan Lainnya &amp; Jasa Industri</h3>
+            </div>
+            <div class="form-grid">
+
+                <!-- 302 -->
+                <div class="form-row">
+                    <label class="form-label required">
+                        <span class="question-number">302.</span>
+                        <span>Pendapatan lainnya selama tahun 2025
+                            <small class="form-hint-inline">Isi nilai dalam rupiah. Isi 0 jika tidak ada.</small>
+                        </span>
+                    </label>
+                    <div class="form-subgrid">
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q302a">a. Keuntungan/kerugian penjualan barang dalam bentuk yang sama (tanpa proses lebih lanjut)</label>
+                            <div>
+                                <input type="number" id="q302a" name="blok3a_pendapatan_lainnya[q302a]" class="form-control" min="0" step="1" value="{{ $pl['q302a'] ?? '' }}" placeholder="0" required>
+                                <span class="field-error-message" id="err-q302a" style="display:none;">Bidang ini wajib diisi. Isi 0 jika tidak ada.</span>
+                            </div>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q302b">b. Penjualan kekayaan intelektual (Paten, Merk, Hak cipta, Desain industri)</label>
+                            <div>
+                                <input type="number" id="q302b" name="blok3a_pendapatan_lainnya[q302b]" class="form-control" min="0" step="1" value="{{ $pl['q302b'] ?? '' }}" placeholder="0" required>
+                                <span class="field-error-message" id="err-q302b" style="display:none;">Bidang ini wajib diisi. Isi 0 jika tidak ada.</span>
+                            </div>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q302c">c. Nilai jasa yang tidak berkaitan dengan proses produksi</label>
+                            <div>
+                                <input type="number" id="q302c" name="blok3a_pendapatan_lainnya[q302c]" class="form-control" min="0" step="1" value="{{ $pl['q302c'] ?? '' }}" placeholder="0" required>
+                                <span class="field-error-message" id="err-q302c" style="display:none;">Bidang ini wajib diisi. Isi 0 jika tidak ada.</span>
+                            </div>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q302d">d. Tenaga listrik yang dijual</label>
+                            <div>
+                                <input type="number" id="q302d" name="blok3a_pendapatan_lainnya[q302d]" class="form-control" min="0" step="1" value="{{ $pl['q302d'] ?? '' }}" placeholder="0" required>
+                                <span class="field-error-message" id="err-q302d" style="display:none;">Bidang ini wajib diisi. Isi 0 jika tidak ada.</span>
+                            </div>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q302e">e. Pendapatan non operasional (Laba/dividen yang diterima, bunga atas simpanan dan piutang, pendapatan dari sewa lahan, klaim asuransi kerugian yang diterima)</label>
+                            <div>
+                                <input type="number" id="q302e" name="blok3a_pendapatan_lainnya[q302e]" class="form-control" min="0" step="1" value="{{ $pl['q302e'] ?? '' }}" placeholder="0" required>
+                                <span class="field-error-message" id="err-q302e" style="display:none;">Bidang ini wajib diisi. Isi 0 jika tidak ada.</span>
+                            </div>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q302f">f. Lainnya</label>
+                            <div>
+                                <input type="number" id="q302f" name="blok3a_pendapatan_lainnya[q302f]" class="form-control" min="0" step="1" value="{{ $pl['q302f'] ?? '' }}" placeholder="0" required>
+                                <span class="field-error-message" id="err-q302f" style="display:none;">Bidang ini wajib diisi. Isi 0 jika tidak ada.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 305 -->
+                <div class="form-row">
+                    <label class="form-label required">
+                        <span class="question-number">305.</span>
+                        <span>Pendapatan dari jasa industri (maklun) selama tahun 2025</span>
+                    </label>
+                    <div class="form-subgrid">
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q305a_maklun_nilai">a. Nilai pendapatan dari jasa industri (maklun)</label>
+                            <div>
+                                <div style="display:flex;align-items:center;gap:0.5rem;">
+                                    <span class="input-prefix">Rp</span>
+                                    <input type="number" id="q305a_maklun_nilai" name="blok3a_q305a_maklun_nilai"
+                                           class="form-control" min="0" step="1"
+                                           value="{{ $surveyResponse->blok3a_q305a_maklun_nilai ?? '' }}"
+                                           placeholder="0" required>
+                                </div>
+                                <small class="form-hint-inline">Isi nilai dalam rupiah (bilangan bulat).</small>
+                                <span class="field-error-message" id="err-q305a_maklun_nilai" style="display:none;">Bidang ini wajib diisi.</span>
+                            </div>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel" for="q305b_maklun_pct">b. Persentase nilai pendapatan dari jasa industri (maklun) luar negeri</label>
+                            <div>
+                                <div style="display:flex;align-items:center;gap:0.5rem;">
+                                    <input type="number" id="q305b_maklun_pct" name="blok3a_q305b_maklun_pct"
+                                           class="form-control" min="0" max="100" step="0.01"
+                                           value="{{ $surveyResponse->blok3a_q305b_maklun_pct ?? '' }}"
+                                           placeholder="0" required>
+                                    <span class="input-prefix">%</span>
+                                </div>
+                                <small class="form-hint-inline">Maksimal 100%.</small>
+                                <span class="field-error-message" id="err-q305b_maklun_pct" style="display:none;">Bidang ini wajib diisi.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 306 -->
+                <div class="form-row">
+                    <label class="form-label required">
+                        <span class="question-number">306.</span>
+                        <span>Berapa persentase pendapatan yang diperoleh dari usaha online (%)</span>
+                    </label>
+                    <div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <input type="number" id="q305_online" name="blok3a_q305_online"
+                                   class="form-control" min="0" max="100" step="0.01"
+                                   value="{{ $surveyResponse->blok3a_q305_online ?? '' }}"
+                                   placeholder="0" required>
+                            <span class="input-prefix">%</span>
+                        </div>
+                        <small class="form-hint-inline">Maksimal 100%.</small>
+                        <span class="field-error-message" id="err-q305_online" style="display:none;">Bidang ini wajib diisi.</span>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -243,6 +359,13 @@
     </form>
 </div>
 
+@if(!empty($historicalResponses))
+@include('survey.sibstr.partials.historical-drawer', [
+    'historicalResponses' => $historicalResponses,
+    'blockKey'            => 'blok3a',
+])
+@endif
+
 <!-- Scripts -->
 @push('scripts')
 <script>
@@ -250,26 +373,24 @@
 window.surveyRoutes = @json($editRoutes);
 @else
 window.surveyRoutes = {
-    autoSave: '{{ route("survey.sibstr.blok3a.autosave") }}',
-    saveAll: '{{ route("survey.sibstr.blok3a.save") }}',
-    status: '{{ route("survey.sibstr.blok3a.status") }}',
-    backToBlok2: '{{ route("survey.sibstr.blok2") }}',
-    // Default fallback next block based on KBLI prefix (10–33 = Industri)
+    autoSave:    '{{ route("survey.sibstr.blok3a.autosave",      ["year" => $tahun, "period" => $period]) }}',
+    saveAll:     '{{ route("survey.sibstr.blok3a.save",          ["year" => $tahun, "period" => $period]) }}',
+    status:      '{{ route("survey.sibstr.blok3a.status",        ["year" => $tahun, "period" => $period]) }}',
+    backToBlok2: '{{ route("survey.sibstr.blok2",                ["year" => $tahun, "period" => $period]) }}',
     nextBlok: @php
-        $fallbackNext = (isset($kbliPrefix) && $kbliPrefix >= 10 && $kbliPrefix <= 33)
-            ? route('survey.sibstr.blok3b.industri')
-            : route('survey.sibstr.blok3b.nonindustri');
-        echo "'{$fallbackNext}'";
+        $blok3aNext = (isset($kbliPrefix) && $kbliPrefix >= 10 && $kbliPrefix <= 33)
+            ? route('survey.sibstr.blok3b.industri',   ['year' => $tahun, 'period' => $period])
+            : route('survey.sibstr.blok3b.nonindustri',['year' => $tahun, 'period' => $period]);
+        echo "'{$blok3aNext}'";
     @endphp,
-    blok6: '{{ route("survey.sibstr.blok6") }}',
-    blok3b_industri: '{{ route("survey.sibstr.blok3b.industri") }}',
-    blok3b_nonindustri: '{{ route("survey.sibstr.blok3b.nonindustri") }}'
+    blok6:              '{{ route("survey.sibstr.blok6",                ["year" => $tahun, "period" => $period]) }}',
+    blok3b_industri:    '{{ route("survey.sibstr.blok3b.industri",      ["year" => $tahun, "period" => $period]) }}',
+    blok3b_nonindustri: '{{ route("survey.sibstr.blok3b.nonindustri",   ["year" => $tahun, "period" => $period]) }}'
 };
 @endif
 
 window.surveyData = {
     products: @json($surveyResponse->blok3a_products ?? []),
-    lainnya: @json($surveyResponse->blok3a_lainnya ?? []),
     totals: @json($surveyResponse->blok3a_totals ?? [])
 };
 </script>
