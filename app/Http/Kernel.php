@@ -37,6 +37,9 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\DevAccessRestriction::class,
+            // Dev auth gate: redirects unauthenticated requests to /dev-login
+            // when DEV_AUTH_ENABLED=true.  No-op in production (flag unset).
+            \App\Http\Middleware\DevAuthGate::class,
         ],
 
         'api' => [

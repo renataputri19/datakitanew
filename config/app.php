@@ -20,6 +20,9 @@ return [
 
     'dev_allowed_email' => env('DEV_ALLOWED_EMAIL', null),
 
+    // Enables the manual dev-login gate (only ever true in local/dev .env)
+    'dev_auth_enabled' => env('DEV_AUTH_ENABLED', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

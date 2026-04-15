@@ -22,12 +22,29 @@ use App\Http\Controllers\MonalisaController;
 use App\Http\Controllers\Monalisa\KominfoController;
 use App\Http\Controllers\Monalisa\BpsController as MonalisaBpsController;
 use App\Http\Controllers\Monalisa\NotificationController as MonalisaNotificationController;
+use App\Http\Controllers\DevLoginController;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 */
+
+// ── Dev-only login gate ───────────────────────────────────────────────────────
+// These routes are registered ONLY when DEV_AUTH_ENABLED=true in .env.
+// In production the config value is false/absent, so none of this code runs.
+if (config('app.dev_auth_enabled')) {
+    Route::get('/dev-login', [DevLoginController::class, 'showForm'])
+        ->name('dev.login');
+
+    Route::post('/dev-login', [DevLoginController::class, 'login'])
+        ->name('dev.login.submit');
+
+    Route::post('/dev-logout', [DevLoginController::class, 'logout'])
+        ->middleware('auth')
+        ->name('dev.logout');
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Main Pages
 Route::get('/', [HomeController::class, 'index'])->name('home');
