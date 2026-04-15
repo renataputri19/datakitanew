@@ -150,17 +150,16 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
     </svg>
     <div class="flex-1">
-      <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">Lengkapi Data Pertanyaan 207 Terlebih Dahulu</p>
+      <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">Ada Pembaruan di Survei Tahunan 2025</p>
       <p class="mt-1 text-sm text-amber-700 dark:text-amber-400">
-        Sebelum memulai pengisian survei triwulanan {{ $tahun }}, Anda perlu melengkapi data
-        <strong>Pertanyaan 207 (Jumlah Pekerja Selama Tahun 2025)</strong> pada survei tahunan 2025.
+        Formulir tahunan 2025 telah diperbarui dengan tambahan data baru. Lengkapi bagian yang belum terisi — survei triwulanan {{ $tahun }} akan terbuka setelah semua data tahunan selesai diisi.
       </p>
       <a href="{{ route('survey.sibstr.edit.blok2', ['year' => 2025, 'period' => 'tahunan']) }}"
          class="inline-flex items-center gap-1.5 mt-3 text-sm font-medium text-amber-800 dark:text-amber-300 underline hover:no-underline">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
         </svg>
-        Lengkapi Data Q207 Sekarang
+        Lengkapi Sekarang
       </a>
     </div>
   </div>
@@ -271,7 +270,7 @@
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
               </svg>
-              Lengkapi Q207 dulu
+              Selesaikan Tahunan Dulu
             </button>
           @else
             <button disabled class="ud-btn w-full justify-center text-sm cursor-not-allowed opacity-50 border border-gray-300 text-gray-500 bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500">

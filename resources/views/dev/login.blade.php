@@ -354,12 +354,11 @@
         <div class="card-footer">
             @if($allowedEmail)
                 <p>
-                    Hanya <code>{{ $allowedEmail }}</code> yang dapat membuka kunci ini.<br>
+                    Hanya akun yang berwenang yang dapat membuka kunci ini.<br>
                     Setelah berhasil masuk, semua akun dapat login &amp; menggunakan app secara penuh.
                 </p>
             @else
                 <p>
-                    Halaman ini hanya aktif jika <code>DEV_AUTH_ENABLED=true</code> ada di <code>.env</code>.<br>
                     Di production, route ini tidak terdaftar dan halaman ini tidak dapat diakses.
                 </p>
             @endif
