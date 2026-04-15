@@ -291,7 +291,10 @@
                 {{ strtoupper(config('app.env')) }} &nbsp;·&nbsp; DEV LOGIN
             </span>
 
-            <p class="card-subtitle">Masuk menggunakan akun yang ada di database development.</p>
+            <p class="card-subtitle">
+                Masuk dengan akun yang berwenang untuk membuka akses dev.<br>
+                Setelah itu, semua akun bisa login &amp; daftar seperti di production.
+            </p>
         </div>
 
         {{-- Error messages --}}
@@ -349,10 +352,17 @@
 
         {{-- Footer note --}}
         <div class="card-footer">
-            <p>
-                Halaman ini hanya aktif jika <code>DEV_AUTH_ENABLED=true</code> ada di <code>.env</code>.<br>
-                Di production, route ini tidak terdaftar dan halaman ini tidak dapat diakses.
-            </p>
+            @if($allowedEmail)
+                <p>
+                    Hanya <code>{{ $allowedEmail }}</code> yang dapat membuka kunci ini.<br>
+                    Setelah berhasil masuk, semua akun dapat login &amp; menggunakan app secara penuh.
+                </p>
+            @else
+                <p>
+                    Halaman ini hanya aktif jika <code>DEV_AUTH_ENABLED=true</code> ada di <code>.env</code>.<br>
+                    Di production, route ini tidak terdaftar dan halaman ini tidak dapat diakses.
+                </p>
+            @endif
         </div>
     </div>
 

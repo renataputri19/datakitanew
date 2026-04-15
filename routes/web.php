@@ -30,20 +30,10 @@ use App\Http\Controllers\DevLoginController;
 |--------------------------------------------------------------------------
 */
 
-// ── Dev-only login gate ───────────────────────────────────────────────────────
-// These routes are registered ONLY when DEV_AUTH_ENABLED=true in .env.
-// In production the config value is false/absent, so none of this code runs.
-if (config('app.dev_auth_enabled')) {
-    Route::get('/dev-login', [DevLoginController::class, 'showForm'])
-        ->name('dev.login');
-
-    Route::post('/dev-login', [DevLoginController::class, 'login'])
-        ->name('dev.login.submit');
-
-    Route::post('/dev-logout', [DevLoginController::class, 'logout'])
-        ->middleware('auth')
-        ->name('dev.logout');
-}
+// ── Dev gate routes (always registered, controller aborts 404 in production) ──
+Route::get('/dev-login',  [DevLoginController::class, 'showForm'])->name('dev.login');
+Route::post('/dev-login', [DevLoginController::class, 'login'])->name('dev.login.submit');
+Route::post('/dev-logout',[DevLoginController::class, 'logout'])->name('dev.logout');
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Main Pages
