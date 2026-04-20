@@ -1,16 +1,13 @@
 /**
- * SIBSTR Survey Blok IV Specific JavaScript
- * Handles validation, autosave, and back navigation for Blok IV (Fenomena dan Catatan).
- * Validation UI/UX matches the pattern used in Blok I, II, and III.
+ * Survey Blok 1 Manager
+ * Handles client-side validation and save behaviour for Blok I (Keterangan Umum).
+ * Works for both the normal fill flow and the edit-mode flow.
  */
-
-class SurveyBlok4Manager {
+class SurveyBlok1Manager {
     constructor() {
         this.form = document.getElementById('survey-form');
         if (!this.form) return;
         this.setupEventListeners();
-        this.setupAutoSave();
-        this.setupBackNavigation();
     }
 
     // ── Event listeners ──────────────────────────────────────────────────────
@@ -28,10 +25,20 @@ class SurveyBlok4Manager {
             });
         }
 
-        // Real-time error clearing and blur validation on required textareas
-        this.form.querySelectorAll('textarea[required]').forEach(field => {
-            field.addEventListener('input', () => this.clearFieldError(field));
-            field.addEventListener('blur', () => this.validateField(field));
+        // Real-time error clearing on input / change
+        const processedRadioGroups = new Set();
+        this.form.querySelectorAll('[required]').forEach(field => {
+            if (field.type === 'radio') {
+                if (!processedRadioGroups.has(field.name)) {
+                    processedRadioGroups.add(field.name);
+                    this.form.querySelectorAll(`input[name="${field.name}"]`).forEach(radio => {
+                        radio.addEventListener('change', () => this.clearRadioGroupError(field.name));
+                    });
+                }
+            } else {
+                field.addEventListener('input', () => this.clearFieldError(field));
+                field.addEventListener('blur', () => this.validateField(field));
+            }
         });
     }
 
@@ -39,9 +46,19 @@ class SurveyBlok4Manager {
 
     validateForm() {
         let isValid = true;
-        this.form.querySelectorAll('textarea[required]').forEach(field => {
-            if (!this.validateField(field)) isValid = false;
+        const processedRadioGroups = new Set();
+
+        this.form.querySelectorAll('[required]').forEach(field => {
+            if (field.type === 'radio') {
+                if (!processedRadioGroups.has(field.name)) {
+                    processedRadioGroups.add(field.name);
+                    if (!this.validateRadioGroup(field.name)) isValid = false;
+                }
+            } else {
+                if (!this.validateField(field)) isValid = false;
+            }
         });
+
         return isValid;
     }
 
@@ -52,6 +69,17 @@ class SurveyBlok4Manager {
             return false;
         }
         this.clearFieldError(field);
+        return true;
+    }
+
+    validateRadioGroup(groupName) {
+        const radios = this.form.querySelectorAll(`input[name="${groupName}"]`);
+        const isSelected = Array.from(radios).some(r => r.checked);
+        if (!isSelected) {
+            this.showRadioGroupError(groupName, 'Field ini wajib dipilih');
+            return false;
+        }
+        this.clearRadioGroupError(groupName);
         return true;
     }
 
@@ -67,28 +95,58 @@ class SurveyBlok4Manager {
     }
 
     clearFieldError(field) {
+        if (field.type === 'radio') { this.clearRadioGroupError(field.name); return; }
         field.classList.remove('field-error');
         const errorEl = field.parentNode.querySelector('.field-error-message');
         if (errorEl) errorEl.remove();
     }
 
-    // ── Validation summary ────────────────────────────────────────────────────
+    showRadioGroupError(groupName, message) {
+        this.clearRadioGroupError(groupName);
+        const firstRadio = this.form.querySelector(`input[name="${groupName}"]`);
+        const container = firstRadio?.closest('.radio-group');
+        if (container) {
+            container.classList.add('radio-group-has-error');
+            const errorEl = document.createElement('div');
+            errorEl.className = 'field-error-message radio-group-error';
+            errorEl.dataset.group = groupName;
+            errorEl.textContent = message;
+            container.parentNode.insertBefore(errorEl, container.nextSibling);
+        }
+    }
+
+    clearRadioGroupError(groupName) {
+        const firstRadio = this.form.querySelector(`input[name="${groupName}"]`);
+        firstRadio?.closest('.radio-group')?.classList.remove('radio-group-has-error');
+        this.form.querySelector(`.radio-group-error[data-group="${groupName}"]`)?.remove();
+    }
+
+    // ── Validation summary (same style as blok2 / blok3a) ────────────────────
 
     collectValidationErrors() {
         const errors = [];
         const seen = new Set();
         const addLabel = (label) => { if (label && !seen.has(label)) { seen.add(label); errors.push(label); } };
 
-        this.form.querySelectorAll('.field-error').forEach(field => {
-            const row = field.closest('.form-row');
-            if (!row) return;
+        const getLabel = (el) => {
+            const row = el.closest('.form-row');
+            if (!row) return null;
             const formLabel = row.querySelector('.form-label');
-            if (!formLabel) return;
+            if (!formLabel) return null;
             const qNum = formLabel.querySelector('.question-number')?.textContent?.trim() ?? '';
             const titleSpans = formLabel.querySelectorAll('span:not(.question-number)');
             let title = titleSpans.length > 0 ? titleSpans[0].textContent.trim() : '';
             if (title.length > 70) title = title.substring(0, 70).trimEnd() + '\u2026';
-            addLabel((qNum + ' ' + title).trim() || null);
+            return (qNum + ' ' + title).trim() || null;
+        };
+
+        // Radio group errors
+        this.form.querySelectorAll('.radio-group-has-error').forEach(container => addLabel(getLabel(container)));
+
+        // Text / number / textarea / email / url errors
+        this.form.querySelectorAll('.field-error').forEach(field => {
+            if (field.type === 'radio') return;
+            addLabel(getLabel(field));
         });
 
         return errors;
@@ -98,14 +156,14 @@ class SurveyBlok4Manager {
 
     handleSaveComplete() {
         // Remove any previous summary
-        document.getElementById('blok4-validation-summary')?.remove();
+        document.getElementById('blok1-validation-summary')?.remove();
 
         if (!this.validateForm()) {
             const errors = this.collectValidationErrors();
             if (errors.length > 0) {
                 const esc = s => s.replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
                 const summaryHTML = `
-                <div id="blok4-validation-summary" class="validation-summary">
+                <div id="blok1-validation-summary" class="validation-summary">
                     <div class="validation-summary-header">
                         <span class="validation-summary-icon">&#9888;</span>
                         <h4 class="validation-summary-title">Data belum lengkap</h4>
@@ -118,12 +176,12 @@ class SurveyBlok4Manager {
                 const formActions = this.form.querySelector('.form-actions');
                 if (formActions) {
                     formActions.insertAdjacentHTML('beforebegin', summaryHTML);
-                    document.getElementById('blok4-validation-summary')
+                    document.getElementById('blok1-validation-summary')
                         ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             } else {
                 // Fallback: scroll to first error element
-                this.form.querySelector('.field-error')
+                this.form.querySelector('.field-error, .radio-group-has-error')
                     ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
             return;
@@ -137,47 +195,16 @@ class SurveyBlok4Manager {
             alert('Terjadi kesalahan sistem. Silakan refresh halaman dan coba lagi.');
         }
     }
-
-    // ── Auto-save ────────────────────────────────────────────────────────────
-
-    setupAutoSave() {
-        const fields = this.form.querySelectorAll('textarea[name^="blok4["]');
-        fields.forEach(field => {
-            field.addEventListener('input', () => {
-                if (window.surveyManager) {
-                    window.surveyManager.scheduleAutoSave(field.name, field.value);
-                }
-            });
-        });
-    }
-
-    // ── Back navigation ──────────────────────────────────────────────────────
-
-    setupBackNavigation() {
-        const backBtn = document.getElementById('back-to-blok3b');
-        if (backBtn) {
-            backBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const prefix = window.surveyData?.kbliPrefix;
-                const isIndustri = typeof prefix === 'number' && prefix >= 10 && prefix <= 33;
-                const target = isIndustri ? window.surveyRoutes?.backToBlok3cIndustri : window.surveyRoutes?.backToBlok3bNonIndustri;
-                if (target) {
-                    window.location.href = target;
-                }
-            });
-        }
-    }
 }
 
-// Initialise when DOM is ready
+// Initialise when DOM is ready – works for both fill and edit-mode URLs
 document.addEventListener('DOMContentLoaded', function () {
-    if (document.getElementById('survey-form') && window.location.pathname.includes('blok4')) {
-        window.surveyBlok4Manager = new SurveyBlok4Manager();
-        console.log('Survey Blok 4 Manager initialized');
+    if (document.getElementById('survey-form') && window.location.pathname.includes('blok1')) {
+        window.surveyBlok1Manager = new SurveyBlok1Manager();
+        console.log('Survey Blok 1 Manager initialized');
     }
 });
 
-// Export for module usage
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = SurveyBlok4Manager;
+    module.exports = SurveyBlok1Manager;
 }

@@ -24,6 +24,18 @@ class SurveyBlok3bIndustriManager {
     }
 
     setupEventListeners() {
+        // Clone-and-replace #save-complete to strip survey.js's competing click handler,
+        // preventing double-validation and duplicate error messages near the button.
+        const saveCompleteOld = document.getElementById('save-complete');
+        if (saveCompleteOld) {
+            const saveCompleteBtn = saveCompleteOld.cloneNode(true);
+            saveCompleteOld.parentNode.replaceChild(saveCompleteBtn, saveCompleteOld);
+            saveCompleteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleSaveComplete();
+            });
+        }
+
         // Currency display inputs: positive-only validation, sync to hidden numeric inputs, and auto-save
         this.currencyDisplays.forEach(input => {
             input.addEventListener('input', (e) => {
@@ -339,6 +351,122 @@ class SurveyBlok3bIndustriManager {
         const fallback = field.parentNode.querySelector('.field-error-message');
         if (fallback) fallback.remove();
     }
+
+    // ── Client-side validation ─────────────────────────────────────────────────
+
+    /**
+     * Validate all required, visible fields in the form.
+     * Returns an array of human-readable error labels (one per invalid field).
+     * For currency-display inputs the paired hidden value is checked; for direct
+     * inputs (number, text) the input value itself is checked.
+     * Hidden inputs are skipped — they are already covered by their display pairs.
+     */
+    collectClientValidationErrors() {
+        const errors = [];
+        const seen = new Set();
+
+        const addError = (key, label) => {
+            if (label && !seen.has(key)) { seen.add(key); errors.push(label); }
+        };
+
+        const getLabel = (el) => {
+            // Sub-row label (e.g. Q313a.1 / Q315a)
+            const subrow = el.closest('.form-subrow');
+            if (subrow) {
+                const sublabel = subrow.querySelector('.form-sublabel');
+                if (sublabel) {
+                    const row = subrow.closest('.form-row');
+                    const qNum = row?.querySelector('.question-number')?.textContent?.trim() ?? '';
+                    let text = sublabel.textContent.trim();
+                    if (text.length > 60) text = text.substring(0, 60).trimEnd() + '\u2026';
+                    return (qNum + ' ' + text).trim() || null;
+                }
+            }
+            // Top-level row label
+            const formRow = el.closest('.form-row');
+            if (!formRow) return null;
+            const formLabel = formRow.querySelector('.form-label');
+            if (!formLabel) return null;
+            const qNum = formLabel.querySelector('.question-number')?.textContent?.trim() ?? '';
+            const spans = formLabel.querySelectorAll('span:not(.question-number)');
+            let title = spans.length > 0 ? spans[0].textContent.trim() : '';
+            if (title.length > 70) title = title.substring(0, 70).trimEnd() + '\u2026';
+            return (qNum + ' ' + title).trim() || null;
+        };
+
+        this.form.querySelectorAll('[required]').forEach(el => {
+            // Hidden inputs are validated indirectly through their display counterparts
+            if (el.type === 'hidden') return;
+            // Skip fields in hidden rows (conditional sections toggled by blade PHP)
+            const parentRow = el.closest('.form-row');
+            if (parentRow && (parentRow.style.display === 'none' || parentRow.style.opacity === '0')) return;
+
+            let isEmpty;
+            if (el.classList.contains('currency-display')) {
+                // Check the paired hidden input's numeric value
+                const targetName = el.getAttribute('data-target-name');
+                const hidden = targetName
+                    ? this.form.querySelector(`input[type="hidden"][name="${targetName}"]`)
+                    : null;
+                isEmpty = hidden
+                    ? (hidden.value ?? '').toString().trim() === ''
+                    : (el.value ?? '').trim() === '';
+            } else {
+                isEmpty = (el.value ?? '').trim() === '';
+            }
+
+            if (isEmpty) {
+                this.showFieldError(el, 'Field ini wajib diisi');
+                addError(el.name || el.id, getLabel(el));
+            } else {
+                this.clearFieldError(el);
+            }
+        });
+
+        return errors;
+    }
+
+    // ── Save handler ─────────────────────────────────────────────────────────
+
+    handleSaveComplete() {
+        // Remove any previous validation summary
+        document.getElementById('blok3b-industri-validation-summary')?.remove();
+
+        const errors = this.collectClientValidationErrors();
+
+        if (errors.length > 0) {
+            const esc = s => s.replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
+            const summaryHTML = `
+            <div id="blok3b-industri-validation-summary" class="validation-summary">
+                <div class="validation-summary-header">
+                    <span class="validation-summary-icon">&#9888;</span>
+                    <h4 class="validation-summary-title">Data belum lengkap</h4>
+                </div>
+                <p class="validation-summary-desc">Mohon lengkapi bidang berikut sebelum menyimpan:</p>
+                <ul class="validation-summary-list">
+                    ${errors.map(e => `<li class="validation-summary-item">${esc(e)}</li>`).join('')}
+                </ul>
+            </div>`;
+            const formActions = this.form.querySelector('.form-actions');
+            if (formActions) {
+                formActions.insertAdjacentHTML('beforebegin', summaryHTML);
+                document.getElementById('blok3b-industri-validation-summary')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                this.form.querySelector('.field-error, .field-error-message')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
+
+        // Validation passed – delegate to the global survey manager
+        if (window.surveyManager && typeof window.surveyManager.saveForm === 'function') {
+            window.surveyManager.saveForm(true);
+        } else {
+            console.error('SurveyManager not available');
+            alert('Terjadi kesalahan sistem. Silakan refresh halaman dan coba lagi.');
+        }
+    }
 }
 
 // Initialize when DOM is ready
@@ -377,6 +505,36 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         window.surveyManager.clearFieldError = function(field) {
             mgr.clearFieldError(field);
+        };
+
+        // Override showSubmissionGuidance so server-side error summaries appear before
+        // .form-actions (consistent with blok1/blok2/blok3a) instead of inside the
+        // button container that survey.js uses by default.
+        const form = window.surveyManager.form;
+        window.surveyManager.showSubmissionGuidance = function(message, details) {
+            document.getElementById('blok3b-industri-validation-summary')?.remove();
+            const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+            let itemsHTML = '';
+            if (Array.isArray(details) && details.length) {
+                itemsHTML = '<ul class="validation-summary-list">'
+                    + details.map(d => `<li class="validation-summary-item">${esc(d)}</li>`).join('')
+                    + '</ul>';
+            }
+            const summaryHTML = `
+            <div id="blok3b-industri-validation-summary" class="validation-summary">
+                <div class="validation-summary-header">
+                    <span class="validation-summary-icon">&#9888;</span>
+                    <h4 class="validation-summary-title">Data belum lengkap</h4>
+                </div>
+                <p class="validation-summary-desc">${esc(message)}</p>
+                ${itemsHTML}
+            </div>`;
+            const formActions = form ? form.querySelector('.form-actions') : null;
+            if (formActions) {
+                formActions.insertAdjacentHTML('beforebegin', summaryHTML);
+                document.getElementById('blok3b-industri-validation-summary')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         };
 
         // Override server-side validation error handler to:

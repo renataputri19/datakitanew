@@ -156,6 +156,29 @@ class SibstrEditController extends Controller
         ];
     }
 
+    /**
+     * Guard for Triwulan 2026 edit pages: denies access unless the 2025 Tahunan survey
+     * has reached FINISH_SURVEY status (is_completed = true).
+     * Returns a redirect when access is denied, or null to allow.
+     */
+    private function checkTriwulanAccess(): ?\Illuminate\Http\RedirectResponse
+    {
+        ['tahun' => $tahun, 'triwulan' => $triwulan] = $this->getPeriod();
+
+        if ($tahun !== 2026 || $triwulan < 1) {
+            return null;
+        }
+
+        $user = Auth::user();
+        if (!SurveyResponse::isTahunanFullyCompletedForUser($user->id)) {
+            return redirect()
+                ->route('survey.sibstr.entry')
+                ->with('error', 'Survei Triwulanan 2026 hanya dapat diakses setelah Survei Tahunan 2025 diselesaikan sepenuhnya melalui Blok VI.');
+        }
+
+        return null;
+    }
+
     // ──────────────────────────────────────────────
     //  PER-TEMPLATE EDIT ROUTES
     //  Each returns the exact same keys the original
@@ -259,7 +282,7 @@ class SibstrEditController extends Controller
             'autoSave'           => route('survey.sibstr.edit.blok3b.nonindustri.autosave', $p),
             'saveAll'            => route('survey.sibstr.edit.blok3b.nonindustri.save', $p),
             'status'             => route('survey.sibstr.edit.blok3b.nonindustri.status', $p),
-            'backToBlok2'        => route('survey.sibstr.edit.blok3a', $p),
+            'backToBlok2'        => route('survey.sibstr.edit.blok2', $p),
             'nextBlok'           => $triwulan > 0
                 ? route('survey.sibstr.edit.blok5', $p)
                 : route('survey.sibstr.edit.blok4', $p),
@@ -317,6 +340,10 @@ class SibstrEditController extends Controller
 
     public function blok1()
     {
+        if ($redirect = $this->checkTriwulanAccess()) {
+            return $redirect;
+        }
+
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -326,18 +353,24 @@ class SibstrEditController extends Controller
         ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
 
         $jenisKawasanOptions = SurveyResponse::getJenisKawasanOptions();
-        $bpsRiData  = $this->bpsRiData();
-        $isEditMode = true;
-        $editRoutes = $this->editRoutesBlok1($tahun, $triwulan);
+        $bpsRiData         = $this->bpsRiData();
+        $isEditMode        = true;
+        $editRoutes        = $this->editRoutesBlok1($tahun, $triwulan);
+        $referenceResponse = $this->getPreviousPeriodResponse($surveyResponse->user_id, $tahun, $triwulan);
 
         return view('survey.sibstr.blok1', compact(
             'surveyResponse', 'jenisKawasanOptions', 'bpsRiData',
-            'isEditMode', 'editRoutes', 'tahun', 'triwulan', 'period'
+            'isEditMode', 'editRoutes', 'tahun', 'triwulan', 'period',
+            'referenceResponse'
         ));
     }
 
     public function blok2()
     {
+        if ($redirect = $this->checkTriwulanAccess()) {
+            return $redirect;
+        }
+
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -358,6 +391,10 @@ class SibstrEditController extends Controller
 
     public function blok3a()
     {
+        if ($redirect = $this->checkTriwulanAccess()) {
+            return $redirect;
+        }
+
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -389,6 +426,10 @@ class SibstrEditController extends Controller
 
     public function blok3cIndustri()
     {
+        if ($redirect = $this->checkTriwulanAccess()) {
+            return $redirect;
+        }
+
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -414,6 +455,10 @@ class SibstrEditController extends Controller
 
     public function blok3bIndustri()
     {
+        if ($redirect = $this->checkTriwulanAccess()) {
+            return $redirect;
+        }
+
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -434,6 +479,10 @@ class SibstrEditController extends Controller
 
     public function blok3bNonIndustri()
     {
+        if ($redirect = $this->checkTriwulanAccess()) {
+            return $redirect;
+        }
+
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -454,6 +503,10 @@ class SibstrEditController extends Controller
 
     public function blok4()
     {
+        if ($redirect = $this->checkTriwulanAccess()) {
+            return $redirect;
+        }
+
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -479,6 +532,10 @@ class SibstrEditController extends Controller
 
     public function blok5()
     {
+        if ($redirect = $this->checkTriwulanAccess()) {
+            return $redirect;
+        }
+
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -499,6 +556,10 @@ class SibstrEditController extends Controller
 
     public function blok6()
     {
+        if ($redirect = $this->checkTriwulanAccess()) {
+            return $redirect;
+        }
+
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -592,6 +653,7 @@ class SibstrEditController extends Controller
      */
     public function finishSurvey(Request $request)
     {
+        $request->merge(['is_completed' => true, '_edit_mode' => true]);
         return app(SurveyController::class)->finishSurvey($request);
     }
 }

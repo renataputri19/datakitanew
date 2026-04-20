@@ -30,7 +30,12 @@ class SibstrController extends Controller
             ->where('survey_type', 'sibstr')
             ->findOrFail($id);
 
-        $surveyResponse = SurveyResponse::unifiedForUser($requested->user_id, 'sibstr') ?? $requested;
+        $surveyResponse = SurveyResponse::unifiedForUser(
+            $requested->user_id,
+            'sibstr',
+            $requested->tahun ?? 2025,
+            $requested->triwulan ?? 0
+        ) ?? $requested;
 
         $bpsRiData = [
             'penghubung' => 'Tim Statistik Industri',
@@ -54,6 +59,8 @@ class SibstrController extends Controller
         $isIndustri = $kbliPrefix !== null && $kbliPrefix >= 10 && $kbliPrefix <= 33;
         $isUnitPembantuPenunjang = $jaringanUnitKegiatan === 'unit_pembantu_penunjang';
 
+        $isTahunanRecord = (((int)($surveyResponse->triwulan ?? 0)) === 0);
+
         $showBlocks = [
             'blok1' => true,
             'blok2' => true,
@@ -61,7 +68,9 @@ class SibstrController extends Controller
             'blok3a' => $isMasihAktif && $isIndustri,
             'blok3bIndustri' => $isMasihAktif && $isIndustri,
             'blok3bNonIndustri' => $isMasihAktif && !$isIndustri,
-            'blok4' => $isMasihAktif,
+            // Blok IIIC hanya untuk industri tahunan
+            'blok3c' => $isMasihAktif && $isIndustri && $isTahunanRecord,
+            'blok4' => $isMasihAktif && $isTahunanRecord,
             'blok5' => $isMasihAktif,
             'blok6' => true,
         ];
@@ -128,15 +137,30 @@ class SibstrController extends Controller
         $user = Auth::user();
 
         // Get filter parameters
-        $search = $request->input('search');
-        $status = $request->input('status');
-        $sortBy = $request->input('sort_by', 'updated_at');
-        $sortOrder = $request->input('sort_order', 'desc');
-        $perPage = $request->input('per_page', 25);
+        $search        = $request->input('search');
+        $status        = $request->input('status');
+        $sortBy        = $request->input('sort_by', 'updated_at');
+        $sortOrder     = $request->input('sort_order', 'desc');
+        $perPage       = $request->input('per_page', 25);
+        $year          = (int) $request->input('year', now()->year);
+        $type          = $request->input('type', 'tahunan'); // 'tahunan' or 'triwulanan'
+        $triwulanFilter = $request->input('triwulan');       // optional quarter filter (1-4)
 
-        // Base query for SIBSTR responses
+        $isTahunan = ($type === 'tahunan');
+
+        // Base query for SIBSTR responses filtered by year + type
         $baseQuery = SurveyResponse::with('user')
-            ->where('survey_type', 'sibstr');
+            ->where('survey_type', 'sibstr')
+            ->where('tahun', $year);
+
+        if ($isTahunan) {
+            $baseQuery->where('triwulan', 0);
+        } else {
+            $baseQuery->where('triwulan', '>', 0);
+            if ($triwulanFilter !== null && $triwulanFilter !== '') {
+                $baseQuery->where('triwulan', (int) $triwulanFilter);
+            }
+        }
 
         // Apply search filter
         if ($search) {
@@ -153,20 +177,38 @@ class SibstrController extends Controller
 
         // Apply status filter
         if ($status !== null && $status !== '') {
-            if ($status === 'completed') {
-                $baseQuery->where('is_completed', true);
-            } elseif ($status === 'in_progress') {
-                $baseQuery->where('is_completed', false);
+            if ($isTahunan) {
+                if ($status === 'completed') {
+                    $baseQuery->where('annual_survey_status', 'FINISH_SURVEY');
+                } elseif ($status === 'in_progress') {
+                    $baseQuery->where(function($q) {
+                        $q->whereNull('annual_survey_status')
+                          ->orWhere('annual_survey_status', '!=', 'FINISH_SURVEY');
+                    });
+                }
+            } else {
+                if ($status === 'completed') {
+                    $baseQuery->where('is_completed', true);
+                } elseif ($status === 'in_progress') {
+                    $baseQuery->where('is_completed', false);
+                }
             }
         }
 
-        // Compute latest record id per user within filtered set to deduplicate
-        $latestIds = (clone $baseQuery)
-            ->selectRaw('MAX(id) as id')
-            ->groupBy('user_id')
-            ->pluck('id');
+        // Deduplicate: latest record per user (tahunan) or per user+triwulan (triwulanan)
+        if ($isTahunan) {
+            $latestIds = (clone $baseQuery)
+                ->selectRaw('MAX(id) as id')
+                ->groupBy('user_id')
+                ->pluck('id');
+        } else {
+            $latestIds = (clone $baseQuery)
+                ->selectRaw('MAX(id) as id')
+                ->groupBy('user_id', 'triwulan')
+                ->pluck('id');
+        }
 
-        // Final query restricted to latest IDs per user
+        // Final query restricted to latest IDs
         $query = SurveyResponse::with('user')
             ->whereIn('id', $latestIds);
 
@@ -181,19 +223,42 @@ class SibstrController extends Controller
         // Paginate results
         $surveyResponses = $query->paginate($perPage)->withQueryString();
 
-        // Get statistics based on latest record per user
-        $allLatestIds = SurveyResponse::where('survey_type', 'sibstr')
-            ->selectRaw('MAX(id) as id')
-            ->groupBy('user_id')
-            ->pluck('id');
+        // Compute statistics for the selected year + type
+        $statsBase = SurveyResponse::where('survey_type', 'sibstr')->where('tahun', $year);
+        if ($isTahunan) {
+            $statsBase->where('triwulan', 0);
+            $allLatestIds = (clone $statsBase)
+                ->selectRaw('MAX(id) as id')
+                ->groupBy('user_id')
+                ->pluck('id');
+            $stats = [
+                'total'       => $allLatestIds->count(),
+                'completed'   => SurveyResponse::whereIn('id', $allLatestIds)
+                                    ->where('annual_survey_status', 'FINISH_SURVEY')
+                                    ->count(),
+                'in_progress' => SurveyResponse::whereIn('id', $allLatestIds)
+                                    ->where(function($q) {
+                                        $q->whereNull('annual_survey_status')
+                                          ->orWhere('annual_survey_status', '!=', 'FINISH_SURVEY');
+                                    })->count(),
+            ];
+        } else {
+            $statsBase->where('triwulan', '>', 0);
+            $allLatestIds = (clone $statsBase)
+                ->selectRaw('MAX(id) as id')
+                ->groupBy('user_id', 'triwulan')
+                ->pluck('id');
+            $stats = [
+                'total'       => $allLatestIds->count(),
+                'completed'   => SurveyResponse::whereIn('id', $allLatestIds)->where('is_completed', true)->count(),
+                'in_progress' => SurveyResponse::whereIn('id', $allLatestIds)->where('is_completed', false)->count(),
+            ];
+        }
 
-        $stats = [
-            'total' => $allLatestIds->count(),
-            'completed' => SurveyResponse::whereIn('id', $allLatestIds)->where('is_completed', true)->count(),
-            'in_progress' => SurveyResponse::whereIn('id', $allLatestIds)->where('is_completed', false)->count(),
-        ];
-
-        return view('bps.sibstr.index', compact('surveyResponses', 'stats', 'user'));
+        return view('bps.sibstr.index', compact(
+            'surveyResponses', 'stats', 'user',
+            'year', 'type', 'isTahunan', 'triwulanFilter'
+        ));
     }
 
     /**
@@ -211,7 +276,12 @@ class SibstrController extends Controller
             ->where('survey_type', 'sibstr')
             ->findOrFail($id);
 
-        $surveyResponse = SurveyResponse::unifiedForUser($requested->user_id, 'sibstr') ?? $requested;
+        $surveyResponse = SurveyResponse::unifiedForUser(
+            $requested->user_id,
+            'sibstr',
+            $requested->tahun ?? 2025,
+            $requested->triwulan ?? 0
+        ) ?? $requested;
 
         // Prepare all data that might be needed by the survey block views
         $bpsRiData = [
@@ -239,6 +309,8 @@ class SibstrController extends Controller
         $isIndustri = $kbliPrefix !== null && $kbliPrefix >= 10 && $kbliPrefix <= 33;
         $isUnitPembantuPenunjang = $jaringanUnitKegiatan === 'unit_pembantu_penunjang';
 
+        $isTahunanRecord = (((int)($surveyResponse->triwulan ?? 0)) === 0);
+
         $showBlocks = [
             'blok1' => true,
             'blok2' => true,
@@ -246,7 +318,9 @@ class SibstrController extends Controller
             'blok3a' => $isMasihAktif && $isIndustri,
             'blok3bIndustri' => $isMasihAktif && $isIndustri,
             'blok3bNonIndustri' => $isMasihAktif && !$isIndustri,
-            'blok4' => $isMasihAktif,
+            // Blok IIIC hanya untuk industri tahunan
+            'blok3c' => $isMasihAktif && $isIndustri && $isTahunanRecord,
+            'blok4' => $isMasihAktif && $isTahunanRecord,
             'blok5' => $isMasihAktif,
             'blok6' => true,
         ];

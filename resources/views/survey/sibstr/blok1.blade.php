@@ -542,19 +542,22 @@
                                 ? \App\Models\SurveyResponse::triwulanLabel($triwulan) . ' ' . ($tahun ?? 2025)
                                 : 'Tahunan ' . ($tahun ?? 2025),
         'fields'            => [
-            ['name' => 'nama_perusahaan',       'label' => 'Nama Perusahaan',          'copyable' => true],
-            ['name' => 'alamat_pabrik',         'label' => 'Alamat Pabrik',            'copyable' => true],
-            ['name' => 'kabupaten_kota',        'label' => 'Kabupaten / Kota',         'copyable' => true],
-            ['name' => 'telepon_fax',           'label' => 'Telepon / Fax',            'copyable' => true],
-            ['name' => 'penghubung',            'label' => 'Penghubung',               'copyable' => true],
-            ['name' => 'email',                 'label' => 'Email',                    'copyable' => true],
-            ['name' => 'homepage',              'label' => 'Homepage / Website',       'copyable' => true],
-            ['name' => 'nib',                   'label' => 'NIB',                      'copyable' => true],
-            ['name' => 'jenis_kawasan',         'label' => 'Jenis Kawasan',            'copyable' => true],
-            ['name' => 'nama_kawasan',          'label' => 'Nama Kawasan',             'copyable' => true],
-            ['name' => 'nama_pengelola_kawasan','label' => 'Nama Pengelola Kawasan',   'copyable' => true],
-            ['name' => 'legalisasi_nama',       'label' => 'Nama Penanggung Jawab',    'copyable' => true],
-            ['name' => 'legalisasi_jabatan',    'label' => 'Jabatan Penanggung Jawab', 'copyable' => true],
+            ['name' => 'nama_perusahaan',          'label' => 'Nama Perusahaan',          'copyable' => true],
+            ['name' => 'alamat_pabrik',            'label' => 'Alamat Pabrik',            'copyable' => true],
+            ['name' => 'kabupaten_kota',           'label' => 'Kabupaten / Kota',         'copyable' => true],
+            ['name' => 'telepon_fax',              'label' => 'Telepon / Fax',            'copyable' => true],
+            ['name' => 'penghubung',               'label' => 'Penghubung',               'copyable' => true],
+            ['name' => 'email',                    'label' => 'Email',                    'copyable' => true],
+            ['name' => 'homepage',                 'label' => 'Homepage / Website',       'copyable' => true],
+            ['name' => 'tahun_mulai_beroperasi',   'label' => 'Tahun Mulai Beroperasi',   'copyable' => true],
+            ['name' => 'nib',                      'label' => 'NIB',                      'copyable' => true],
+            ['name' => 'jenis_kawasan',            'label' => 'Jenis Kawasan',            'copyable' => true],
+            ['name' => 'nama_kawasan',             'label' => 'Nama Kawasan',             'copyable' => true],
+            ['name' => 'nama_pengelola_kawasan',   'label' => 'Nama Pengelola Kawasan',   'copyable' => true],
+            ['name' => 'legalisasi_nama',          'label' => 'Nama Penanggung Jawab',    'copyable' => true],
+            ['name' => 'legalisasi_jabatan',       'label' => 'Jabatan Penanggung Jawab', 'copyable' => true],
+            ['name' => 'legalisasi_jenis_kelamin', 'label' => 'Jenis Kelamin',            'copyable' => true],
+            ['name' => 'legalisasi_nik',           'label' => 'NIK',                      'copyable' => true],
         ],
     ])
     @endif
@@ -584,6 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script src="{{ asset('js/survey.js') }}"></script>
+<script src="{{ asset('js/survey-blok1.js') }}"></script>
 @endif
 @endpush
 @endsection

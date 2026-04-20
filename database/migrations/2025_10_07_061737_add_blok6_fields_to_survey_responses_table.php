@@ -24,7 +24,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('survey_responses', function (Blueprint $table) {
-            $table->dropColumn(['blok6_data', 'blok6_completed']);
+            if (Schema::hasColumn('survey_responses', 'blok6_data')) {
+                $table->dropColumn('blok6_data');
+            }
+            if (Schema::hasColumn('survey_responses', 'blok6_completed')) {
+                $table->dropColumn('blok6_completed');
+            }
         });
     }
 };

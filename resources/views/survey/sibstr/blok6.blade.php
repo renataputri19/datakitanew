@@ -26,7 +26,7 @@
             Catatan tambahan untuk survei industri besar dan sedang triwulanan
         </p>
 
-        @if(isset($referenceResponse) && $referenceResponse)
+        @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
         <div style="margin-top:1rem;">
             <button type="button"
                     onclick="openRefDrawer()"
@@ -46,12 +46,6 @@
         </div>
         @endif
     </div>
-
-    @if(session('warning'))
-    <div class="autosave-status info" data-aos="fade-up">
-        <span>{{ session('warning') }}</span>
-    </div>
-    @endif
 
     <!-- Auto-save Status -->
     <div id="autosave-status" class="autosave-status hidden">
@@ -121,7 +115,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="9,18 15,12 9,6"></polyline>
                     </svg>
-                    Selesaikan Survei
+                    {{ $triwulan === 0 ? 'Simpan dan Lanjutkan' : 'Selesaikan Survei' }}
                 </button>
             </div>
 
@@ -131,7 +125,53 @@
         </div>
     </form>
 
-    @if(isset($referenceResponse) && $referenceResponse)
+    <!-- Survey Notification Modal -->
+    <div id="survey-modal-overlay"
+         style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.45);
+                backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:1rem;">
+        <div id="survey-modal-box"
+             style="background:#fff;border-radius:1rem;padding:2rem 2rem 1.5rem;max-width:28rem;width:100%;
+                    box-shadow:0 20px 60px rgba(0,0,0,0.25);position:relative;animation:modalIn .18s ease-out;">
+            <div style="display:flex;align-items:flex-start;gap:0.875rem;margin-bottom:1.25rem;">
+                <span id="survey-modal-icon" style="font-size:1.75rem;line-height:1;flex-shrink:0;margin-top:0.1rem;"></span>
+                <div style="flex:1;min-width:0;">
+                    <p id="survey-modal-title"
+                       style="font-size:1rem;font-weight:700;color:#1f2937;margin:0 0 0.35rem;"></p>
+                    <p id="survey-modal-body"
+                       style="font-size:0.875rem;color:#4b5563;margin:0;line-height:1.5;"></p>
+                </div>
+            </div>
+            <div id="survey-modal-progress-wrap" style="display:none;margin-bottom:1rem;">
+                <div style="height:4px;background:#e5e7eb;border-radius:99px;overflow:hidden;">
+                    <div id="survey-modal-progress-bar"
+                         style="height:100%;width:100%;border-radius:99px;
+                                transition:width linear;"></div>
+                </div>
+                <p id="survey-modal-countdown"
+                   style="font-size:0.75rem;color:#9ca3af;margin:0.4rem 0 0;text-align:right;"></p>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                <button id="survey-modal-cancel"
+                        style="display:none;padding:0.5rem 1rem;border-radius:0.5rem;border:1px solid #d1d5db;
+                               background:#fff;color:#374151;font-size:0.875rem;font-weight:600;cursor:pointer;">
+                    Batal
+                </button>
+                <button id="survey-modal-confirm"
+                        style="padding:0.5rem 1.25rem;border-radius:0.5rem;border:none;
+                               font-size:0.875rem;font-weight:700;cursor:pointer;color:#fff;transition:opacity .15s;">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+    <style>
+    @keyframes modalIn {
+        from { opacity:0; transform:scale(.94) translateY(8px); }
+        to   { opacity:1; transform:scale(1)  translateY(0);    }
+    }
+    </style>
+
+    @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
     @include('survey.sibstr.partials.reference-drawer', [
         'referenceResponse' => $referenceResponse,
         'currentTwLabel'    => isset($triwulan) && $triwulan > 0
@@ -163,7 +203,8 @@ window.surveyRoutes = {
 // Pass kondisi_perusahaan from Blok 2 for conditional back navigation
 window.surveyData = {
     kondisiPerusahaan: @json($kondisiPerusahaan),
-    jaringanUnitKegiatan: @json($jaringanUnitKegiatan)
+    jaringanUnitKegiatan: @json($jaringanUnitKegiatan),
+    isTahunan: @json($triwulan === 0),
 };
 </script>
 <script src="{{ asset('js/survey.js') }}"></script>

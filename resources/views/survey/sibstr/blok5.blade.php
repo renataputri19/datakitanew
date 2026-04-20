@@ -46,7 +46,7 @@
             Isi indikator kondisi dan prospek usaha per triwulan.
         </p>
 
-        @if(isset($referenceResponse) && $referenceResponse)
+        @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
         <div style="margin-top:1rem;">
             <button type="button"
                     onclick="openRefDrawer()"
@@ -167,8 +167,7 @@
                             <tr>
                                 <td class="row-label sticky-col">
                                     <span class="question-number">{{ $row['key'] }}.</span>
-                                    <span>{{ $row['label'] }}</span>
-                                    <span class="required-asterisk" style="color: #ef4444;">*</span>
+                                    <span>{{ $row['label'] }}</span>@if($isTriwulanan)<span style="color:#ef4444;"> *</span>@endif
                                     @if(isset($descriptions[$row['key']]))
                                         <small class="component-desc">{{ $descriptions[$row['key']] }}</small>
                                     @endif
@@ -183,7 +182,7 @@
                                                     $checked = isset($data[$row['key']][$pKey]) && $data[$row['key']][$pKey] === $opt['value'];
                                                 @endphp
                                                 <label class="radio-pill">
-                                                    <input type="radio" name="{{ $name }}" value="{{ $opt['value'] }}" {{ $checked ? 'checked' : '' }} required>
+                                                    <input type="radio" name="{{ $name }}" value="{{ $opt['value'] }}" {{ $checked ? 'checked' : '' }}{{ $isTriwulanan ? ' required' : '' }}>
                                                     <span>{{ $opt['text'] }}</span>
                                                 </label>
                                             @endforeach
@@ -225,12 +224,12 @@
             </div>
 
             <div class="text-sm text-gray-500 dark:text-gray-400">
-                <span>* Wajib diisi</span>
+                <span>{{ $isTriwulanan ? '* Semua pilihan wajib diisi.' : 'Opsional, isi sesuai kondisi yang diketahui.' }}</span>
             </div>
         </div>
     </form>
 
-    @if(isset($referenceResponse) && $referenceResponse)
+    @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
     @include('survey.sibstr.partials.reference-drawer', [
         'referenceResponse' => $referenceResponse,
         'currentTwLabel'    => null,

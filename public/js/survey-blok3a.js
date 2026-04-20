@@ -155,7 +155,15 @@ class SurveyBlok3aManager {
 
         setupNavBtn('back-to-blok2', () => window.location.href = window.surveyRoutes.backToBlok2);
         setupNavBtn('save-draft', () => this.saveDraft());
-        setupNavBtn('save-complete', () => this.saveAndContinue());
+
+        // Clone-and-replace #save-complete to strip survey.js's competing click handler,
+        // preventing duplicate validation messages near the button.
+        const saveCompleteOld = document.getElementById('save-complete');
+        if (saveCompleteOld) {
+            const saveCompleteBtn = saveCompleteOld.cloneNode(true);
+            saveCompleteOld.parentNode.replaceChild(saveCompleteBtn, saveCompleteOld);
+            saveCompleteBtn.addEventListener('click', () => this.saveAndContinue());
+        }
 
         // Real-time error clearing for mandatory fields 302, 305, 306
         const mandatoryIds = [
@@ -860,6 +868,7 @@ class SurveyBlok3aManager {
         // Build table HTML with three sub-rows per product
         let html = '<div class="preview-table"><table class="preview-table-el"><thead><tr>';
         html += '<th class="sticky-col">Kode/Nama</th>';
+        if (!this.isTriwulanan) html += '<th style="text-align:left;min-width:170px;">Detail Produk</th>';
         html += '<th>Uraian</th>';
         months.forEach(m => {
             html += `<th>${getMonthLabel(m)}</th>`;
@@ -891,9 +900,25 @@ class SurveyBlok3aManager {
                 return inp ? (inp.value || '') : '';
             };
 
+            const getKbli = () => { const i = card.querySelector('.kbli5digit-input'); return i ? i.value.trim() : ''; };
+            const getPersenEkspor = () => { const i = card.querySelector('.persen-ekspor-input'); return i ? i.value.trim() : ''; };
+            const getNegaraEkspor = () => { const i = card.querySelector('.negara-ekspor-input'); return i ? i.value.trim() : ''; };
+
+            const kbliVal = getKbli();
+            const persenVal = getPersenEkspor();
+            const negaraVal = getNegaraEkspor();
+            const persenFormatted = persenVal !== '' ? (parseFloat(persenVal).toLocaleString('id-ID', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' %') : '-';
+
             // Row 1: Banyaknya
             html += `<tr>`;
             html += `<td class="sticky-col" rowspan="3"><div class="code">${code}</div><div class="name">${this.escapeHtml(name)}</div></td>`;
+            if (!this.isTriwulanan) {
+                html += `<td rowspan="3" style="vertical-align:top;padding:0.5rem 0.625rem;font-size:0.8125rem;line-height:1.5;border:1px solid #e5e7eb;">`;
+                html += `<div style="margin-bottom:0.4rem;"><span style="font-weight:600;color:#374151;display:block;">KBLI 5 Digit</span><span style="color:#1f2937;">${this.escapeHtml(kbliVal) || '-'}</span></div>`;
+                html += `<div style="margin-bottom:0.4rem;"><span style="font-weight:600;color:#374151;display:block;">Persentase Diekspor (*)</span><span style="color:#1f2937;">${persenFormatted}</span></div>`;
+                html += `<div><span style="font-weight:600;color:#374151;display:block;">Negara Tujuan Ekspor (**)</span><span style="color:#1f2937;">${this.escapeHtml(negaraVal) || '-'}</span></div>`;
+                html += `</td>`;
+            }
             html += `<td>Banyaknya</td>`;
             months.forEach(m => {
                 const qty = getBanyaknya(m);
@@ -916,15 +941,26 @@ class SurveyBlok3aManager {
             html += `</tr>`;
         });
 
-        // Note: 302. Pendapatan lainnya is now a separate annual section (not monthly), so no preview row here.
+        // 302. Lainnya row (triwulanan only, when lainnya section exists)
+        if (this.isTriwulanan && this.lainnyaContainer) {
+            html += `<tr>`;
+            html += `<td class="sticky-col"><div class="code" style="font-weight:700;font-size:0.8125rem;">302.</div><div class="name" style="font-size:0.875rem;">Lainnya</div></td>`;
+            html += `<td>Nilai</td>`;
+            months.forEach(m => {
+                const v = this.lainnyaContainer.querySelector(`.lainnya-nilai-input[data-month="${m}"]`);
+                html += `<td class="num">${this.formatNumber(v ? (parseFloat(v.value) || 0) : 0)}</td>`;
+            });
+            html += `</tr>`;
+        }
 
         // Total (303) — only Nilai row is applicable
         const totalValues = months.map(m => {
-            const v = document.querySelector(`.total-input[data-month=\"${m}\"]`);
+            const v = document.querySelector(`.total-input[data-month="${m}"]`);
             return v ? (parseFloat(v.value) || 0) : 0;
         });
         html += `<tr class="total-row">`;
         html += `<td class="sticky-col"><div class="code">303.</div><div class="name">Total</div></td>`;
+        if (!this.isTriwulanan) html += `<td style="border:1px solid #e5e7eb;"></td>`;
         html += `<td>Nilai</td>`;
         totalValues.forEach(v => html += `<td class="num bold">${this.formatNumber(v)}</td>`);
         html += `</tr>`;
@@ -1030,12 +1066,12 @@ class SurveyBlok3aManager {
         if (errors.length > 0) {
             // Build and inject validation summary before form actions
             const summaryHTML = `
-            <div id="blok3a-validation-summary" class="validation-summary" style="margin:1rem 1.5rem;">
+            <div id="blok3a-validation-summary" class="validation-summary">
                 <div class="validation-summary-header">
                     <span class="validation-summary-icon">&#9888;</span>
                     <h4 class="validation-summary-title">Data belum lengkap</h4>
                 </div>
-                <p style="margin-bottom:0.5rem;color:#991b1b;font-size:0.875rem;">Mohon lengkapi bidang berikut sebelum menyimpan:</p>
+                <p class="validation-summary-desc">Mohon lengkapi bidang berikut sebelum menyimpan:</p>
                 <ul class="validation-summary-list">
                     ${errors.map(e => `<li class="validation-summary-item">${e}</li>`).join('')}
                 </ul>

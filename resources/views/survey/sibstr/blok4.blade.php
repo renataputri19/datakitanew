@@ -25,7 +25,7 @@
             Jelaskan fenomena penting dan catatan per triwulan terkait perubahan signifikan.
         </p>
 
-        @if(isset($referenceResponse) && $referenceResponse)
+        @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
         <div style="margin-top:1rem;">
             <button type="button"
                     onclick="openRefDrawer()"
@@ -63,43 +63,47 @@
             </div>
             <div class="form-grid">
                 <div class="form-row">
-                    <label class="form-label">
+                    <label class="form-label required">
                         <span class="question-number">401.</span>
                         <span>Triwulan I (Jan–Mar): Jelaskan fenomena atau catatan</span>
                     </label>
                     <textarea name="blok4[triwulan1]" id="blok4_triwulan1" rows="4"
                               class="form-control textarea"
+                              required
                               placeholder="Contoh: Lonjakan pesanan produk X karena kampanye...">{{ $surveyResponse->blok4_data['triwulan1'] ?? '' }}</textarea>
                 </div>
 
                 <div class="form-row">
-                    <label class="form-label">
+                    <label class="form-label required">
                         <span class="question-number">402.</span>
                         <span>Triwulan II (Apr–Jun): Jelaskan fenomena atau catatan</span>
                     </label>
                     <textarea name="blok4[triwulan2]" id="blok4_triwulan2" rows="4"
                               class="form-control textarea"
+                              required
                               placeholder="Contoh: Penurunan produksi karena perawatan mesin...
 ">{{ $surveyResponse->blok4_data['triwulan2'] ?? '' }}</textarea>
                 </div>
 
                 <div class="form-row">
-                    <label class="form-label">
+                    <label class="form-label required">
                         <span class="question-number">403.</span>
                         <span>Triwulan III (Jul–Sep): Jelaskan fenomena atau catatan</span>
                     </label>
                     <textarea name="blok4[triwulan3]" id="blok4_triwulan3" rows="4"
                               class="form-control textarea"
+                              required
                               placeholder="Contoh: Perubahan harga bahan baku impor...">{{ $surveyResponse->blok4_data['triwulan3'] ?? '' }}</textarea>
                 </div>
 
                 <div class="form-row">
-                    <label class="form-label">
+                    <label class="form-label required">
                         <span class="question-number">404.</span>
                         <span>Triwulan IV (Okt–Des): Jelaskan fenomena atau catatan</span>
                     </label>
                     <textarea name="blok4[triwulan4]" id="blok4_triwulan4" rows="4"
                               class="form-control textarea"
+                              required
                               placeholder="Contoh: Peningkatan ekspor pada akhir tahun...">{{ $surveyResponse->blok4_data['triwulan4'] ?? '' }}</textarea>
                 </div>
             </div>
@@ -133,12 +137,12 @@
             </div>
 
             <div class="text-sm text-gray-500 dark:text-gray-400">
-                <span>Opsional, isi bila ada fenomena penting.</span>
+                <span>* Wajib diisi</span>
             </div>
         </div>
     </form>
 
-    @if(isset($referenceResponse) && $referenceResponse)
+    @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
     @include('survey.sibstr.partials.reference-drawer', [
         'referenceResponse' => $referenceResponse,
         'currentTwLabel'    => isset($triwulan) && $triwulan > 0

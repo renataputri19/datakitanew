@@ -3,6 +3,99 @@
  * Handles validation and interactions specific to Blok VI (Catatan)
  */
 
+/**
+ * Show a styled in-page modal instead of browser alert().
+ *
+ * @param {object} opts
+ *   type        : 'warning' | 'success' | 'error'
+ *   title       : headline text
+ *   body        : body text
+ *   confirmText : confirm button label (default 'OK')
+ *   cancelText  : cancel button label; omit to hide cancel button
+ *   redirectUrl : if set, auto-redirect after `redirectDelay` ms
+ *   redirectDelay: ms before auto-redirect (default 3000)
+ *   onConfirm   : callback when confirm is clicked (overrides redirectUrl)
+ *   onCancel    : callback when cancel is clicked
+ */
+function showSurveyModal(opts = {}) {
+    const overlay  = document.getElementById('survey-modal-overlay');
+    const icon     = document.getElementById('survey-modal-icon');
+    const title    = document.getElementById('survey-modal-title');
+    const body     = document.getElementById('survey-modal-body');
+    const confirm  = document.getElementById('survey-modal-confirm');
+    const cancel   = document.getElementById('survey-modal-cancel');
+    const progWrap = document.getElementById('survey-modal-progress-wrap');
+    const progBar  = document.getElementById('survey-modal-progress-bar');
+    const countdown= document.getElementById('survey-modal-countdown');
+    if (!overlay) return;
+
+    const palette = {
+        warning : { icon: '⚠️',  color: '#d97706', bg: '#fbbf24' },
+        success : { icon: '✅',  color: '#059669', bg: '#10b981' },
+        error   : { icon: '❌',  color: '#dc2626', bg: '#ef4444' },
+    };
+    const p = palette[opts.type] || palette.error;
+
+    icon.textContent    = p.icon;
+    title.textContent   = opts.title  || '';
+    body.textContent    = opts.body   || '';
+    confirm.textContent = opts.confirmText || 'OK';
+    confirm.style.background = p.bg;
+
+    // Cancel button
+    if (opts.cancelText) {
+        cancel.textContent = opts.cancelText;
+        cancel.style.display = '';
+    } else {
+        cancel.style.display = 'none';
+    }
+
+    // Auto-redirect countdown
+    let timer = null;
+    const delay = opts.redirectDelay ?? 3000;
+    if (opts.redirectUrl && !opts.onConfirm) {
+        progWrap.style.display = '';
+        progBar.style.background = p.bg;
+        progBar.style.transitionDuration = delay + 'ms';
+        countdown.textContent = Math.ceil(delay / 1000) + ' detik…';
+        // trigger reflow so transition fires
+        void progBar.offsetWidth;
+        progBar.style.width = '0%';
+
+        let remaining = delay;
+        const tick = 1000;
+        timer = setInterval(() => {
+            remaining -= tick;
+            if (remaining <= 0) {
+                clearInterval(timer);
+                close();
+                window.location.href = opts.redirectUrl;
+            } else {
+                countdown.textContent = Math.ceil(remaining / 1000) + ' detik…';
+            }
+        }, tick);
+    } else {
+        progWrap.style.display = 'none';
+    }
+
+    function close() {
+        clearInterval(timer);
+        overlay.style.display = 'none';
+    }
+
+    confirm.onclick = () => {
+        close();
+        if (opts.onConfirm)       opts.onConfirm();
+        else if (opts.redirectUrl) window.location.href = opts.redirectUrl;
+    };
+    cancel.onclick = () => {
+        close();
+        if (opts.onCancel) opts.onCancel();
+    };
+
+    overlay.style.display = 'flex';
+}
+
 class SurveyBlok6Manager {
     constructor() {
         this.form = document.getElementById('survey-form');
@@ -48,52 +141,94 @@ class SurveyBlok6Manager {
     }
 
     handleFinishSurvey() {
-        // Save the current data and mark as completed, following global SurveyManager pattern
-        if (window.surveyManager && typeof window.surveyManager.saveForm === 'function') {
-            window.surveyManager.saveForm(true)
-                .then(() => {
-                    // Redirect to results summary under dashboard
-                    const resultsUrl = '/dashboard/surveys/sibstr/results';
-                    window.location.href = resultsUrl;
-                })
-                .catch((error) => {
-                    console.error('Error finishing survey:', error);
-                    alert('Terjadi kesalahan saat menyelesaikan survei. Silakan coba lagi.');
-                });
-        } else {
-            // Fallback: directly hit finish endpoint if SurveyManager is unavailable
-            const finishUrl = window.surveyRoutes?.finishSurvey;
-            if (finishUrl) {
-                const formData = new FormData(this.form);
-                formData.append('is_completed', 'true');
-
-                // Ensure CSRF token
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                    || this.form.querySelector('input[name="_token"]')?.value;
-
-                fetch(finishUrl, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken || '',
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
-                })
-                    .then(async (response) => {
-                        const result = await response.json().catch(() => ({}));
-                        if (response.ok && result.success) {
-                            window.location.href = '/dashboard/surveys/sibstr/results';
-                        } else {
-                            throw new Error(result.message || 'Finish survey failed');
-                        }
-                    })
-                    .catch((error) => {
-                        console.error('Error finishing survey:', error);
-                        alert('Terjadi kesalahan saat menyelesaikan survei. Silakan coba lagi.');
-                    });
-            }
+        const finishUrl = window.surveyRoutes?.finishSurvey;
+        if (!finishUrl) {
+            console.error('finishSurvey route not configured in window.surveyRoutes');
+            return;
         }
+
+        const isTahunan = window.surveyData?.isTahunan === true;
+        const originalBtnText = isTahunan ? 'Simpan dan Lanjutkan' : 'Selesaikan Survei';
+
+        const formData = new FormData(this.form);
+        formData.append('is_completed', 'true');
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            || this.form.querySelector('input[name="_token"]')?.value;
+
+        // Disable button to prevent double-submit
+        const btn = document.getElementById('finish-survey');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Memvalidasi…';
+        }
+
+        fetch(finishUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken || '',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: formData,
+        })
+            .then(async (response) => {
+                const result = await response.json().catch(() => ({}));
+
+                if (result.success) {
+                    if (result.triwulan_access_granted) {
+                        showSurveyModal({
+                            type: 'success',
+                            title: 'Survei Tahunan 2025 Selesai!',
+                            body: 'Akses Survei Triwulanan 2026 kini telah dibuka. Anda akan diarahkan ke halaman dashboard.',
+                            confirmText: 'Ke Dashboard',
+                            redirectUrl: '/dashboard/surveys/sibstr/results',
+                            redirectDelay: 4000,
+                        });
+                    } else {
+                        window.location.href = '/dashboard/surveys/sibstr/results';
+                    }
+                    return;
+                }
+
+                // Re-enable button on failure
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = originalBtnText;
+                }
+
+                if (result.redirect_to) {
+                    const url = new URL(result.redirect_to, window.location.origin);
+                    url.searchParams.set('_incomplete', '1');
+                    showSurveyModal({
+                        type: 'warning',
+                        title: 'Isian Belum Lengkap',
+                        body: (result.message || 'Terdapat isian yang belum lengkap.') + '\n\nAnda akan diarahkan ke halaman yang perlu dilengkapi.',
+                        confirmText: 'Lengkapi Sekarang',
+                        cancelText: 'Nanti',
+                        redirectUrl: url.href,
+                        redirectDelay: 5000,
+                        onCancel: () => {
+                            if (btn) { btn.disabled = false; btn.textContent = originalBtnText; }
+                        },
+                    });
+                } else {
+                    showSurveyModal({
+                        type: 'error',
+                        title: 'Terjadi Kesalahan',
+                        body: result.message || 'Terjadi kesalahan saat menyelesaikan survei.',
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error('Error finishing survey:', error);
+                if (btn) { btn.disabled = false; btn.textContent = originalBtnText; }
+                showSurveyModal({
+                    type: 'error',
+                    title: 'Kesalahan Jaringan',
+                    body: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda dan coba lagi.',
+                });
+            });
     }
 }
 

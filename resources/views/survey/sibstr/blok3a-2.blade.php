@@ -199,7 +199,7 @@
             Klik <em>Tambah Bahan</em> untuk menambah baris baru. Klik judul kartu untuk membuka/menutupnya.
         </p>
 
-        @if(!empty($historicalResponses) && $historicalResponses->isNotEmpty())
+        @if(!empty($historicalResponses) && $historicalResponses->isNotEmpty() && !(isset($triwulan) && $triwulan === 1))
         <div style="margin-top:1rem;">
             <button type="button" onclick="openHistDrawer()"
                     style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
@@ -334,7 +334,7 @@
     </form>
 </div>
 
-@if(!empty($historicalResponses))
+@if(!empty($historicalResponses) && !(isset($triwulan) && $triwulan === 1))
 @include('survey.sibstr.partials.historical-drawer', [
     'historicalResponses' => $historicalResponses,
     'blockKey'            => 'blok3a2',

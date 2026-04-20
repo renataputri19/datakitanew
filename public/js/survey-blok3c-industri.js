@@ -121,6 +121,19 @@
 
         recalcQ318();
         recalcQ319();
+        prefillRadioFields();
+    }
+
+    // ── Pre-fill prospek/kendala radio fields from surveyData.blok3b ─────────
+    function prefillRadioFields() {
+        const blok3b = window.surveyData?.blok3b || {};
+        ['q320','q321','q322','q323','q324','q325','q326','q327','q328'].forEach(key => {
+            const val = blok3b[key];
+            if (val === undefined || val === null || val === '') return;
+            document.querySelectorAll(`[name="blok3b_industri[${key}]"]`).forEach(r => {
+                r.checked = (r.value === String(val));
+            });
+        });
     }
 
     // ── Field error helpers (matching blok3b-industri approach) ─────────────
@@ -189,6 +202,40 @@
         return isValid;
     }
 
+    // ── Prospek & Kendala radio validation (Q701–Q703, tahunan only) ─────────
+    var PROSPEK_RADIO_DEFS = [
+        { key: 'q320', groupId: 'q701a-group', errorId: 'q701a-error', label: '320a. Permodalan' },
+        { key: 'q321', groupId: 'q701b-group', errorId: 'q701b-error', label: '320b. Bahan baku' },
+        { key: 'q322', groupId: 'q701c-group', errorId: 'q701c-error', label: '320c. Pemasaran' },
+        { key: 'q323', groupId: 'q701d-group', errorId: 'q701d-error', label: '320d. Iklim Usaha' },
+        { key: 'q324', groupId: 'q702-group',  errorId: 'q702-error',  label: '321. Rencana merekrut/kembangkan usaha 2026' },
+        { key: 'q325', groupId: 'q703a-group', errorId: 'q703a-error', label: '322a. Inovasi (barang dan jasa)' },
+        { key: 'q326', groupId: 'q703b-group', errorId: 'q703b-error', label: '322b. Pengembangan Teknologi' },
+        { key: 'q327', groupId: 'q703c-group', errorId: 'q703c-error', label: '322c. Pemasaran (marketing)' },
+        { key: 'q328', groupId: 'q703d-group', errorId: 'q703d-error', label: '322d. Kemitraan (UMKM, pemerintah, dll)' },
+    ];
+
+    function validateProspekKendala() {
+        var errors = [];
+        if (!document.getElementById('section-prospek-kendala')) return errors;
+        PROSPEK_RADIO_DEFS.forEach(function (def) {
+            var radios = document.querySelectorAll('[name="blok3b_industri[' + def.key + ']"]');
+            if (!radios.length) return;
+            var checked = Array.from(radios).some(function (r) { return r.checked; });
+            var groupEl = document.getElementById(def.groupId);
+            var errorEl = document.getElementById(def.errorId);
+            if (!checked) {
+                errors.push(def.label);
+                if (groupEl) groupEl.classList.add('radio-group-invalid');
+                if (errorEl) errorEl.classList.add('visible');
+            } else {
+                if (groupEl) groupEl.classList.remove('radio-group-invalid');
+                if (errorEl) errorEl.classList.remove('visible');
+            }
+        });
+        return errors;
+    }
+
     // ── Expose combined validator so blok3a2 manager can check it ────────────
     window.validateBlok3cQ319 = function () {
         const q319ok = validateQ319();
@@ -226,5 +273,221 @@
         // Q318d — clear red border as soon as user types
         const areaEl = document.getElementById('q318d_area');
         if (areaEl) areaEl.addEventListener('input', () => validateQ318d());
+
+        // Q318c_range — when range is selected, 318a/b become optional (and vice versa)
+        const rangeSelectEl = document.getElementById('q318c_range');
+        if (rangeSelectEl) {
+            rangeSelectEl.addEventListener('change', () => {
+                const hasRange = rangeSelectEl.value !== '';
+                ['q318a_display', 'q318b_display'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (hasRange) {
+                        el.removeAttribute('required');
+                        clearFieldError(el);
+                    } else {
+                        el.setAttribute('required', '');
+                    }
+                });
+            });
+            // Apply immediately on load in case range is already pre-filled
+            if (rangeSelectEl.value !== '') {
+                ['q318a_display', 'q318b_display'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.removeAttribute('required');
+                });
+            }
+        }
+
+        // Q701–Q703 radios — clear group error state as soon as a selection is made
+        PROSPEK_RADIO_DEFS.forEach(function (def) {
+            document.querySelectorAll('[name="blok3b_industri[' + def.key + ']"]').forEach(function (r) {
+                r.addEventListener('change', function () {
+                    var groupEl = document.getElementById(def.groupId);
+                    var errorEl = document.getElementById(def.errorId);
+                    if (groupEl) groupEl.classList.remove('radio-group-invalid');
+                    if (errorEl) errorEl.classList.remove('visible');
+                });
+            });
+        });
+
+        // ── Validation summary helpers ────────────────────────────────────────
+
+        function collectClientValidationErrors() {
+            const form = document.getElementById('survey-form');
+            if (!form) return [];
+            const errors = [];
+            const seen = new Set();
+
+            const addError = (key, label) => {
+                if (label && !seen.has(key)) { seen.add(key); errors.push(label); }
+            };
+
+            const getLabel = (el) => {
+                const subrow = el.closest('.form-subrow');
+                if (subrow) {
+                    const sublabel = subrow.querySelector('.form-sublabel');
+                    if (sublabel) {
+                        const row = subrow.closest('.form-row');
+                        const qNum = row?.querySelector('.question-number')?.textContent?.trim() ?? '';
+                        let text = sublabel.textContent.trim();
+                        if (text.length > 60) text = text.substring(0, 60).trimEnd() + '\u2026';
+                        return (qNum + ' ' + text).trim() || null;
+                    }
+                }
+                const formRow = el.closest('.form-row');
+                if (!formRow) return null;
+                const formLabel = formRow.querySelector('.form-label');
+                if (!formLabel) return null;
+                const qNum = formLabel.querySelector('.question-number')?.textContent?.trim() ?? '';
+                const spans = formLabel.querySelectorAll('span:not(.question-number)');
+                let title = spans.length > 0 ? spans[0].textContent.trim() : '';
+                if (title.length > 70) title = title.substring(0, 70).trimEnd() + '\u2026';
+                return (qNum + ' ' + title).trim() || null;
+            };
+
+            // q318a / q318b are optional when c1 range is selected
+            const rangeEl = document.getElementById('q318c_range');
+            const rangeSelected = rangeEl && rangeEl.value !== '';
+
+            form.querySelectorAll('[required]').forEach(el => {
+                if (el.type === 'hidden') return;
+                if (rangeSelected && (el.id === 'q318a_display' || el.id === 'q318b_display')) {
+                    el.classList.remove('input-invalid');
+                    return;
+                }
+                const parentRow = el.closest('.form-row');
+                if (parentRow && (parentRow.style.display === 'none' || parentRow.style.opacity === '0')) return;
+
+                let isEmpty;
+                if (el.classList.contains('currency-display')) {
+                    const targetName = el.getAttribute('data-target-name');
+                    const hidden = targetName
+                        ? form.querySelector(`input[type="hidden"][name="${targetName}"]`)
+                        : null;
+                    isEmpty = hidden
+                        ? (hidden.value ?? '').toString().trim() === ''
+                        : (el.value ?? '').trim() === '';
+                } else {
+                    isEmpty = (el.value ?? '').trim() === '';
+                }
+
+                if (isEmpty) {
+                    el.classList.add('input-invalid');
+                    addError(el.name || el.id, getLabel(el));
+                } else {
+                    el.classList.remove('input-invalid');
+                }
+            });
+
+            return errors;
+        }
+
+        function showSummary(errors) {
+            document.getElementById('blok3c-industri-validation-summary')?.remove();
+            const formActions = document.querySelector('.form-actions');
+            if (!formActions || !errors.length) return;
+            const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+            formActions.insertAdjacentHTML('beforebegin',
+                `<div id="blok3c-industri-validation-summary" class="validation-summary">
+                    <div class="validation-summary-header">
+                        <span class="validation-summary-icon">&#9888;</span>
+                        <h4 class="validation-summary-title">Data belum lengkap</h4>
+                    </div>
+                    <p class="validation-summary-desc">Mohon lengkapi bidang berikut sebelum menyimpan:</p>
+                    <ul class="validation-summary-list">
+                        ${errors.map(e => `<li class="validation-summary-item">${esc(e)}</li>`).join('')}
+                    </ul>
+                </div>`
+            );
+            document.getElementById('blok3c-industri-validation-summary')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function handleSaveComplete() {
+            document.getElementById('blok3c-industri-validation-summary')?.remove();
+
+            // 1. Material card validation (blok3a2)
+            let cardsValid = true;
+            if (window.blok3a2Manager && typeof window.blok3a2Manager._validateCards === 'function') {
+                cardsValid = window.blok3a2Manager._validateCards();
+            }
+
+            // 2. Required-field validation (Q318a/b/d, Q319a-h)
+            const errors = collectClientValidationErrors();
+
+            // 3. Q319 total must equal 100%
+            const totalEl = document.getElementById('q319i_display');
+            const total = parseFloat(totalEl?.value || 0);
+            if (totalEl && Math.abs(total - 100) >= 0.01) {
+                errors.push('319. Total kepemilikan modal harus 100% (saat ini: ' + total.toFixed(2) + '%)');
+                totalEl.classList.add('input-invalid');
+            } else if (totalEl) {
+                totalEl.classList.remove('input-invalid');
+            }
+
+            // 4. Prospek & Kendala radio validation (Q701–Q703, tahunan only)
+            const prospekErrors = validateProspekKendala();
+            prospekErrors.forEach(e => errors.push(e));
+
+            if (!cardsValid || errors.length > 0) {
+                if (errors.length > 0) {
+                    showSummary(errors);
+                } else {
+                    // Only card errors — show a generic card summary
+                    const div = document.createElement('div');
+                    div.id = 'blok3c-industri-validation-summary';
+                    div.className = 'validation-summary';
+                    div.innerHTML = `
+                        <div class="validation-summary-header">
+                            <span class="validation-summary-icon">&#9888;</span>
+                            <h4 class="validation-summary-title">Data belum lengkap</h4>
+                        </div>
+                        <p class="validation-summary-desc">Data bahan baku belum lengkap. Perbaiki kartu yang ditandai merah di atas.</p>`;
+                    const formActions = document.querySelector('.form-actions');
+                    if (formActions) formActions.insertAdjacentElement('beforebegin', div);
+                    div.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                return;
+            }
+
+            // All valid — delegate to blok3a2Manager
+            if (window.blok3a2Manager) {
+                window.blok3a2Manager._saveAndContinue();
+            }
+        }
+
+        // Clone-replace save-complete button to strip blok3a2's click handler
+        const saveOld = document.getElementById('save-complete');
+        if (saveOld) {
+            const saveBtn = saveOld.cloneNode(true);
+            saveOld.parentNode.replaceChild(saveBtn, saveOld);
+            saveBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleSaveComplete();
+            });
+        }
+
+        // Override showSubmissionGuidance so server-side error messages
+        // also appear in the summary panel instead of near the button
+        if (window.surveyManager) {
+            window.surveyManager.showSubmissionGuidance = function (message) {
+                document.getElementById('blok3c-industri-validation-summary')?.remove();
+                const formActions = document.querySelector('.form-actions');
+                if (!formActions) return;
+                const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+                formActions.insertAdjacentHTML('beforebegin',
+                    `<div id="blok3c-industri-validation-summary" class="validation-summary">
+                        <div class="validation-summary-header">
+                            <span class="validation-summary-icon">&#9888;</span>
+                            <h4 class="validation-summary-title">Data belum lengkap</h4>
+                        </div>
+                        <p class="validation-summary-desc">${esc(message)}</p>
+                    </div>`
+                );
+                document.getElementById('blok3c-industri-validation-summary')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+        }
     });
 })();

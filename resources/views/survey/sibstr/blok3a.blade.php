@@ -30,7 +30,7 @@
             <strong>Petunjuk:</strong> Mencatat semua pendapatan dari hasil produksi. Klik tombol "Tambah Produk" untuk menambahkan jenis barang.
         </p>
 
-        @if(!empty($historicalResponses) && $historicalResponses->isNotEmpty())
+        @if(!empty($historicalResponses) && $historicalResponses->isNotEmpty() && !(isset($triwulan) && $triwulan === 1))
         <div style="margin-top:1rem;">
             <button type="button"
                     onclick="openHistDrawer()"
@@ -89,34 +89,49 @@
             </button>
         </div>
 
+        @php
+            $currentTw  = $triwulan ?? 0;
+            $curYear    = $tahun ?? 2025;
+            $prevYear   = $curYear - 1;
+            $twMonthMap = [
+                1 => ['key' => 'q1', 'label' => 'Triwulan I',   'months' => ["{$curYear}_jan", "{$curYear}_feb", "{$curYear}_mar"]],
+                2 => ['key' => 'q2', 'label' => 'Triwulan II',  'months' => ["{$curYear}_apr", "{$curYear}_mei", "{$curYear}_jun"]],
+                3 => ['key' => 'q3', 'label' => 'Triwulan III', 'months' => ["{$curYear}_jul", "{$curYear}_agu", "{$curYear}_sep"]],
+                4 => ['key' => 'q4', 'label' => 'Triwulan IV',  'months' => ["{$curYear}_okt", "{$curYear}_nov", "{$curYear}_des"]],
+            ];
+            $quarterConf = ['dec_prev' => ['label' => "Des {$prevYear}", 'months' => ["{$prevYear}_des"]]];
+            if ($currentTw > 0) {
+                $quarterConf[$twMonthMap[$currentTw]['key']] = $twMonthMap[$currentTw];
+            } else {
+                foreach ($twMonthMap as $tw) {
+                    $quarterConf[$tw['key']] = $tw;
+                }
+            }
+            $firstQKey = array_key_first($quarterConf);
+        @endphp
+
+        @if($currentTw > 0)
+        {{-- 302. Pendapatan Lainnya — triwulanan only --}}
+        <div class="special-section" id="lainnya-section">
+            <h3 class="special-title">
+                <span class="text-xl">302.</span> Pendapatan Lainnya
+            </h3>
+            <div class="quarter-tabs" id="lainnya-tabs" role="tablist" aria-label="Pilih Triwulan untuk Lainnya">
+                @foreach($quarterConf as $qKey => $qConf)
+                <button type="button" class="quarter-tab {{ $loop->first ? 'active' : '' }}" data-quarter="{{ $qKey }}">{{ $qConf['label'] }}</button>
+                @endforeach
+            </div>
+            <div id="lainnya-grid-container">
+                {{-- Inputs injected by JS --}}
+            </div>
+        </div>
+        @endif
+
         <!-- Total Section -->
         <div class="special-section border-l-4 border-green-500" id="total-section">
             <h3 class="special-title text-green-700 dark:text-green-400">
                 <span class="text-xl">303.</span> Total Pendapatan
             </h3>
-            <!-- Per-section Quarter Tabs (dynamic based on tahun/triwulan) -->
-            @php
-                $currentTw  = $triwulan ?? 0;
-                $curYear    = $tahun ?? 2025;
-                $prevYear   = $curYear - 1;
-                $twMonthMap = [
-                    1 => ['key' => 'q1', 'label' => 'Triwulan I',   'months' => ["{$curYear}_jan", "{$curYear}_feb", "{$curYear}_mar"]],
-                    2 => ['key' => 'q2', 'label' => 'Triwulan II',  'months' => ["{$curYear}_apr", "{$curYear}_mei", "{$curYear}_jun"]],
-                    3 => ['key' => 'q3', 'label' => 'Triwulan III', 'months' => ["{$curYear}_jul", "{$curYear}_agu", "{$curYear}_sep"]],
-                    4 => ['key' => 'q4', 'label' => 'Triwulan IV',  'months' => ["{$curYear}_okt", "{$curYear}_nov", "{$curYear}_des"]],
-                ];
-                $quarterConf = ['dec_prev' => ['label' => "Des {$prevYear}", 'months' => ["{$prevYear}_des"]]];
-                if ($currentTw > 0) {
-                    // Triwulanan: show only previous Dec + current quarter
-                    $quarterConf[$twMonthMap[$currentTw]['key']] = $twMonthMap[$currentTw];
-                } else {
-                    // Tahunan: all 4 quarters
-                    foreach ($twMonthMap as $tw) {
-                        $quarterConf[$tw['key']] = $tw;
-                    }
-                }
-                $firstQKey = array_key_first($quarterConf);
-            @endphp
             <div class="quarter-tabs" id="total-tabs" role="tablist" aria-label="Pilih Triwulan untuk Total">
                 @foreach($quarterConf as $qKey => $qConf)
                 <button type="button" class="quarter-tab {{ $loop->first ? 'active' : '' }}" data-quarter="{{ $qKey }}">{{ $qConf['label'] }}</button>
@@ -130,7 +145,8 @@
         <!-- Excel-Style Preview (Read-Only) -->
         <div class="special-section" id="preview-section">
             <h3 class="special-title">
-                Pratinjau Excel (Ringkasan Baca-Saja)
+                Ringkasan Data Produksi
+                <span style="font-size:0.75rem; font-weight:400; color:#6b7280; margin-left:0.5rem;">(Pratinjau - diperbarui secara otomatis)</span>
             </h3>
             <div id="blok3a-preview-table">
                 @php
@@ -161,6 +177,7 @@
                         <thead>
                             <tr>
                                 <th class="sticky-col" style="text-align:left; background:#f9fafb; border:1px solid #e5e7eb;">Kode/Nama</th>
+                                <th style="text-align:left; background:#f9fafb; border:1px solid #e5e7eb; min-width:170px;">Detail Produk</th>
                                 <th style="background:#f9fafb; border:1px solid #e5e7eb;">Uraian</th>
                                 @foreach($monthLabels as $ml)
                                     <th style="text-align:center; background:#f9fafb; border:1px solid #e5e7eb;">{{ $ml }}</th>
@@ -176,6 +193,20 @@
                                     <td class="sticky-col" rowspan="3" style="border:1px solid #e5e7eb;">
                                         <div class="code">{{ '301.'.($i+1) }}</div>
                                         <div class="name">{{ $productName }}</div>
+                                    </td>
+                                    <td rowspan="3" style="border:1px solid #e5e7eb; vertical-align:top; padding:0.5rem 0.625rem; min-width:170px; font-size:0.8125rem; line-height:1.5;">
+                                        <div style="margin-bottom:0.4rem;">
+                                            <span style="font-weight:600; color:#374151; display:block;">KBLI 5 Digit</span>
+                                            <span style="color:#1f2937;">{{ !empty($p['kbli_5digit']) ? e($p['kbli_5digit']) : '-' }}</span>
+                                        </div>
+                                        <div style="margin-bottom:0.4rem;">
+                                            <span style="font-weight:600; color:#374151; display:block;">Persentase Diekspor (*)</span>
+                                            <span style="color:#1f2937;">{{ (isset($p['persen_ekspor']) && $p['persen_ekspor'] !== '') ? number_format((float)$p['persen_ekspor'], 2, ',', '.') . ' %' : '-' }}</span>
+                                        </div>
+                                        <div>
+                                            <span style="font-weight:600; color:#374151; display:block;">Negara Tujuan Ekspor (**)</span>
+                                            <span style="color:#1f2937;">{{ !empty($p['negara_ekspor']) ? e($p['negara_ekspor']) : '-' }}</span>
+                                        </div>
                                     </td>
                                     <td style="border:1px solid #e5e7eb;">Banyaknya</td>
                                     @foreach($months as $m)
@@ -219,6 +250,7 @@
                                         <div class="code">303.</div>
                                         <div class="name">Total</div>
                                     </td>
+                                    <td style="border:1px solid #e5e7eb;"></td>
                                     <td style="border:1px solid #e5e7eb;">Nilai</td>
                                     @foreach($months as $m)
                                         <td class="num" style="text-align:right; border:1px solid #e5e7eb;">
@@ -396,7 +428,7 @@
     </form>
 </div>
 
-@if(!empty($historicalResponses))
+@if(!empty($historicalResponses) && !(isset($triwulan) && $triwulan === 1))
 @include('survey.sibstr.partials.historical-drawer', [
     'historicalResponses' => $historicalResponses,
     'blockKey'            => 'blok3a',
@@ -428,6 +460,7 @@ window.surveyRoutes = {
 
 window.surveyData = {
     products: @json($surveyResponse->blok3a_products ?? []),
+    lainnya: @json($surveyResponse->blok3a_lainnya ?? []),
     totals: @json($surveyResponse->blok3a_totals ?? []),
     quarterConf: @json($quarterConf),
     firstQuarter: '{{ $firstQKey }}'

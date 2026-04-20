@@ -621,12 +621,18 @@
                     </div>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem;">
-                    @if($surveyResponse->is_completed)
+                    @php
+                        $isTahunanRecord = (((int)($surveyResponse->triwulan ?? 0)) === 0);
+                        $isFinishedRecord = $isTahunanRecord
+                            ? ($surveyResponse->annual_survey_status === 'FINISH_SURVEY')
+                            : (bool) $surveyResponse->is_completed;
+                    @endphp
+                    @if($isFinishedRecord)
                         <span class="bps-view-badge completed">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            Selesai
+                            {{ $isTahunanRecord ? 'FINISH_SURVEY' : 'Selesai' }}
                         </span>
                     @else
                         <span class="bps-view-badge in-progress">
@@ -731,6 +737,22 @@
         </div>
         @endif
 
+        <!-- ===== BLOK IIIC: Bahan Baku & Bahan Penolong ===== -->
+        @if(!empty($showBlocks['blok3c']))
+        <div class="block-section" id="section-blok3c">
+            <div class="block-section-header">
+                <div class="block-number">IIIC</div>
+                <div>
+                    <h2>Blok IIIC: Bahan Baku &amp; Bahan Penolong</h2>
+                    <div class="block-subtitle">Ringkasan Data Bahan Baku, Flow Table, dan Prospek Usaha</div>
+                </div>
+            </div>
+            <div class="block-section-body">
+                @include('bps.sibstr.partials.blok3c')
+            </div>
+        </div>
+        @endif
+
         <!-- ===== BLOK IV: Fenomena dan Catatan ===== -->
         @if(!empty($showBlocks['blok4']))
         <div class="block-section" id="section-blok4">
@@ -787,6 +809,7 @@
                 $shown += !empty($showBlocks['blok2']) ? 1 : 0;
                 $shown += !empty($showBlocks['blok3a']) ? 1 : 0;
                 $shown += (!empty($showBlocks['blok3bIndustri']) || !empty($showBlocks['blok3bNonIndustri'])) ? 1 : 0;
+                $shown += !empty($showBlocks['blok3c']) ? 1 : 0;
                 $shown += !empty($showBlocks['blok4']) ? 1 : 0;
                 $shown += !empty($showBlocks['blok5']) ? 1 : 0;
                 $shown += !empty($showBlocks['blok6']) ? 1 : 0;
@@ -844,6 +867,14 @@
                 <a href="#section-blok3b" class="bps-toc-link" data-section="section-blok3b">
                     <span class="toc-dot"></span>
                     Blok IIIB: Pendapatan @if(!empty($showBlocks['blok3bIndustri'])) (Industri) @elseif(!empty($showBlocks['blok3bNonIndustri'])) (Non-Industri) @endif
+                </a>
+            </li>
+            @endif
+            @if(!empty($showBlocks['blok3c']))
+            <li class="bps-toc-item">
+                <a href="#section-blok3c" class="bps-toc-link" data-section="section-blok3c">
+                    <span class="toc-dot"></span>
+                    Blok IIIC: Bahan Baku
                 </a>
             </li>
             @endif

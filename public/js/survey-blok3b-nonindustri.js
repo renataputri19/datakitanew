@@ -371,12 +371,181 @@ class SurveyBlok3bNonIndustriManager {
         const fallback = field.parentNode.querySelector('.field-error-message');
         if (fallback) fallback.remove();
     }
+
+    // ── Collect all empty required visible fields ─────────────────────────────
+    collectClientValidationErrors() {
+        const errors = [];
+        const seen = new Set();
+
+        const addError = (key, label) => {
+            if (label && !seen.has(key)) { seen.add(key); errors.push(label); }
+        };
+
+        const getLabel = (el) => {
+            const subrow = el.closest('.form-subrow');
+            if (subrow) {
+                const sublabel = subrow.querySelector('.form-sublabel');
+                if (sublabel) {
+                    const row = subrow.closest('.form-row');
+                    const qNum = row?.querySelector('.question-number')?.textContent?.trim() ?? '';
+                    let text = sublabel.textContent.trim();
+                    if (text.length > 60) text = text.substring(0, 60).trimEnd() + '\u2026';
+                    return (qNum + ' ' + text).trim() || null;
+                }
+            }
+            const formRow = el.closest('.form-row');
+            if (!formRow) return null;
+            const formLabel = formRow.querySelector('.form-label');
+            if (!formLabel) return null;
+            const qNum = formLabel.querySelector('.question-number')?.textContent?.trim() ?? '';
+            const spans = formLabel.querySelectorAll('span:not(.question-number)');
+            let title = spans.length > 0 ? spans[0].textContent.trim() : '';
+            if (title.length > 70) title = title.substring(0, 70).trimEnd() + '\u2026';
+            return (qNum + ' ' + title).trim() || null;
+        };
+
+        this.form.querySelectorAll('[required]').forEach(el => {
+            if (el.type === 'hidden') return;
+            if (el.hasAttribute('readonly') || el.classList.contains('readonly')) return;
+            const parentRow = el.closest('.form-row');
+            if (parentRow && (parentRow.style.display === 'none' || parentRow.style.opacity === '0')) return;
+
+            let isEmpty;
+            if (el.classList.contains('currency-display')) {
+                const targetName = el.getAttribute('data-target-name');
+                const hidden = targetName
+                    ? this.form.querySelector(`input[type="hidden"][name="${targetName}"]`)
+                    : null;
+                isEmpty = hidden
+                    ? (hidden.value ?? '').toString().trim() === ''
+                    : (el.value ?? '').trim() === '';
+            } else {
+                isEmpty = (el.value ?? '').trim() === '';
+            }
+
+            if (isEmpty) {
+                el.classList.add('field-error');
+                addError(el.name || el.id, getLabel(el));
+            } else {
+                el.classList.remove('field-error');
+            }
+        });
+
+        return errors;
+    }
+
+    // ── Validation summary + save handler ─────────────────────────────────────
+    handleSaveComplete() {
+        document.getElementById('blok3b-nonindustri-validation-summary')?.remove();
+
+        const errors = this.collectClientValidationErrors();
+
+        if (errors.length > 0) {
+            const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+            const summaryHTML = `
+            <div id="blok3b-nonindustri-validation-summary" class="validation-summary">
+                <div class="validation-summary-header">
+                    <span class="validation-summary-icon">&#9888;</span>
+                    <h4 class="validation-summary-title">Data belum lengkap</h4>
+                </div>
+                <p class="validation-summary-desc">Mohon lengkapi bidang berikut sebelum menyimpan:</p>
+                <ul class="validation-summary-list">
+                    ${errors.map(e => `<li class="validation-summary-item">${esc(e)}</li>`).join('')}
+                </ul>
+            </div>`;
+            const formActions = this.form.querySelector('.form-actions');
+            if (formActions) {
+                formActions.insertAdjacentHTML('beforebegin', summaryHTML);
+                document.getElementById('blok3b-nonindustri-validation-summary')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            return;
+        }
+
+        // All valid — delegate to surveyManager
+        if (window.surveyManager && typeof window.surveyManager.saveForm === 'function') {
+            window.surveyManager.saveForm(true);
+        }
+    }
 }
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    if (document.getElementById('survey-form')) {
-        window.surveyBlok3bNonIndustriManager = new SurveyBlok3bNonIndustriManager();
+    if (!document.getElementById('survey-form')) return;
+
+    window.surveyBlok3bNonIndustriManager = new SurveyBlok3bNonIndustriManager();
+    const mgr = window.surveyBlok3bNonIndustriManager;
+
+    // Clone-replace save-complete to strip survey.js's generic click handler
+    const saveOld = document.getElementById('save-complete');
+    if (saveOld) {
+        const saveBtn = saveOld.cloneNode(true);
+        saveOld.parentNode.replaceChild(saveBtn, saveOld);
+        saveBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            mgr.handleSaveComplete();
+        });
+    }
+
+    // Override showSubmissionGuidance so server-side error messages
+    // appear in the summary panel instead of near the button
+    if (window.surveyManager) {
+        window.surveyManager.showSubmissionGuidance = function(message, details) {
+            document.getElementById('blok3b-nonindustri-validation-summary')?.remove();
+            const form = document.getElementById('survey-form');
+            const formActions = form ? form.querySelector('.form-actions') : null;
+            if (!formActions) return;
+            const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+            let itemsHTML = '';
+            if (Array.isArray(details) && details.length) {
+                itemsHTML = '<ul class="validation-summary-list">'
+                    + details.map(d => `<li class="validation-summary-item">${esc(d)}</li>`).join('')
+                    + '</ul>';
+            }
+            formActions.insertAdjacentHTML('beforebegin', `
+                <div id="blok3b-nonindustri-validation-summary" class="validation-summary">
+                    <div class="validation-summary-header">
+                        <span class="validation-summary-icon">&#9888;</span>
+                        <h4 class="validation-summary-title">Data belum lengkap</h4>
+                    </div>
+                    <p class="validation-summary-desc">${esc(message)}</p>
+                    ${itemsHTML}
+                </div>`
+            );
+            document.getElementById('blok3b-nonindustri-validation-summary')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        // Override handleServerValidationErrors to redirect inline server errors
+        // to the summary panel instead of highlighting individual fields near the button
+        const origHandleServer = window.surveyManager.handleServerValidationErrors?.bind(window.surveyManager);
+        if (origHandleServer) {
+            window.surveyManager.handleServerValidationErrors = function(errors) {
+                origHandleServer(errors);
+                // After inline errors are set, pull them into the summary panel
+                const form = document.getElementById('survey-form');
+                const formActions = form ? form.querySelector('.form-actions') : null;
+                if (!formActions) return;
+                const errorMessages = Object.values(errors).flat();
+                if (!errorMessages.length) return;
+                document.getElementById('blok3b-nonindustri-validation-summary')?.remove();
+                const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+                formActions.insertAdjacentHTML('beforebegin', `
+                    <div id="blok3b-nonindustri-validation-summary" class="validation-summary">
+                        <div class="validation-summary-header">
+                            <span class="validation-summary-icon">&#9888;</span>
+                            <h4 class="validation-summary-title">Data belum lengkap</h4>
+                        </div>
+                        <p class="validation-summary-desc">Mohon lengkapi bidang berikut sebelum menyimpan:</p>
+                        <ul class="validation-summary-list">
+                            ${errorMessages.map(e => `<li class="validation-summary-item">${esc(e)}</li>`).join('')}
+                        </ul>
+                    </div>`
+                );
+                document.getElementById('blok3b-nonindustri-validation-summary')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+        }
     }
 });
 

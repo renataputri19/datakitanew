@@ -84,7 +84,7 @@
             Formulir survei untuk pengumpulan data industri besar dan sedang triwulanan sesuai standar BPS
         </p>
 
-        @if(isset($referenceResponse) && $referenceResponse)
+        @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
         <div style="margin-top:1rem;">
             <button type="button"
                     onclick="openRefDrawer()"
@@ -483,7 +483,7 @@
                         @if($currentPeriod === 'tahunan')
                         <div class="form-subrow">
                             <label for="produk_utama_q210" class="form-sublabel">b. Tuliskan produk utama tahun 2025:</label>
-                            <textarea name="produk_utama_perusahaan" id="produk_utama_q210" class="form-control" maxlength="1000" placeholder="Contoh: sandal karet, sepatu kulit, ikan tongkol beku, dll.">{{ old('produk_utama_perusahaan', $surveyResponse->produk_utama_perusahaan ?? '') }}</textarea>
+                            <textarea name="produk_utama_perusahaan" id="produk_utama_q210" class="form-control" required maxlength="1000" placeholder="Contoh: sandal karet, sepatu kulit, ikan tongkol beku, dll.">{{ old('produk_utama_perusahaan', $surveyResponse->produk_utama_perusahaan ?? '') }}</textarea>
                         </div>
                         @endif
                         <div class="form-subrow">
@@ -563,7 +563,7 @@
                 @if($currentPeriod === 'tahunan')
                 <!-- Question 210 -->
                 <div class="form-row">
-                    <label class="form-label">
+                    <label class="form-label required">
                         <span class="question-number">210.</span>
                         <span>Sebutkan sertifikasi produk yang dimiliki perusahaan (pilih semua yang sesuai):</span>
                     </label>
@@ -595,7 +595,7 @@
                 @if($currentPeriod === 'tahunan')
                 <!-- Question 211 -->
                 <div class="form-row">
-                    <label class="form-label">
+                    <label class="form-label required">
                         <span class="question-number">211.</span>
                         <span>Model industri manufaktur yang diterapkan di perusahaan (pilihan boleh lebih dari 1):</span>
                     </label>
@@ -838,34 +838,39 @@
         </div>
     </form>
 
-    @if(isset($referenceResponse) && $referenceResponse)
+    @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
+    @php
+    $refFields = $currentTriwulan > 0 ? [
+        ['name' => 'kondisi_perusahaan',        'label' => 'Kondisi Perusahaan (201)',           'copyable' => true],
+        ['name' => 'jaringan_unit_kegiatan',    'label' => 'Jaringan Unit Kegiatan (202)',       'copyable' => true],
+        ['name' => 'kegiatan_utama_perusahaan', 'label' => 'Kegiatan Utama Perusahaan (208.a)', 'copyable' => true],
+        ['name' => 'kbli_utama',                'label' => 'KBLI Utama (208.c)',                'copyable' => true],
+    ] : [
+        ['name' => 'kondisi_perusahaan',                  'label' => 'Kondisi Perusahaan',                       'copyable' => true],
+        ['name' => 'jaringan_unit_kegiatan',              'label' => 'Jaringan Unit Kegiatan',                   'copyable' => true],
+        ['name' => 'kegiatan_utama_perusahaan',           'label' => 'Kegiatan Utama Perusahaan',                'copyable' => true],
+        ['name' => 'kbli_utama',                          'label' => 'KBLI Utama',                               'copyable' => true],
+        ['name' => 'jumlah_bulan_aktif_2025',             'label' => 'Jumlah Bulan Aktif',                       'copyable' => true],
+        ['name' => 'rata_hari_kerja_bulanan_2025',        'label' => 'Rata-rata Hari Kerja Bulanan',             'copyable' => true],
+        ['name' => 'jumlah_seluruh_pekerja',              'label' => 'Jumlah Seluruh Pekerja (207.a)',           'copyable' => true],
+        ['name' => 'tenaga_kerja_laki_laki',              'label' => 'TK Laki-laki (207.b.1)',                   'copyable' => true],
+        ['name' => 'tenaga_kerja_perempuan',              'label' => 'TK Perempuan (207.b.2)',                   'copyable' => true],
+        ['name' => 'pekerja_bukan_outsourcing_produksi',  'label' => 'TK Bukan Outsourcing Produksi (207.c.1)', 'copyable' => true],
+        ['name' => 'pekerja_bukan_outsourcing_lainnya',   'label' => 'TK Bukan Outsourcing Lainnya (207.c.2)',  'copyable' => true],
+        ['name' => 'pekerja_outsourcing_produksi',        'label' => 'TK Outsourcing Produksi (207.d.1)',        'copyable' => true],
+        ['name' => 'pekerja_outsourcing_lainnya',         'label' => 'TK Outsourcing Lainnya (207.d.2)',         'copyable' => true],
+        ['name' => 'tenaga_kerja_asing',                  'label' => 'TK Asing (207.e)',                         'copyable' => true],
+        ['name' => 'memproduksi_barang_sendiri',          'label' => 'Memproduksi Barang Sendiri',               'copyable' => true],
+        ['name' => 'penggunaan_internet',                 'label' => 'Penggunaan Internet',                      'copyable' => true],
+        ['name' => 'produksi_ramah_lingkungan',           'label' => 'Produksi Ramah Lingkungan',                'copyable' => true],
+    ];
+    @endphp
     @include('survey.sibstr.partials.reference-drawer', [
         'referenceResponse' => $referenceResponse,
         'currentTwLabel'    => isset($triwulan) && $triwulan > 0
                                 ? \App\Models\SurveyResponse::triwulanLabel($triwulan) . ' ' . ($tahun ?? 2025)
                                 : 'Tahunan ' . ($tahun ?? 2025),
-        'fields'            => [
-            ['name' => 'kondisi_perusahaan',                  'label' => 'Kondisi Perusahaan',                   'copyable' => true],
-            ['name' => 'jaringan_unit_kegiatan',              'label' => 'Jaringan Unit Kegiatan',               'copyable' => true],
-            ['name' => 'kegiatan_utama_perusahaan',           'label' => 'Kegiatan Utama Perusahaan',            'copyable' => true],
-            ['name' => 'kbli_utama',                          'label' => 'KBLI Utama',                           'copyable' => true],
-            ['name' => 'jumlah_bulan_aktif_2025',             'label' => 'Jumlah Bulan Aktif',                   'copyable' => true],
-            ['name' => 'rata_hari_kerja_bulanan_2025',        'label' => 'Rata-rata Hari Kerja Bulanan',         'copyable' => true],
-            // Q207 Tahunan 2025 fields
-            ['name' => 'jumlah_seluruh_pekerja',              'label' => 'Jumlah Seluruh Pekerja (207.a)',       'copyable' => true],
-            ['name' => 'tenaga_kerja_laki_laki',              'label' => 'TK Laki-laki (207.b.1)',               'copyable' => true],
-            ['name' => 'tenaga_kerja_perempuan',              'label' => 'TK Perempuan (207.b.2)',               'copyable' => true],
-            ['name' => 'pekerja_bukan_outsourcing_produksi',  'label' => 'TK Bukan Outsourcing Produksi (207.c.1)', 'copyable' => true],
-            ['name' => 'pekerja_bukan_outsourcing_lainnya',   'label' => 'TK Bukan Outsourcing Lainnya (207.c.2)', 'copyable' => true],
-            ['name' => 'pekerja_outsourcing_produksi',        'label' => 'TK Outsourcing Produksi (207.d.1)',    'copyable' => true],
-            ['name' => 'pekerja_outsourcing_lainnya',         'label' => 'TK Outsourcing Lainnya (207.d.2)',     'copyable' => true],
-            ['name' => 'tenaga_kerja_asing',                  'label' => 'TK Asing (207.e)',                     'copyable' => true],
-            // Q203 Triwulanan field
-            ['name' => 'rata_rata_tenaga_kerja',              'label' => 'Rata-rata TK Triwulan (203)',          'copyable' => true],
-            ['name' => 'memproduksi_barang_sendiri',          'label' => 'Memproduksi Barang Sendiri',           'copyable' => true],
-            ['name' => 'penggunaan_internet',                 'label' => 'Penggunaan Internet',                  'copyable' => true],
-            ['name' => 'produksi_ramah_lingkungan',           'label' => 'Produksi Ramah Lingkungan',            'copyable' => true],
-        ],
+        'fields'            => $refFields,
     ])
     @endif
 </div>

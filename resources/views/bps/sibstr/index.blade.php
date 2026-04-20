@@ -214,11 +214,56 @@
 @section('content')
 <div class="space-y-6">
     <!-- Page Header -->
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Data Survei SIBSTR</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Daftar semua respons survei SIBSTR (Survei Industri Besar dan Sedang Triwulanan) dari seluruh pengguna
-        </p>
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Data Survei SIBSTR</h1>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                Daftar respons survei SIBSTR dari seluruh pengguna &mdash;
+                <span class="font-medium">{{ $isTahunan ? 'Tahunan' : 'Triwulanan' }} {{ $year }}</span>
+            </p>
+        </div>
+        <!-- Year selector quick links -->
+        <div class="flex items-center gap-2 flex-wrap">
+            @foreach([2025, 2026] as $yr)
+                <a href="{{ route('bps.sibstr.index', array_merge(request()->except(['year','page']), ['year' => $yr, 'type' => $type])) }}"
+                   class="px-3 py-1.5 rounded-md text-sm font-medium border transition-all
+                          {{ $year === $yr ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400' }}">
+                    {{ $yr }}
+                </a>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- Tahunan / Triwulanan Tabs -->
+    <div class="border-b border-gray-200 dark:border-gray-700">
+        <nav class="-mb-px flex space-x-1" aria-label="Tabs">
+            <a href="{{ route('bps.sibstr.index', array_merge(request()->except(['type','triwulan','page']), ['type' => 'tahunan'])) }}"
+               class="flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors
+                      {{ $isTahunan
+                          ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                          : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:border-gray-300' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Tahunan
+                @if($isTahunan)
+                    <span class="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-xs px-2 py-0.5 rounded-full font-semibold">{{ $stats['total'] }}</span>
+                @endif
+            </a>
+            <a href="{{ route('bps.sibstr.index', array_merge(request()->except(['type','triwulan','page']), ['type' => 'triwulanan'])) }}"
+               class="flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors
+                      {{ !$isTahunan
+                          ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                          : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:border-gray-300' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Triwulanan
+                @if(!$isTahunan)
+                    <span class="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-xs px-2 py-0.5 rounded-full font-semibold">{{ $stats['total'] }}</span>
+                @endif
+            </a>
+        </nav>
     </div>
 
     <!-- Statistics Cards -->
@@ -245,7 +290,7 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Selesai</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ $isTahunan ? 'FINISH_SURVEY' : 'Selesai' }}</p>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ $stats['completed'] }}</p>
                 </div>
             </div>
@@ -269,14 +314,18 @@
     <!-- Filter Section -->
     <div class="filter-section">
         <form method="GET" action="{{ route('bps.sibstr.index') }}" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Preserve tab and year state through filter submissions -->
+            <input type="hidden" name="type" value="{{ $type }}">
+            <input type="hidden" name="year" value="{{ $year }}">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Pencarian
                     </label>
-                    <input type="text" 
-                           id="search" 
-                           name="search" 
+                    <input type="text"
+                           id="search"
+                           name="search"
                            value="{{ request('search') }}"
                            placeholder="Cari nama perusahaan, KIP, IDSBR..."
                            class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -286,21 +335,40 @@
                     <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Status
                     </label>
-                    <select id="status" 
-                            name="status" 
+                    <select id="status"
+                            name="status"
                             class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">Semua Status</option>
-                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai</option>
+                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>
+                            {{ $isTahunan ? 'FINISH_SURVEY' : 'Selesai' }}
+                        </option>
                         <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>Dalam Proses</option>
                     </select>
                 </div>
+
+                @if(!$isTahunan)
+                <div>
+                    <label for="triwulan" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Triwulan
+                    </label>
+                    <select id="triwulan"
+                            name="triwulan"
+                            class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Semua Triwulan</option>
+                        <option value="1" {{ request('triwulan') == '1' ? 'selected' : '' }}>Triwulan I (Jan–Mar)</option>
+                        <option value="2" {{ request('triwulan') == '2' ? 'selected' : '' }}>Triwulan II (Apr–Jun)</option>
+                        <option value="3" {{ request('triwulan') == '3' ? 'selected' : '' }}>Triwulan III (Jul–Sep)</option>
+                        <option value="4" {{ request('triwulan') == '4' ? 'selected' : '' }}>Triwulan IV (Okt–Des)</option>
+                    </select>
+                </div>
+                @endif
 
                 <div>
                     <label for="sort_by" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Urutkan Berdasarkan
                     </label>
-                    <select id="sort_by" 
-                            name="sort_by" 
+                    <select id="sort_by"
+                            name="sort_by"
                             class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="updated_at" {{ request('sort_by', 'updated_at') === 'updated_at' ? 'selected' : '' }}>Terakhir Diperbarui</option>
                         <option value="created_at" {{ request('sort_by') === 'created_at' ? 'selected' : '' }}>Tanggal Dibuat</option>
@@ -312,8 +380,8 @@
                     <label for="per_page" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Tampilkan
                     </label>
-                    <select id="per_page" 
-                            name="per_page" 
+                    <select id="per_page"
+                            name="per_page"
                             class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="25" {{ request('per_page', 25) == 25 ? 'selected' : '' }}>25 per halaman</option>
                         <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50 per halaman</option>
@@ -329,11 +397,11 @@
                     </svg>
                     Terapkan Filter
                 </button>
-                <a href="{{ route('bps.sibstr.index') }}" class="btn-reset">
+                <a href="{{ route('bps.sibstr.index', ['type' => $type, 'year' => $year]) }}" class="btn-reset">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    Reset
+                    Reset Filter
                 </a>
             </div>
         </form>
@@ -350,6 +418,9 @@
                             <th>Nama Perusahaan</th>
                             <th>Pengguna</th>
                             <th>KIP/IDSBR</th>
+                            @if(!$isTahunan)
+                            <th>Periode</th>
+                            @endif
                             <th>Status</th>
                             <th>Terakhir Diperbarui</th>
                             <th>Aksi</th>
@@ -357,6 +428,11 @@
                     </thead>
                     <tbody>
                         @foreach($surveyResponses as $index => $response)
+                        @php
+                            $isFinished = $isTahunan
+                                ? ($response->annual_survey_status === 'FINISH_SURVEY')
+                                : $response->is_completed;
+                        @endphp
                         <tr>
                             <td class="font-medium">{{ $surveyResponses->firstItem() + $index }}</td>
                             <td>
@@ -384,13 +460,20 @@
                                 <span class="text-gray-400">-</span>
                                 @endif
                             </td>
+                            @if(!$isTahunan)
                             <td>
-                                @if($response->is_completed)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                                    TW {{ $response->triwulan }}
+                                </span>
+                            </td>
+                            @endif
+                            <td>
+                                @if($isFinished)
                                     <span class="status-badge status-completed">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                         </svg>
-                                        Selesai
+                                        {{ $isTahunan ? 'FINISH_SURVEY' : 'Selesai' }}
                                     </span>
                                 @else
                                     <span class="status-badge status-in-progress">
@@ -406,13 +489,24 @@
                                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ $response->updated_at->setTimezone('Asia/Jakarta')->format('H:i') }} WIB</div>
                             </td>
                             <td>
-                                <a href="{{ route('bps.sibstr.show', $response->id) }}" class="btn-view">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    Lihat Detail
-                                </a>
+                                <div style="display:flex; gap:0.375rem; flex-wrap:wrap;">
+                                    <a href="{{ route('bps.sibstr.show', $response->id) }}" class="btn-view">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        Lihat Detail
+                                    </a>
+                                    <a href="{{ route('bps.sibstr.download', $response->id) }}"
+                                       class="btn-view"
+                                       style="background:#16a34a;"
+                                       title="Download PDF">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                                        </svg>
+                                        PDF
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         @endforeach
@@ -437,10 +531,10 @@
                 </svg>
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Tidak Ada Data</h3>
                 <p class="text-gray-600 dark:text-gray-400">
-                    @if(request()->hasAny(['search', 'status']))
+                    @if(request()->hasAny(['search', 'status', 'triwulan']))
                         Tidak ada hasil yang sesuai dengan filter yang dipilih.
                     @else
-                        Belum ada respons survei SIBSTR yang tersedia.
+                        Belum ada respons survei SIBSTR {{ $isTahunan ? 'Tahunan' : 'Triwulanan' }} {{ $year }} yang tersedia.
                     @endif
                 </p>
             </div>

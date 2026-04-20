@@ -65,9 +65,21 @@
     .ln-box .box-label { color: #1e40af; border-color: #3b82f6; }
 
     /* ── Input validation ─────────────────────────── */
-    .field-error { display: none; color: #dc2626; font-size: 0.75rem; margin-top: 0.3rem; }
-    .field-error.visible { display: block; }
+    div.field-error,
+    span.field-error { display: none; color: #dc2626; font-size: 0.75rem; margin-top: 0.3rem; }
+    div.field-error.visible,
+    span.field-error.visible { display: block; }
     .input-invalid { border-color: #ef4444 !important; box-shadow: 0 0 0 2px #fee2e2 !important; }
+
+    /* ── Radio inline & invalid ──────────────────────── */
+    .radio-inline { flex-direction: row !important; gap: 1.5rem; flex-wrap: wrap; }
+    .radio-group-invalid {
+        border: 2px solid #ef4444 !important;
+        border-radius: 0.375rem;
+        padding: 0.4rem 0.75rem;
+        background: #fef2f2;
+    }
+    .dark .radio-group-invalid { background: #450a0a22; }
 
     /* ── Delete button ────────────────────────────── */
     .btn-delete-material {
@@ -199,7 +211,7 @@
             Klik <em>Tambah Bahan</em> untuk menambah baris baru. Klik judul kartu untuk membuka/menutupnya.
         </p>
 
-        @if(!empty($historicalResponses) && $historicalResponses->isNotEmpty())
+        @if(!empty($historicalResponses) && $historicalResponses->isNotEmpty() && !(isset($triwulan) && $triwulan === 1))
         <div style="margin-top:1rem;">
             <button type="button" onclick="openHistDrawer()"
                     style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
@@ -270,8 +282,8 @@
         {{-- ── Preview section ──────────────────────────────── --}}
         <div class="special-section" id="preview-section" style="margin-top:2rem;" data-aos="fade-up" data-aos-delay="100">
             <h3 class="special-title">
-                Pratinjau Excel
-                <span style="font-size:0.75rem;font-weight:400;color:#6b7280;margin-left:0.5rem;">(Ringkasan Baca-Saja — perbarui otomatis saat Anda mengetik)</span>
+                Ringkasan Data Bahan Baku
+                <span style="font-size:0.75rem;font-weight:400;color:#6b7280;margin-left:0.5rem;">(Pratinjau - diperbarui secara otomatis)</span>
             </h3>
 
             {{-- Scroll wrapper with arrow controls --}}
@@ -314,19 +326,19 @@
             </div>
             <div class="form-grid">
                 <div class="form-row">
-                    <label class="form-label">
+                    <label class="form-label required">
                         <span class="question-number">318.</span>
                         <span>Nilai aset pada 31 Desember 2025 (rupiah)</span>
                     </label>
                     <div class="form-subgrid">
                         <div class="form-subrow">
                             <label class="form-sublabel" for="q318a_display">a. Tanah dan bangunan</label>
-                            <input type="text" id="q318a_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_industri[q318a]">
+                            <input type="text" id="q318a_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_industri[q318a]" required>
                             <input type="hidden" name="blok3b_industri[q318a]" id="q318a" value="{{ $surveyResponse->blok3b_industri_data['q318a'] ?? '' }}">
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel" for="q318b_display">b. Selain tanah dan bangunan</label>
-                            <input type="text" id="q318b_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_industri[q318b]">
+                            <input type="text" id="q318b_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_industri[q318b]" required>
                             <input type="hidden" name="blok3b_industri[q318b]" id="q318b" value="{{ $surveyResponse->blok3b_industri_data['q318b'] ?? '' }}">
                         </div>
                         <div class="form-subrow">
@@ -347,7 +359,7 @@
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel required" for="q318d_area">d. Luas tanah yang digunakan untuk usaha (m persegi)</label>
-                            <input type="number" id="q318d_area" name="blok3b_industri[q318d_area]" class="form-control" min="0" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q318d_area'] ?? '' }}" placeholder="0">
+                            <input type="number" id="q318d_area" name="blok3b_industri[q318d_area]" class="form-control" min="0" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q318d_area'] ?? '' }}" placeholder="0" required>
                         </div>
                     </div>
                     <div class="form-errors"></div>
@@ -369,35 +381,35 @@
                     <div class="form-subgrid">
                         <div class="form-subrow">
                             <label class="form-sublabel" for="q319a">a. Pribadi/Perorangan</label>
-                            <input type="number" id="q319a" name="blok3b_industri[q319a]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319a'] ?? '' }}" placeholder="0">
+                            <input type="number" id="q319a" name="blok3b_industri[q319a]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319a'] ?? '' }}" placeholder="0" required>
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel" for="q319b">b. Lembaga Nonprofit yang Melayani Rumah Tangga</label>
-                            <input type="number" id="q319b" name="blok3b_industri[q319b]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319b'] ?? '' }}" placeholder="0">
+                            <input type="number" id="q319b" name="blok3b_industri[q319b]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319b'] ?? '' }}" placeholder="0" required>
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel" for="q319c">c. Korporasi Publik</label>
-                            <input type="number" id="q319c" name="blok3b_industri[q319c]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319c'] ?? '' }}" placeholder="0">
+                            <input type="number" id="q319c" name="blok3b_industri[q319c]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319c'] ?? '' }}" placeholder="0" required>
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel" for="q319d">d. Korporasi Non Publik</label>
-                            <input type="number" id="q319d" name="blok3b_industri[q319d]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319d'] ?? '' }}" placeholder="0">
+                            <input type="number" id="q319d" name="blok3b_industri[q319d]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319d'] ?? '' }}" placeholder="0" required>
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel" for="q319e">e. Pemerintah Pusat</label>
-                            <input type="number" id="q319e" name="blok3b_industri[q319e]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319e'] ?? '' }}" placeholder="0">
+                            <input type="number" id="q319e" name="blok3b_industri[q319e]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319e'] ?? '' }}" placeholder="0" required>
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel" for="q319f">f. Pemerintah Daerah</label>
-                            <input type="number" id="q319f" name="blok3b_industri[q319f]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319f'] ?? '' }}" placeholder="0">
+                            <input type="number" id="q319f" name="blok3b_industri[q319f]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319f'] ?? '' }}" placeholder="0" required>
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel" for="q319g">g. Perusahaan Swasta Nasional</label>
-                            <input type="number" id="q319g" name="blok3b_industri[q319g]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319g'] ?? '' }}" placeholder="0">
+                            <input type="number" id="q319g" name="blok3b_industri[q319g]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319g'] ?? '' }}" placeholder="0" required>
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel" for="q319h">h. Asing</label>
-                            <input type="number" id="q319h" name="blok3b_industri[q319h]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319h'] ?? '' }}" placeholder="0">
+                            <input type="number" id="q319h" name="blok3b_industri[q319h]" class="form-control percent-input" min="0" max="100" step="0.01" value="{{ $surveyResponse->blok3b_industri_data['q319h'] ?? '' }}" placeholder="0" required>
                         </div>
                         <div class="form-subrow">
                             <label class="form-sublabel required" for="q319i_display">i. Total (otomatis) — harus 100%</label>
@@ -413,7 +425,190 @@
             </div>
         </div>
 
-        {{-- ── Form actions ──────────────────────────────────── --}}
+        {{-- ── 701-703. Prospek dan Kendala Usaha (tahunan only) ─── --}}
+        @if(($triwulan ?? 0) == 0)
+        <div class="form-section" id="section-prospek-kendala" style="margin-top:1.5rem;" data-aos="fade-up" data-aos-delay="160">
+            <div class="section-header">
+                <h3 class="section-title">PROSPEK DAN KENDALA USAHA/PERUSAHAAN</h3>
+            </div>
+            <div class="form-grid">
+
+                {{-- Q701: Kendala/Kesulitan --}}
+                <div class="form-row">
+                    <label class="form-label">
+                        <span class="question-number">320.</span>
+                        <span>Apakah selama tahun 2025 usaha/perusahaan mengalami kendala/kesulitan berikut?</span>
+                    </label>
+                    <div class="form-subgrid">
+                        <div class="form-subrow" id="q701a-row">
+                            <label class="form-sublabel">a. Permodalan</label>
+                            <div class="radio-group" id="q701a-group">
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q320]" id="q701a_ya" value="1" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q320']) && $surveyResponse->blok3b_industri_data['q320'] == '1') ? 'checked' : '' }}>
+                                    <label for="q701a_ya" class="radio-label">Ya</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q320]" id="q701a_tidak" value="2" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q320']) && $surveyResponse->blok3b_industri_data['q320'] == '2') ? 'checked' : '' }}>
+                                    <label for="q701a_tidak" class="radio-label">Tidak</label>
+                                </div>
+                            </div>
+                            <div class="field-error" id="q701a-error">Wajib dipilih salah satu.</div>
+                        </div>
+                        <div class="form-subrow" id="q701b-row">
+                            <label class="form-sublabel">b. Bahan baku</label>
+                            <div class="radio-group" id="q701b-group">
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q321]" id="q701b_ya" value="1" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q321']) && $surveyResponse->blok3b_industri_data['q321'] == '1') ? 'checked' : '' }}>
+                                    <label for="q701b_ya" class="radio-label">Ya</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q321]" id="q701b_tidak" value="2" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q321']) && $surveyResponse->blok3b_industri_data['q321'] == '2') ? 'checked' : '' }}>
+                                    <label for="q701b_tidak" class="radio-label">Tidak</label>
+                                </div>
+                            </div>
+                            <div class="field-error" id="q701b-error">Wajib dipilih salah satu.</div>
+                        </div>
+                        <div class="form-subrow" id="q701c-row">
+                            <label class="form-sublabel">c. Pemasaran</label>
+                            <div class="radio-group" id="q701c-group">
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q322]" id="q701c_ya" value="1" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q322']) && $surveyResponse->blok3b_industri_data['q322'] == '1') ? 'checked' : '' }}>
+                                    <label for="q701c_ya" class="radio-label">Ya</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q322]" id="q701c_tidak" value="2" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q322']) && $surveyResponse->blok3b_industri_data['q322'] == '2') ? 'checked' : '' }}>
+                                    <label for="q701c_tidak" class="radio-label">Tidak</label>
+                                </div>
+                            </div>
+                            <div class="field-error" id="q701c-error">Wajib dipilih salah satu.</div>
+                        </div>
+                        <div class="form-subrow" id="q701d-row">
+                            <label class="form-sublabel">d. Iklim Usaha</label>
+                            <div class="radio-group" id="q701d-group">
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q323]" id="q701d_ya" value="1" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q323']) && $surveyResponse->blok3b_industri_data['q323'] == '1') ? 'checked' : '' }}>
+                                    <label for="q701d_ya" class="radio-label">Ya</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q323]" id="q701d_tidak" value="2" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q323']) && $surveyResponse->blok3b_industri_data['q323'] == '2') ? 'checked' : '' }}>
+                                    <label for="q701d_tidak" class="radio-label">Tidak</label>
+                                </div>
+                            </div>
+                            <div class="field-error" id="q701d-error">Wajib dipilih salah satu.</div>
+                        </div>
+                    </div>
+                    <div class="form-errors"></div>
+                </div>
+
+                {{-- Q702: Rencana Rekrut/Pengembangan 2026 --}}
+                <div class="form-row" id="q702-row">
+                    <label class="form-label">
+                        <span class="question-number">321.</span>
+                        <span>Apakah tahun 2026 usaha/perusahaan berencana merekrut pegawai atau mengembangkan/memperluas usaha?</span>
+                    </label>
+                    <div class="radio-group" id="q702-group">
+                        <div class="radio-option">
+                            <input type="radio" name="blok3b_industri[q324]" id="q702_ya" value="1" class="radio-input"
+                                   {{ (isset($surveyResponse->blok3b_industri_data['q324']) && $surveyResponse->blok3b_industri_data['q324'] == '1') ? 'checked' : '' }}>
+                            <label for="q702_ya" class="radio-label">Ya</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="blok3b_industri[q324]" id="q702_tidak" value="2" class="radio-input"
+                                   {{ (isset($surveyResponse->blok3b_industri_data['q324']) && $surveyResponse->blok3b_industri_data['q324'] == '2') ? 'checked' : '' }}>
+                            <label for="q702_tidak" class="radio-label">Tidak</label>
+                        </div>
+                    </div>
+                    <div class="form-errors"><div class="field-error" id="q702-error">Wajib dipilih salah satu.</div></div>
+                </div>
+
+                {{-- Q703: Strategi Daya Saing --}}
+                <div class="form-row">
+                    <label class="form-label">
+                        <span class="question-number">322.</span>
+                        <span>Strategi perusahaan untuk peningkatan daya saing?</span>
+                    </label>
+                    <div class="form-subgrid">
+                        <div class="form-subrow" id="q703a-row">
+                            <label class="form-sublabel">a. Inovasi (barang dan jasa)</label>
+                            <div class="radio-group" id="q703a-group">
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q325]" id="q703a_ya" value="1" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q325']) && $surveyResponse->blok3b_industri_data['q325'] == '1') ? 'checked' : '' }}>
+                                    <label for="q703a_ya" class="radio-label">Ya</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q325]" id="q703a_tidak" value="2" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q325']) && $surveyResponse->blok3b_industri_data['q325'] == '2') ? 'checked' : '' }}>
+                                    <label for="q703a_tidak" class="radio-label">Tidak</label>
+                                </div>
+                            </div>
+                            <div class="field-error" id="q703a-error">Wajib dipilih salah satu.</div>
+                        </div>
+                        <div class="form-subrow" id="q703b-row">
+                            <label class="form-sublabel">b. Pengembangan Teknologi</label>
+                            <div class="radio-group" id="q703b-group">
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q326]" id="q703b_ya" value="1" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q326']) && $surveyResponse->blok3b_industri_data['q326'] == '1') ? 'checked' : '' }}>
+                                    <label for="q703b_ya" class="radio-label">Ya</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q326]" id="q703b_tidak" value="2" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q326']) && $surveyResponse->blok3b_industri_data['q326'] == '2') ? 'checked' : '' }}>
+                                    <label for="q703b_tidak" class="radio-label">Tidak</label>
+                                </div>
+                            </div>
+                            <div class="field-error" id="q703b-error">Wajib dipilih salah satu.</div>
+                        </div>
+                        <div class="form-subrow" id="q703c-row">
+                            <label class="form-sublabel">c. Pemasaran (marketing)</label>
+                            <div class="radio-group" id="q703c-group">
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q327]" id="q703c_ya" value="1" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q327']) && $surveyResponse->blok3b_industri_data['q327'] == '1') ? 'checked' : '' }}>
+                                    <label for="q703c_ya" class="radio-label">Ya</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q327]" id="q703c_tidak" value="2" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q327']) && $surveyResponse->blok3b_industri_data['q327'] == '2') ? 'checked' : '' }}>
+                                    <label for="q703c_tidak" class="radio-label">Tidak</label>
+                                </div>
+                            </div>
+                            <div class="field-error" id="q703c-error">Wajib dipilih salah satu.</div>
+                        </div>
+                        <div class="form-subrow" id="q703d-row">
+                            <label class="form-sublabel">d. Kemitraan (UMKM, pemerintah, dll)</label>
+                            <div class="radio-group" id="q703d-group">
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q328]" id="q703d_ya" value="1" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q328']) && $surveyResponse->blok3b_industri_data['q328'] == '1') ? 'checked' : '' }}>
+                                    <label for="q703d_ya" class="radio-label">Ya</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" name="blok3b_industri[q328]" id="q703d_tidak" value="2" class="radio-input"
+                                           {{ (isset($surveyResponse->blok3b_industri_data['q328']) && $surveyResponse->blok3b_industri_data['q328'] == '2') ? 'checked' : '' }}>
+                                    <label for="q703d_tidak" class="radio-label">Tidak</label>
+                                </div>
+                            </div>
+                            <div class="field-error" id="q703d-error">Wajib dipilih salah satu.</div>
+                        </div>
+                    </div>
+                    <div class="form-errors"></div>
+                </div>
+
+            </div>
+        </div>
+        @endif
+
+        {{-- ── Form actions ──────────────────────────────────────── --}}
         <div class="form-actions" style="margin-top:2rem;">
             <div class="flex items-center gap-4">
                 <button type="button" id="back-to-blok3b" class="btn btn-secondary">
@@ -440,7 +635,7 @@
     </form>
 </div>
 
-@if(!empty($historicalResponses))
+@if(!empty($historicalResponses) && !(isset($triwulan) && $triwulan === 1))
 @include('survey.sibstr.partials.historical-drawer', [
     'historicalResponses' => $historicalResponses,
     'blockKey'            => 'blok3a2',

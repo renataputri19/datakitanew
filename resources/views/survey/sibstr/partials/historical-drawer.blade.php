@@ -62,8 +62,6 @@
             ['label'=>'Q311b.  Upah/gaji — tahun berjalan',             'key'=>'q311b',     'type'=>'currency'],
             ['label'=>'Q311b.1 Upah produksi (tahun)',                  'key'=>'q311b1',    'type'=>'currency'],
             ['label'=>'Q311b.2 Upah non-produksi (tahun)',              'key'=>'q311b2',    'type'=>'currency'],
-            ['label'=>'Q312.   Biaya listrik — triwulan lalu',          'key'=>'q312',      'type'=>'currency'],
-            ['label'=>'Q312.   Biaya listrik — tahun berjalan',         'key'=>'q312_year', 'type'=>'currency'],
             ['label'=>'Q313.   Biaya bahan bakar — triwulan lalu',      'key'=>'q313',      'type'=>'currency'],
             ['label'=>'Q313.   Biaya bahan bakar — tahun berjalan',     'key'=>'q313_year', 'type'=>'currency'],
         ]],

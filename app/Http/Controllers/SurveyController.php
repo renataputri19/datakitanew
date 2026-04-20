@@ -121,6 +121,31 @@ class SurveyController extends Controller
     }
 
     /**
+     * Guard for Triwulan 2026: blocks access unless the 2025 Tahunan survey has
+     * reached FINISH_SURVEY status (is_completed = true, set only by Block 6 finish).
+     * Returns a redirect to the landing page when access is denied, or null to allow.
+     *
+     * @param  \App\Models\User $user
+     * @return \Illuminate\Http\RedirectResponse|null
+     */
+    private function checkTriwulanAccess($user): ?\Illuminate\Http\RedirectResponse
+    {
+        ['tahun' => $tahun, 'triwulan' => $triwulan] = $this->getPeriod();
+
+        if ($tahun !== 2026 || $triwulan < 1) {
+            return null;
+        }
+
+        if (!SurveyResponse::isTahunanFullyCompletedForUser($user->id)) {
+            return redirect()
+                ->route('survey.sibstr.entry')
+                ->with('error', 'Survei Triwulanan 2026 hanya dapat diakses setelah Survei Tahunan 2025 diselesaikan sepenuhnya melalui Blok VI.');
+        }
+
+        return null;
+    }
+
+    /**
      * Check if the SIBSTR survey for the current period is completed.
      * Period-aware: only redirects if THIS period's row is completed.
      *
@@ -146,6 +171,239 @@ class SurveyController extends Controller
     }
 
     /**
+     * Sequential block access guard.
+     *
+     * Prevents navigating to a survey block unless all prerequisite blocks for
+     * that user's path (determined by kondisi_perusahaan and KBLI) are complete.
+     * Returns a redirect to the first incomplete prerequisite, or null when the
+     * requested block is accessible.
+     *
+     * @param  string  $requestedBlock  Route-name suffix, e.g. 'blok6', 'blok3b.industri'
+     */
+    private function checkSequentialBlockAccess(string $requestedBlock): ?\Illuminate\Http\RedirectResponse
+    {
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
+        $user = Auth::user();
+
+        $response = SurveyResponse::where('user_id', $user->id)
+            ->where('survey_type', 'sibstr')
+            ->where('tahun', $tahun)
+            ->where('triwulan', $triwulan)
+            ->first();
+
+        $firstIncomplete = $this->resolveFirstIncompleteBlock($response, $requestedBlock, $triwulan);
+
+        if ($firstIncomplete !== null) {
+            return redirect()
+                ->route("survey.sibstr.{$firstIncomplete}", ['year' => $tahun, 'period' => $period])
+                ->with('warning', 'Silakan lengkapi blok sebelumnya terlebih dahulu sebelum melanjutkan.');
+        }
+
+        return null;
+    }
+
+    /**
+     * Determine the first prerequisite block that is not yet complete for the
+     * requested block, or null when the requested block is accessible.
+     *
+     * Block sequences by company type and period:
+     *
+     *  Non-active company (any period):
+     *    blok1 → blok2 → blok6
+     *
+     *  Active + Industri (KBLI 10–33), tahunan:
+     *    blok1 → blok2 → blok3a → blok3b.industri → blok3c.industri → blok4 → blok5 → blok6
+     *
+     *  Active + Industri (KBLI 10–33), triwulanan:
+     *    blok1 → blok2 → blok3a → blok3b.industri → blok5 → blok6
+     *
+     *  Active + Non-Industri, tahunan:
+     *    blok1 → blok2 → blok3b.nonindustri → blok4 → blok5 → blok6
+     *
+     *  Active + Non-Industri, triwulanan:
+     *    blok1 → blok2 → blok3b.nonindustri → blok5 → blok6
+     *
+     * @param  \App\Models\SurveyResponse|null  $r
+     * @param  string  $requestedBlock
+     * @param  int     $triwulan
+     * @return string|null  Route-name suffix of the first incomplete prerequisite, or null.
+     */
+    private function resolveFirstIncompleteBlock(
+        ?SurveyResponse $r,
+        string $requestedBlock,
+        int $triwulan
+    ): ?string {
+        // blok1 is always the universal entry point
+        if ($requestedBlock === 'blok1') {
+            return null;
+        }
+
+        // Everything beyond blok1 requires it to be complete
+        if (!$r || !$r->isBlok1Complete()) {
+            return 'blok1';
+        }
+
+        if ($requestedBlock === 'blok2') {
+            return null;
+        }
+
+        // Everything beyond blok2 requires it to be submitted with key fields
+        if (!$r->isBlok2Complete()) {
+            return 'blok2';
+        }
+
+        // Non-active company: only blok6 follows blok2
+        if ($r->kondisi_perusahaan !== 'masih_aktif') {
+            return ($requestedBlock === 'blok6') ? null : 'blok6';
+        }
+
+        // Active company – build the ordered path for this user + period
+        $kbliIndustri = $r->isKbliIndustri();
+
+        $path = $kbliIndustri
+            ? ($triwulan === 0
+                ? ['blok3a', 'blok3b.industri', 'blok3c.industri', 'blok4', 'blok5', 'blok6']
+                : ['blok3a', 'blok3b.industri', 'blok5', 'blok6'])
+            : ($triwulan === 0
+                ? ['blok3b.nonindustri', 'blok4', 'blok5', 'blok6']
+                : ['blok3b.nonindustri', 'blok5', 'blok6']);
+
+        // Completion checkers keyed by block route-name suffix
+        $completionOf = [
+            'blok3a'             => fn () => $r->isBlok3aComplete(),
+            'blok3b.industri'    => fn () => (bool) $r->blok3b_industri_completed,
+            'blok3c.industri'    => fn () => (bool) $r->blok3a2_completed,
+            'blok3b.nonindustri' => fn () => (bool) $r->blok3b_nonindustri_completed,
+            'blok4'              => fn () => (bool) $r->blok4_completed,
+            'blok5'              => fn () => (bool) $r->blok5_completed,
+            'blok6'              => fn () => true,
+        ];
+
+        $posInPath = array_search($requestedBlock, $path, true);
+
+        if ($posInPath === false) {
+            // Block is not part of this user's valid path.
+            // Redirect to the first incomplete block in the valid path.
+            foreach ($path as $block) {
+                if ($block === 'blok6') {
+                    break;
+                }
+                $checker = $completionOf[$block] ?? fn () => true;
+                if (!$checker()) {
+                    return $block;
+                }
+            }
+            return 'blok6';
+        }
+
+        // Check every prerequisite block in order
+        for ($i = 0; $i < $posInPath; $i++) {
+            $block   = $path[$i];
+            $checker = $completionOf[$block] ?? fn () => true;
+            if (!$checker()) {
+                return $block;
+            }
+        }
+
+        return null; // All prerequisites met; access is granted
+    }
+
+    /**
+     * Comprehensive sequential validation for the final survey submission.
+     *
+     * Aggregates the "Data belum lengkap" criteria from every individual block
+     * page and evaluates them in order. Returns a ['block' => ..., 'label' => ...]
+     * array for the FIRST failing block, or null when all blocks are complete.
+     *
+     * Sequences mirror resolveFirstIncompleteBlock:
+     *
+     *   Non-active company (any period):
+     *     blok1 → blok2
+     *
+     *   Active + Industri (KBLI 10–33), tahunan:
+     *     blok1 → blok2 → blok3a → blok3b.industri → blok3c.industri → blok4 → blok5
+     *
+     *   Active + Industri (KBLI 10–33), triwulanan:
+     *     blok1 → blok2 → blok3a → blok3b.industri → blok5
+     *
+     *   Active + Non-Industri, tahunan:
+     *     blok1 → blok2 → blok3b.nonindustri → blok4 → blok5
+     *
+     *   Active + Non-Industri, triwulanan:
+     *     blok1 → blok2 → blok3b.nonindustri → blok5
+     *
+     * @param  SurveyResponse|null $r
+     * @param  int                 $triwulan
+     * @return array{block: string, label: string}|null
+     */
+    private function runFinishSurveyValidation(?SurveyResponse $r, int $triwulan): ?array
+    {
+        $labels = [
+            'blok1'              => 'Blok I (Identitas Perusahaan)',
+            'blok2'              => 'Blok II (Keterangan Umum Perusahaan)',
+            'blok3a'             => 'Blok IIIA (Daftar Barang yang Diproduksi)',
+            'blok3b.industri'    => 'Blok IIIB Industri (Produksi dan Pendapatan)',
+            'blok3c.industri'    => 'Blok IIIC Industri (Pengeluaran)',
+            'blok3b.nonindustri' => 'Blok IIIB Non-Industri (Pendapatan)',
+            'blok4'              => 'Blok IV (Fenomena dan Indikator)',
+            'blok5'              => 'Blok V (Tenaga Kerja)',
+        ];
+
+        $fail = fn (string $block): array => [
+            'block' => $block,
+            'label' => $labels[$block] ?? "Blok {$block}",
+        ];
+
+        $isTahunan = $triwulan === 0;
+
+        // ── Blok 1 ──────────────────────────────────────────────
+        if (!$r || !$r->isBlok1Complete()) {
+            return $fail('blok1');
+        }
+
+        // ── Blok 2 ──────────────────────────────────────────────
+        if (!$r->isBlok2Complete()) {
+            return $fail('blok2');
+        }
+
+        // Non-active company: blok1 & blok2 are the only requirements
+        if ($r->kondisi_perusahaan !== 'masih_aktif') {
+            return null;
+        }
+
+        // ── Blok 3 — KBLI-conditional ───────────────────────────
+        if ($r->isKbliIndustri()) {
+            // Industri path: 3A → 3B Industri → 3C Industri (tahunan only)
+            if (!$r->isBlok3aComplete()) {
+                return $fail('blok3a');
+            }
+            if (!$r->isBlok3bIndustriComplete()) {
+                return $fail('blok3b.industri');
+            }
+            if ($isTahunan && !$r->blok3a2_completed) {
+                return $fail('blok3c.industri');
+            }
+        } else {
+            // Non-Industri path: 3B Non-Industri only (3A and 3C are skipped entirely)
+            if (!$r->blok3b_nonindustri_completed) {
+                return $fail('blok3b.nonindustri');
+            }
+        }
+
+        // ── Blok 4 (tahunan only) ────────────────────────────────
+        if ($isTahunan && !$r->isBlok4Complete()) {
+            return $fail('blok4');
+        }
+
+        // ── Blok 5 ──────────────────────────────────────────────
+        if (!$r->blok5_completed) {
+            return $fail('blok5');
+        }
+
+        return null; // All blocks complete — proceed to finish
+    }
+
+    /**
      * SIBSTR survey landing/overview page.
      * Shows the sequential steps: Annual 2025 → Quarterly 2026.
      * Quarterly is gated behind annual completion + Q207 fields.
@@ -165,10 +423,12 @@ class SurveyController extends Controller
 
         $annualDone       = $annualResponse && $annualResponse->is_completed;
         $annualInProgress = $annualResponse && !$annualResponse->is_completed;
-        $q207Complete     = $annualDone ? $annualResponse->isQ207TahunanComplete() : false;
 
-        // Quarterly only unlocked when annual is completed AND Q207 worker-detail fields are filled
-        $quarterlyUnlocked = $annualDone && $q207Complete;
+        // Quarterly unlocked ONLY when annual_survey_status = 'FINISH_SURVEY'.
+        // This is set exclusively by finishSurvey() when the user submits Block 6.
+        // Legacy rows with is_completed = true but null annual_survey_status remain locked
+        // until the user re-submits Block 6 through the finish flow.
+        $quarterlyUnlocked = SurveyResponse::isTahunanFullyCompletedForUser($user->id);
 
         // Build triwulan cards for 2026
         $availableTriwulan = SurveyResponse::availableTriwulan($triwulanYear);
@@ -202,7 +462,6 @@ class SurveyController extends Controller
             'annualResponse'    => $annualResponse,
             'annualDone'        => $annualDone,
             'annualInProgress'  => $annualInProgress,
-            'q207Complete'      => $q207Complete,
             'quarterlyUnlocked' => $quarterlyUnlocked,
             'annualYear'        => $annualYear,
             'triwulanYear'      => $triwulanYear,
@@ -219,6 +478,10 @@ class SurveyController extends Controller
     public function sibstrBlok1()
     {
         $user = Auth::user();
+
+        if ($redirect = $this->checkTriwulanAccess($user)) {
+            return $redirect;
+        }
 
         if ($redirect = $this->checkSibstrCompletion($user)) {
             return $redirect;
@@ -259,7 +522,15 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
+        if ($redirect = $this->checkTriwulanAccess($user)) {
+            return $redirect;
+        }
+
         if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
+
+        if ($redirect = $this->checkSequentialBlockAccess('blok2')) {
             return $redirect;
         }
 
@@ -283,7 +554,15 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
+        if ($redirect = $this->checkTriwulanAccess($user)) {
+            return $redirect;
+        }
+
         if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
+
+        if ($redirect = $this->checkSequentialBlockAccess('blok3a')) {
             return $redirect;
         }
 
@@ -328,7 +607,15 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
+        if ($redirect = $this->checkTriwulanAccess($user)) {
+            return $redirect;
+        }
+
         if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
+
+        if ($redirect = $this->checkSequentialBlockAccess('blok6')) {
             return $redirect;
         }
 
@@ -361,7 +648,15 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
+        if ($redirect = $this->checkTriwulanAccess($user)) {
+            return $redirect;
+        }
+
         if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
+
+        if ($redirect = $this->checkSequentialBlockAccess('blok4')) {
             return $redirect;
         }
 
@@ -396,7 +691,15 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
+        if ($redirect = $this->checkTriwulanAccess($user)) {
+            return $redirect;
+        }
+
         if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
+
+        if ($redirect = $this->checkSequentialBlockAccess('blok5')) {
             return $redirect;
         }
 
@@ -430,7 +733,15 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
+        if ($redirect = $this->checkTriwulanAccess($user)) {
+            return $redirect;
+        }
+
         if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
+
+        if ($redirect = $this->checkSequentialBlockAccess('blok3b.industri')) {
             return $redirect;
         }
 
@@ -467,9 +778,18 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
+        if ($redirect = $this->checkTriwulanAccess($user)) {
+            return $redirect;
+        }
+
         if ($redirect = $this->checkSibstrCompletion($user)) {
             return $redirect;
         }
+
+        if ($redirect = $this->checkSequentialBlockAccess('blok3b.nonindustri')) {
+            return $redirect;
+        }
+
         ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
 
         // Pastikan perusahaan masih aktif menggunakan latest response
@@ -1293,12 +1613,21 @@ class SurveyController extends Controller
         try {
             $user = Auth::user();
 
-            // Validate the request for Blok 4 fields (text areas)
+            $isCompleted = $request->boolean('is_completed', false);
+
+            // When completing, all four textarea fields are strictly required
+            $requiredOrNullable = $isCompleted ? 'required' : 'nullable';
+
             $validator = Validator::make($request->all(), [
-                'blok4.triwulan1' => 'nullable|string|max:3000',
-                'blok4.triwulan2' => 'nullable|string|max:3000',
-                'blok4.triwulan3' => 'nullable|string|max:3000',
-                'blok4.triwulan4' => 'nullable|string|max:3000',
+                'blok4.triwulan1' => "{$requiredOrNullable}|string|max:3000",
+                'blok4.triwulan2' => "{$requiredOrNullable}|string|max:3000",
+                'blok4.triwulan3' => "{$requiredOrNullable}|string|max:3000",
+                'blok4.triwulan4' => "{$requiredOrNullable}|string|max:3000",
+            ], [
+                'blok4.triwulan1.required' => 'Fenomena Triwulan I (Jan–Mar) wajib diisi',
+                'blok4.triwulan2.required' => 'Fenomena Triwulan II (Apr–Jun) wajib diisi',
+                'blok4.triwulan3.required' => 'Fenomena Triwulan III (Jul–Sep) wajib diisi',
+                'blok4.triwulan4.required' => 'Fenomena Triwulan IV (Okt–Des) wajib diisi',
             ]);
 
             if ($validator->fails()) {
@@ -1347,30 +1676,26 @@ class SurveyController extends Controller
 
             $isCompleted = $request->boolean('is_completed', false);
 
-            // Build validation rules. When completing, all radio groups are required.
+            // Blok 5 fields are non-mandatory — accept any partial submission.
+            ['triwulan' => $twCheck] = $this->getPeriod();
+            $rows = ['501','502','503','504','505','506','507'];
+            $periods = $twCheck > 0 ? ['p1','p2'] : ['p1','p2','p3','p4','p5','p6'];
+
             $rules = [
-                'blok5' => $isCompleted ? 'required|array' : 'nullable|array',
+                'blok5' => 'nullable|array',
             ];
 
-            if ($isCompleted) {
-                ['triwulan' => $twCheck] = $this->getPeriod();
-                $rows = ['501','502','503','504','505','506','507'];
-                // Triwulanan uses only p1 (kondisi) and p2 (prospek)
-                $periods = $twCheck > 0 ? ['p1','p2'] : ['p1','p2','p3','p4','p5','p6'];
-                foreach ($rows as $row) {
-                    foreach ($periods as $period) {
-                        if ($row === '506') {
-                            $rules["blok5.$row.$period"] = 'required|in:lebih_cepat,tetap,lebih_lambat';
-                        } else {
-                            $rules["blok5.$row.$period"] = 'required|in:naik,tetap,turun';
-                        }
+            foreach ($rows as $row) {
+                foreach ($periods as $period) {
+                    if ($row === '506') {
+                        $rules["blok5.$row.$period"] = 'nullable|in:lebih_cepat,tetap,lebih_lambat';
+                    } else {
+                        $rules["blok5.$row.$period"] = 'nullable|in:naik,tetap,turun';
                     }
                 }
             }
 
             $messages = [
-                'blok5.required' => 'Semua pertanyaan Blok V wajib diisi.',
-                'blok5.*.*.required' => 'Pilihan wajib dipilih.',
                 'blok5.*.*.in' => 'Pilihan tidak valid.',
             ];
 
@@ -1689,7 +2014,6 @@ class SurveyController extends Controller
             $updateData = $request->except(['_token']);
 
             // Mark as completed if requested
-            // Mark as completed if requested
             if ($request->has('is_completed')) {
                 // For Blok 3A, we restrict completion unless it was ALREADY completed (Edit Mode)
                 $updateData['is_completed'] = $surveyResponse->is_completed ? true : false;
@@ -1763,6 +2087,10 @@ class SurveyController extends Controller
     public function sibstrBlok3a2()
     {
         $user = Auth::user();
+
+        if ($redirect = $this->checkTriwulanAccess($user)) {
+            return $redirect;
+        }
 
         if ($redirect = $this->checkSibstrCompletion($user)) {
             return $redirect;
@@ -1941,6 +2269,19 @@ class SurveyController extends Controller
     public function sibstrBlok3cIndustri(Request $request)
     {
         $user = Auth::user();
+
+        if ($redirect = $this->checkTriwulanAccess($user)) {
+            return $redirect;
+        }
+
+        if ($redirect = $this->checkSibstrCompletion($user)) {
+            return $redirect;
+        }
+
+        if ($redirect = $this->checkSequentialBlockAccess('blok3c.industri')) {
+            return $redirect;
+        }
+
         ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
 
         $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok3a2', $tahun, $triwulan);
@@ -2169,9 +2510,8 @@ class SurveyController extends Controller
                     'blok3b_industri.q309_awal'       => 'nullable|numeric|min:0',
                     'blok3b_industri.q309_akhir'      => 'nullable|numeric|min:0',
                     'blok3b_industri.q310'            => 'nullable|numeric|min:0',
-                    // Q311a: biaya TK triwulan lalu (both modes)
-                    'blok3b_industri.q311a'           => 'required|numeric|min:0',
-                    'blok3b_industri.q312'            => 'nullable|numeric|min:0',
+                    // Q311a: biaya TK triwulan lalu — nullable because no input field exists on this page
+                    'blok3b_industri.q311a'           => 'nullable|numeric|min:0',
                     'blok3b_industri.q313'            => 'nullable|numeric|min:0',
                     'blok3b_industri.q315a'           => 'nullable|numeric|min:0',
                     'blok3b_industri.q315b'           => 'nullable|numeric|min:0',
@@ -2189,11 +2529,10 @@ class SurveyController extends Controller
                         'blok3b_industri.q310b_awal'      => 'nullable|numeric|min:0',
                         'blok3b_industri.q310b_akhir'     => 'nullable|numeric|min:0',
                         'blok3b_industri.q310_year'       => 'nullable|numeric|min:0',
-                        // Q311b: TK selama tahun 2025 (tahunan-only)
-                        'blok3b_industri.q311b'           => 'required|numeric|min:0',
-                        'blok3b_industri.q311b1'          => 'required|numeric|min:0',
-                        'blok3b_industri.q311b2'          => 'required|numeric|min:0',
-                        'blok3b_industri.q312_year'       => 'nullable|numeric|min:0',
+                        // Q311b: TK selama tahun 2025 — nullable because no input fields exist on this page
+                        'blok3b_industri.q311b'           => 'nullable|numeric|min:0',
+                        'blok3b_industri.q311b1'          => 'nullable|numeric|min:0',
+                        'blok3b_industri.q311b2'          => 'nullable|numeric|min:0',
                         'blok3b_industri.q313_year'       => 'nullable|numeric|min:0',
                     ]);
                 }
@@ -2503,6 +2842,11 @@ class SurveyController extends Controller
     /**
      * Finish the survey and mark as completed.
      *
+     * Runs the comprehensive sequential validation (runFinishSurveyValidation)
+     * before persisting any completion flags. On success for the 2025 Tahunan
+     * survey, sets annual_survey_status = 'FINISH_SURVEY', which is the
+     * authoritative gate that unlocks Triwulan 2026 access.
+     *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -2511,30 +2855,64 @@ class SurveyController extends Controller
         try {
             $user = Auth::user();
 
-            // Get the survey response for Blok 6
-            ['tahun' => $tahun, 'triwulan' => $triwulan] = $this->getPeriod();
+            ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
+
+            // Save any Blok 6 payload (catatan, etc.) before running validation
             $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok6', $tahun, $triwulan);
 
-            // Handle fields in request (e.g. catatan)
-            $incoming = $request->except(['_token', 'is_completed']);
-            
+            $incoming = $request->except(['_token', 'is_completed', '_edit_mode']);
             if (!empty($incoming)) {
                 $current = $surveyResponse->blok6_data ?? [];
                 foreach ($incoming as $key => $val) {
                     $current[$key] = $val;
                 }
-                $updateData['blok6_data'] = $current;
+                $surveyResponse->updateWithAutoSave(['blok6_data' => $current]);
+                $surveyResponse->refresh();
             }
 
-            // Save and mark as completed
-            $updateData['is_completed'] = true;
+            // ── Comprehensive sequential validation ─────────────────────────
+            // Re-fetch the single consolidated row for this period; all blocks
+            // share one row, so this is equivalent to $surveyResponse after refresh.
+            $consolidated = SurveyResponse::where('user_id', $user->id)
+                ->where('survey_type', 'sibstr')
+                ->where('tahun', $tahun)
+                ->where('triwulan', $triwulan)
+                ->first();
+
+            $failed = $this->runFinishSurveyValidation($consolidated, $triwulan);
+
+            if ($failed !== null) {
+                $isEditMode  = $request->boolean('_edit_mode');
+                $routePrefix = $isEditMode ? 'survey.sibstr.edit.' : 'survey.sibstr.';
+                $redirectUrl = route($routePrefix . $failed['block'], ['year' => $tahun, 'period' => $period, 'show_validation' => 1]);
+
+                return response()->json([
+                    'success'          => false,
+                    'redirect_to'      => $redirectUrl,
+                    'incomplete_block' => $failed['block'],
+                    'message'          => "{$failed['label']} belum lengkap. Silakan lengkapi terlebih dahulu.",
+                ], 422);
+            }
+            // ── End validation ───────────────────────────────────────────────
+
+            $isTahunan  = $triwulan === 0;
+            $updateData = ['is_completed' => true, 'blok6_completed' => true];
+
+            if ($isTahunan) {
+                // Setting FINISH_SURVEY is the authoritative gate for Triwulan 2026 access.
+                // isTahunanFullyCompletedForUser() checks exactly this field.
+                $updateData['annual_survey_status'] = 'FINISH_SURVEY';
+            }
 
             $surveyResponse->updateWithAutoSave($updateData);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Survey completed successfully',
-                'completed_at' => $surveyResponse->last_saved_at->format('Y-m-d H:i:s')
+                'success'                 => true,
+                'message'                 => $isTahunan
+                    ? 'Survei Tahunan 2025 berhasil diselesaikan. Akses Survei Triwulanan 2026 telah dibuka.'
+                    : 'Survei berhasil diselesaikan.',
+                'completed_at'            => $surveyResponse->last_saved_at->format('Y-m-d H:i:s'),
+                'triwulan_access_granted' => $isTahunan,
             ]);
 
         } catch (\Exception $e) {

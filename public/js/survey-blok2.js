@@ -18,6 +18,10 @@ class SurveyBlok2Manager {
 
         // Initialize conditional logic on page load
         this.initializeConditionalLogic();
+
+        // Run R207 check immediately so pre-filled inconsistent data is flagged
+        // without requiring the user to touch any field first.
+        this.validateR207();
     }
 
     // setupEventListeners is defined later in the class to include extended logic
@@ -25,15 +29,19 @@ class SurveyBlok2Manager {
     setupValidation() {
         // Real-time validation for required fields
         const requiredFields = this.form.querySelectorAll('[required]');
+        const processedRadioGroups = new Set();
         requiredFields.forEach(field => {
             if (field.type === 'radio') {
-                // For radio buttons, add validation to all buttons in the group
-                const radioGroup = document.querySelectorAll(`input[name="${field.name}"]`);
-                radioGroup.forEach(radio => {
-                    radio.addEventListener('change', () => {
-                        this.validateRadioGroup(field.name);
+                // Only attach listeners once per group name to avoid duplicates
+                if (!processedRadioGroups.has(field.name)) {
+                    processedRadioGroups.add(field.name);
+                    const radioGroup = document.querySelectorAll(`input[name="${field.name}"]`);
+                    radioGroup.forEach(radio => {
+                        radio.addEventListener('change', () => {
+                            this.validateRadioGroup(field.name);
+                        });
                     });
-                });
+                }
             } else {
                 field.addEventListener('blur', () => {
                     this.validateField(field);
@@ -367,8 +375,12 @@ class SurveyBlok2Manager {
     // Attach listeners for conditional fields
     setupEventListeners() {
         // Save and Complete button
-        const saveCompleteButton = document.getElementById('save-complete');
-        if (saveCompleteButton) {
+        // Clone-and-replace to remove any listener attached by survey.js before ours,
+        // so only blok2's handler fires on click (preventing double validation / duplicate errors).
+        const saveCompleteOld = document.getElementById('save-complete');
+        if (saveCompleteOld) {
+            const saveCompleteButton = saveCompleteOld.cloneNode(true);
+            saveCompleteOld.parentNode.replaceChild(saveCompleteButton, saveCompleteOld);
             saveCompleteButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.handleSaveComplete();
@@ -476,6 +488,27 @@ class SurveyBlok2Manager {
             });
         }
 
+        // R207 consistency validation — real-time on every value change.
+        // 'input'  : fires on each keystroke / spinner click / paste
+        // 'change' : catches autofill, programmatic updates, and browser-native spinner
+        //            interactions that some browsers only fire 'change' for (not 'input').
+        const r207FieldIds = [
+            'jumlah_seluruh_pekerja',
+            'tenaga_kerja_laki_laki',
+            'tenaga_kerja_perempuan',
+            'pekerja_bukan_outsourcing_produksi',
+            'pekerja_bukan_outsourcing_lainnya',
+            'pekerja_outsourcing_produksi',
+            'pekerja_outsourcing_lainnya'
+        ];
+        r207FieldIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input',  () => this.validateR207());
+                el.addEventListener('change', () => this.validateR207());
+            }
+        });
+
         // Conditional: Informasi Kantor Pusat depends on R202
         const jaringanRadios = document.querySelectorAll('input[name="jaringan_unit_kegiatan"]');
         jaringanRadios.forEach(radio => {
@@ -498,6 +531,44 @@ class SurveyBlok2Manager {
         const internetRadios = document.querySelectorAll('input[name="penggunaan_internet"]');
         internetRadios.forEach(radio => {
             radio.addEventListener('change', () => this.updateInternetUsageVisibility());
+        });
+
+        // Q210: clear group error when any sertifikasi field is filled
+        const sertifikasiIds = [
+            'sertifikasi_keamanan_produk', 'sertifikasi_kesehatan_keberlanjutan',
+            'sertifikasi_kualitas_manajemen', 'sertifikasi_tidak_ada', 'sertifikasi_lainnya'
+        ];
+        sertifikasiIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', () => {
+                    const q210Row = this.getFormRowsByQuestionNumbers(['210'])[0];
+                    if (!q210Row) return;
+                    const existing = q210Row.querySelector('.q210-group-error');
+                    if (existing) existing.remove();
+                    const textInputs = q210Row.querySelectorAll('input[type="text"]');
+                    textInputs.forEach(f => f.classList.remove('field-error'));
+                });
+            }
+        });
+
+        // Q211: clear group error when any model industri checkbox is changed
+        const modelCheckboxIds = [
+            'model_industri_oem', 'model_industri_odm', 'model_industri_obm',
+            'model_industri_tidak_ada', 'model_industri_lainnya_check'
+        ];
+        modelCheckboxIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', () => {
+                    const q211Row = this.getFormRowsByQuestionNumbers(['211'])[0];
+                    if (!q211Row) return;
+                    const existing = q211Row.querySelector('.q211-group-error');
+                    if (existing) existing.remove();
+                    const radioGrp = q211Row.querySelector('.radio-group');
+                    if (radioGrp) radioGrp.classList.remove('radio-group-has-error');
+                });
+            }
         });
     }
 
@@ -534,7 +605,7 @@ class SurveyBlok2Manager {
         const firstRadio = radioGroup[0];
 
         if (!isSelected && firstRadio && firstRadio.required) {
-            this.showRadioGroupError(groupName, 'Pilihan ini wajib dipilih');
+            this.showRadioGroupError(groupName, 'Field ini wajib dipilih');
             return false;
         }
 
@@ -638,26 +709,24 @@ class SurveyBlok2Manager {
 
     // Radio group error display methods
     showRadioGroupError(groupName, message) {
-        // Remove existing error
+        // Remove existing error for this specific group
         this.clearRadioGroupError(groupName);
 
         // Find the radio group container
         const radioGroup = document.querySelectorAll(`input[name="${groupName}"]`);
         if (radioGroup.length === 0) return;
 
-        // Note: Removed adding 'field-error' class to radio buttons for cleaner error display
-        // radioGroup.forEach(radio => {
-        //     radio.classList.add('field-error');
-        // });
-
-        // Find the radio group container (should be the parent div with class 'radio-group')
         const firstRadio = radioGroup[0];
         const radioGroupContainer = firstRadio.closest('.radio-group');
 
         if (radioGroupContainer) {
-            // Create error message element
+            // Apply red outline to the group container
+            radioGroupContainer.classList.add('radio-group-has-error');
+
+            // Create error message element scoped to this group
             const errorElement = document.createElement('div');
             errorElement.className = 'field-error-message radio-group-error';
+            errorElement.dataset.group = groupName;
             errorElement.textContent = message;
 
             // Insert error message after the radio group container
@@ -666,16 +735,18 @@ class SurveyBlok2Manager {
     }
 
     clearRadioGroupError(groupName) {
-        // Find the radio group
+        // Remove red outline from the group container
         const radioGroup = document.querySelectorAll(`input[name="${groupName}"]`);
+        const firstRadio = radioGroup[0];
+        if (firstRadio) {
+            const radioGroupContainer = firstRadio.closest('.radio-group');
+            if (radioGroupContainer) {
+                radioGroupContainer.classList.remove('radio-group-has-error');
+            }
+        }
 
-        // Note: No longer need to remove 'field-error' class since we don't add it anymore
-        // radioGroup.forEach(radio => {
-        //     radio.classList.remove('field-error');
-        // });
-
-        // Remove error message
-        const errorElement = document.querySelector('.radio-group-error');
+        // Remove only the error message scoped to this group (prevents cross-group removal)
+        const errorElement = document.querySelector(`.radio-group-error[data-group="${groupName}"]`);
         if (errorElement) {
             errorElement.remove();
         }
@@ -712,39 +783,261 @@ class SurveyBlok2Manager {
             }
         }
 
+        // Q210: at least one sertifikasi field must be filled
+        if (!this.validateQ210()) {
+            isValid = false;
+        }
+
+        // Q211: at least one model industri checkbox must be checked
+        if (!this.validateQ211()) {
+            isValid = false;
+        }
+
+        // R207: konsistensi jumlah pekerja (edit rules)
+        if (!this.validateR207()) {
+            isValid = false;
+        }
+
         return isValid;
+    }
+
+    validateQ210() {
+        const q210Row = this.getFormRowsByQuestionNumbers(['210'])[0];
+        if (!q210Row || q210Row.style.display === 'none') return true;
+
+        const textInputs = q210Row.querySelectorAll('input[type="text"]');
+        const anyFilled = Array.from(textInputs).some(f => f.value.trim() !== '');
+
+        // Clear previous Q210 group error
+        const existing = q210Row.querySelector('.q210-group-error');
+        if (existing) existing.remove();
+        textInputs.forEach(f => f.classList.remove('field-error'));
+
+        if (!anyFilled) {
+            textInputs.forEach(f => f.classList.add('field-error'));
+            const subgrid = q210Row.querySelector('.form-subgrid');
+            const anchor = subgrid || q210Row;
+            const errorElement = document.createElement('div');
+            errorElement.className = 'field-error-message q210-group-error';
+            errorElement.textContent = 'Field ini wajib dipilih';
+            anchor.parentNode.insertBefore(errorElement, anchor.nextSibling);
+            return false;
+        }
+        return true;
+    }
+
+    validateQ211() {
+        const q211Row = this.getFormRowsByQuestionNumbers(['211'])[0];
+        if (!q211Row || q211Row.style.display === 'none') return true;
+
+        const checkboxes = q211Row.querySelectorAll('input[type="checkbox"]');
+        const anyChecked = Array.from(checkboxes).some(c => c.checked);
+
+        // Clear previous Q211 group error
+        const existing = q211Row.querySelector('.q211-group-error');
+        if (existing) existing.remove();
+        const radioGroupContainer = q211Row.querySelector('.radio-group');
+        if (radioGroupContainer) radioGroupContainer.classList.remove('radio-group-has-error');
+
+        if (!anyChecked) {
+            if (radioGroupContainer) radioGroupContainer.classList.add('radio-group-has-error');
+            const errorElement = document.createElement('div');
+            errorElement.className = 'field-error-message q211-group-error';
+            errorElement.textContent = 'Field ini wajib dipilih';
+            const anchor = radioGroupContainer || q211Row.querySelector('.form-label');
+            if (anchor) {
+                anchor.parentNode.insertBefore(errorElement, anchor.nextSibling);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // R207 Consistency Validation (Edit Rules — Rincian 207)
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Validate R207 consistency rules:
+     *   Rule 1 (jenis kelamin) : b1 + b2 = a
+     *   Rule 2 (status pekerja): (c1 + c2) + (d1 + d2) = a
+     * Only triggers when all operands in a rule are filled.
+     * Returns true when both rules pass (or the section is hidden / not rendered).
+     */
+    validateR207() {
+        const fieldA = document.getElementById('jumlah_seluruh_pekerja');
+        // Section absent (triwulanan mode) or hidden (perusahaan tidak aktif) — skip
+        if (!fieldA || fieldA.closest('.form-row')?.style.display === 'none') {
+            this.clearR207Errors();
+            return true;
+        }
+
+        const getVal = (id) => {
+            const el = document.getElementById(id);
+            if (!el || el.value.trim() === '') return null;
+            const v = parseInt(el.value, 10);
+            return isNaN(v) ? null : v;
+        };
+
+        const a  = getVal('jumlah_seluruh_pekerja');
+        const b1 = getVal('tenaga_kerja_laki_laki');
+        const b2 = getVal('tenaga_kerja_perempuan');
+        const c1 = getVal('pekerja_bukan_outsourcing_produksi');
+        const c2 = getVal('pekerja_bukan_outsourcing_lainnya');
+        const d1 = getVal('pekerja_outsourcing_produksi');
+        const d2 = getVal('pekerja_outsourcing_lainnya');
+
+        let rule1Fail = false;
+        let rule2Fail = false;
+
+        // ── Rule 1: b1 + b2 = a (jenis kelamin) ──────────────────────
+        // Trigger as soon as 'a' is known and at least one of b1/b2 is filled:
+        //   • if both b1 and b2 are filled → full equality check
+        //   • if only one is filled but already exceeds 'a' → early warning
+        if (a !== null && (b1 !== null || b2 !== null)) {
+            const sumB = (b1 ?? 0) + (b2 ?? 0);
+            const allFilled = b1 !== null && b2 !== null;
+            const earlyExceed = !allFilled && sumB > a;
+
+            if (allFilled && sumB !== a) {
+                rule1Fail = true;
+                const msg = `Validasi jenis kelamin: laki-laki (${b1}) + perempuan (${b2}) = ${sumB}, harus sama dengan jumlah seluruh pekerja (${a}).`;
+                this.showR207Error('r207-rule1-error', 'tenaga_kerja_perempuan', msg);
+            } else if (earlyExceed) {
+                rule1Fail = true;
+                const filled = b1 !== null ? `laki-laki (${b1})` : `perempuan (${b2})`;
+                const msg = `Validasi jenis kelamin: ${filled} sudah melebihi jumlah seluruh pekerja (${a}).`;
+                this.showR207Error('r207-rule1-error', 'tenaga_kerja_perempuan', msg);
+            } else {
+                this.clearR207ErrorById('r207-rule1-error');
+            }
+        } else {
+            this.clearR207ErrorById('r207-rule1-error');
+        }
+
+        // ── Rule 2: (c1+c2) + (d1+d2) = a (status pekerja) ──────────
+        // Trigger as soon as 'a' is known and at least one of c1/c2/d1/d2 is filled.
+        if (a !== null && (c1 !== null || c2 !== null || d1 !== null || d2 !== null)) {
+            const sumCD = (c1 ?? 0) + (c2 ?? 0) + (d1 ?? 0) + (d2 ?? 0);
+            const allFilled = c1 !== null && c2 !== null && d1 !== null && d2 !== null;
+            const earlyExceed = !allFilled && sumCD > a;
+
+            if (allFilled && sumCD !== a) {
+                rule2Fail = true;
+                const nonOs = c1 + c2;
+                const os    = d1 + d2;
+                const msg = `Validasi status pekerja: bukan outsourcing (${nonOs}) + outsourcing (${os}) = ${sumCD}, harus sama dengan jumlah seluruh pekerja (${a}).`;
+                this.showR207Error('r207-rule2-error', 'pekerja_outsourcing_lainnya', msg);
+            } else if (earlyExceed) {
+                rule2Fail = true;
+                const msg = `Validasi status pekerja: subtotal yang terisi (${sumCD}) sudah melebihi jumlah seluruh pekerja (${a}).`;
+                this.showR207Error('r207-rule2-error', 'pekerja_outsourcing_lainnya', msg);
+            } else {
+                this.clearR207ErrorById('r207-rule2-error');
+            }
+        } else {
+            this.clearR207ErrorById('r207-rule2-error');
+        }
+
+        // Update sorotan merah pada semua field terkait
+        this._updateR207FieldHighlights(rule1Fail, rule2Fail);
+
+        return !rule1Fail && !rule2Fail;
+    }
+
+    /**
+     * Tampilkan pesan error konsistensi R207 setelah blok field yang relevan.
+     * anchorId: ID field terakhir dalam grup (b.2 atau d.2) — dipakai sebagai
+     * titik navigasi untuk menyisipkan error di level subgrid grupnya.
+     */
+    showR207Error(errorId, anchorId, message) {
+        this.clearR207ErrorById(errorId);
+
+        const anchor = document.getElementById(anchorId);
+        if (!anchor) return;
+
+        // Struktur DOM: anchor → .form-subrow (b.2/d.2) → .form-subgrid (grup b/d)
+        // → .form-subrow (header "b." / "d."). Sisipkan error setelah .form-subgrid.
+        const innerSubrow  = anchor.closest('.form-subrow');
+        const groupSubgrid = innerSubrow?.parentElement;   // .form-subgrid grup b atau d
+        const insertAfter  = groupSubgrid || innerSubrow;
+
+        const errorEl = document.createElement('div');
+        errorEl.id        = errorId;
+        errorEl.className = 'field-error-message r207-consistency-error';
+        errorEl.setAttribute('role', 'alert');
+        errorEl.textContent = message;
+
+        if (insertAfter?.parentNode) {
+            insertAfter.parentNode.insertBefore(errorEl, insertAfter.nextSibling);
+        }
+    }
+
+    clearR207ErrorById(errorId) {
+        const el = document.getElementById(errorId);
+        if (el) el.remove();
+    }
+
+    clearR207Errors() {
+        this.clearR207ErrorById('r207-rule1-error');
+        this.clearR207ErrorById('r207-rule2-error');
+        this._updateR207FieldHighlights(false, false);
+    }
+
+    /** Tandai/hapus sorotan merah field-field R207 sesuai hasil kedua aturan. */
+    _updateR207FieldHighlights(rule1Fail, rule2Fail) {
+        const toggle = (id, hasError) => {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('field-error', hasError);
+        };
+        // Field 'a' dipakai kedua aturan — merah jika salah satunya gagal
+        toggle('jumlah_seluruh_pekerja',             rule1Fail || rule2Fail);
+        // Rule 1
+        toggle('tenaga_kerja_laki_laki',             rule1Fail);
+        toggle('tenaga_kerja_perempuan',             rule1Fail);
+        // Rule 2
+        toggle('pekerja_bukan_outsourcing_produksi', rule2Fail);
+        toggle('pekerja_bukan_outsourcing_lainnya',  rule2Fail);
+        toggle('pekerja_outsourcing_produksi',       rule2Fail);
+        toggle('pekerja_outsourcing_lainnya',        rule2Fail);
     }
 
     handleSaveComplete() {
         console.log('handleSaveComplete called');
 
+        // Remove any previous validation summary
+        const existingSummary = document.getElementById('blok2-validation-summary');
+        if (existingSummary) existingSummary.remove();
+
         // Validate form first - if invalid, stop here
         if (!this.validateForm()) {
             console.log('Form validation failed, cannot save');
 
-            // Show friendly guidance near the submit button
-            this.showSubmissionGuidance('Mohon lengkapi semua field yang wajib diisi dengan benar');
-
-            // Scroll to first error field or radio group error
-            let firstErrorField = this.form.querySelector('.field-error');
-            if (!firstErrorField) {
-                const radioError = this.form.querySelector('.radio-group-error');
-                if (radioError) {
-                    radioError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    // Try to focus the first radio input in the related group
-                    const groupContainer = radioError.previousElementSibling?.closest('.radio-group');
-                    const firstRadio = groupContainer ? groupContainer.querySelector('input[type="radio"]') : null;
-                    if (firstRadio) {
-                        firstRadio.focus();
-                    }
-                    return;
+            // Build and inject validation summary panel before form actions (same as blok3a)
+            const errors = this.collectValidationErrors();
+            if (errors.length > 0) {
+                const esc = s => s.replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
+                const summaryHTML = `
+                <div id="blok2-validation-summary" class="validation-summary">
+                    <div class="validation-summary-header">
+                        <span class="validation-summary-icon">&#9888;</span>
+                        <h4 class="validation-summary-title">Data belum lengkap</h4>
+                    </div>
+                    <p class="validation-summary-desc">Mohon lengkapi bidang berikut sebelum menyimpan:</p>
+                    <ul class="validation-summary-list">
+                        ${errors.map(e => `<li class="validation-summary-item">${esc(e)}</li>`).join('')}
+                    </ul>
+                </div>`;
+                const formActions = this.form.querySelector('.form-actions');
+                if (formActions) {
+                    formActions.insertAdjacentHTML('beforebegin', summaryHTML);
+                    document.getElementById('blok2-validation-summary')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
-            }
-            if (firstErrorField) {
-                firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                if (typeof firstErrorField.focus === 'function') {
-                    firstErrorField.focus();
-                }
+            } else {
+                // Fallback scroll to first error if no label could be collected
+                const firstError = this.form.querySelector('.field-error, .radio-group-has-error');
+                if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
 
             return;
@@ -774,19 +1067,74 @@ class SurveyBlok2Manager {
         return field.name || field.id || 'Field';
     }
 
-    // Guidance message near submit button
-    showSubmissionGuidance(message) {
-        if (!this.form) return;
-        const submitBtn = this.form.querySelector('#save-complete');
-        if (!submitBtn) return;
-        const container = submitBtn.parentElement || submitBtn.closest('.form-actions') || this.form;
-        let guidance = container.querySelector('.form-guidance-message');
-        if (!guidance) {
-            guidance = document.createElement('div');
-            guidance.className = 'field-error-message form-guidance-message';
-            container.appendChild(guidance);
+    collectValidationErrors() {
+        const errors = [];
+        const seen = new Set();
+        const addLabel = (label) => { if (label && !seen.has(label)) { seen.add(label); errors.push(label); } };
+
+        const getLabel = (el) => {
+            const subrow = el.closest('.form-subrow');
+            if (subrow) {
+                const sublabel = subrow.querySelector('.form-sublabel');
+                if (sublabel) {
+                    let text = sublabel.textContent.trim();
+                    // Truncate long parenthetical notes
+                    const parenIdx = text.indexOf('(');
+                    if (parenIdx > 30) text = text.substring(0, parenIdx).trimEnd();
+                    if (text.length > 80) text = text.substring(0, 80).trimEnd() + '\u2026';
+                    const row = subrow.closest('.form-row');
+                    const qNum = row?.querySelector('.question-number')?.textContent?.trim();
+                    return qNum ? qNum + ' ' + text : text;
+                }
+            }
+            const row = el.closest('.form-row');
+            if (row) {
+                const formLabel = row.querySelector('.form-label');
+                if (formLabel) {
+                    const qNum = formLabel.querySelector('.question-number')?.textContent?.trim() ?? '';
+                    const titleSpans = formLabel.querySelectorAll('span:not(.question-number)');
+                    let title = titleSpans.length > 0 ? titleSpans[0].textContent.trim() : '';
+                    const parenIdx = title.indexOf('(');
+                    if (parenIdx > 30) title = title.substring(0, parenIdx).trimEnd();
+                    if (title.length > 70) title = title.substring(0, 70).trimEnd() + '\u2026';
+                    return (qNum + ' ' + title).trim();
+                }
+            }
+            return null;
+        };
+
+        // 1. Radio / checkbox group container errors
+        this.form.querySelectorAll('.radio-group-has-error').forEach(container => addLabel(getLabel(container)));
+
+        // 2. Text / number / textarea field errors (skip bare radio inputs)
+        this.form.querySelectorAll('.field-error').forEach(field => {
+            if (field.classList.contains('radio-input') || field.type === 'radio') return;
+            addLabel(getLabel(field));
+        });
+
+        // 3. Q210 sertifikasi group (at-least-one)
+        if (this.form.querySelector('.q210-group-error')) {
+            const row = this.getFormRowsByQuestionNumbers(['210'])[0];
+            if (row) addLabel(getLabel(row));
         }
-        guidance.textContent = message;
+
+        // 4. Q211 model industri group (at-least-one)
+        if (this.form.querySelector('.q211-group-error')) {
+            const row = this.getFormRowsByQuestionNumbers(['211'])[0];
+            if (row) addLabel(getLabel(row));
+        }
+
+        // 5. R207 konsistensi jenis kelamin (Rule 1)
+        if (document.getElementById('r207-rule1-error')) {
+            addLabel('207 Validasi jenis kelamin: b.1 (laki-laki) + b.2 (perempuan) \u2260 a (jumlah seluruh pekerja)');
+        }
+
+        // 6. R207 konsistensi status pekerja (Rule 2)
+        if (document.getElementById('r207-rule2-error')) {
+            addLabel('207 Validasi status pekerja: (c.1 + c.2) + (d.1 + d.2) \u2260 a (jumlah seluruh pekerja)');
+        }
+
+        return errors;
     }
 }
 

@@ -89,8 +89,12 @@
                             <input type="radio" name="jaringan_unit_kegiatan_view" value="unit_pembantu_penunjang"
                                    {{ ($surveyResponse->jaringan_unit_kegiatan ?? '') == 'unit_pembantu_penunjang' ? 'checked' : '' }}
                                    class="radio-input" disabled>
+                            <label class="radio-label">e. Unit Pembantu / Penunjang</label>
+                        </div>
+                    </div>
                 </div>
 
+                @if(($surveyResponse->triwulan ?? 0) == 0)
                 <!-- Question 203 -->
                 <div class="form-row">
                     <label class="form-label">
@@ -142,8 +146,10 @@
                     </div>
                 </div>
                 @endif
+                @endif {{-- tahunan-only Q203/Q204 --}}
 
                 @if(!empty($blok2Visibility['showQ205to211']))
+                @if(($surveyResponse->triwulan ?? 0) == 0)
                 <!-- Question 205 -->
                 <div class="form-row">
                     <label class="form-label">
@@ -163,26 +169,7 @@
                     <input type="number" name="rata_hari_kerja_bulanan_2025" value="{{ $surveyResponse->rata_hari_kerja_bulanan_2025 ?? '' }}"
                            class="form-control" readonly disabled>
                 </div>
-
-                <!-- Question 207a (jam kerja & shift) -->
-                <div class="form-row">
-                    <label class="form-label">
-                        <span class="question-number">207a.</span>
-                        <span>Rata-rata jam kerja dan jumlah shift per hari selama tahun 2025:</span>
-                    </label>
-                    <div class="form-subgrid">
-                        <div class="form-subrow">
-                            <label class="form-sublabel">a. Rata-rata jam kerja per hari:</label>
-                            <input type="number" name="rata_jam_kerja_per_hari_2025" value="{{ $surveyResponse->rata_jam_kerja_per_hari_2025 ?? '' }}"
-                                   class="form-control" readonly disabled>
-                        </div>
-                        <div class="form-subrow">
-                            <label class="form-sublabel">b. Rata-rata jumlah shift per hari:</label>
-                            <input type="number" name="rata_shift_per_hari_2025" value="{{ $surveyResponse->rata_shift_per_hari_2025 ?? '' }}"
-                                   class="form-control" readonly disabled>
-                        </div>
-                    </div>
-                </div>
+                @endif {{-- tahunan-only Q205/Q206 --}}
 
                 @if(($surveyResponse->triwulan ?? 0) == 0)
                 {{-- Q207: Tahunan — detailed worker breakdown --}}
@@ -277,6 +264,7 @@
                     </div>
                 </div>
 
+                @if(($surveyResponse->triwulan ?? 0) == 0)
                 <!-- Question 209 -->
                 <div class="form-row">
                     <label class="form-label">
@@ -339,6 +327,8 @@
                     </div>
                 </div>
 
+                @endif {{-- tahunan-only Q209 --}}
+
                 @if(($surveyResponse->triwulan ?? 0) == 0)
                 <!-- Question 210 -->
                 <div class="form-row">
@@ -386,6 +376,7 @@
                 </div>
                 @endif
 
+                @if(($surveyResponse->triwulan ?? 0) == 0)
                 <!-- Question 212 -->
                 <div class="form-row">
                     <label class="form-label">
@@ -497,6 +488,7 @@
                         </div>
                     </div>
                 </div>
+                @endif {{-- tahunan-only Q212/212a/212b/213 --}}
                 @endif {{-- end showQ205to211 --}}
                 @endif {{-- end showAfterQ201 --}}
             </div>

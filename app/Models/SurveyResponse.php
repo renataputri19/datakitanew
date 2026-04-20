@@ -129,6 +129,7 @@ class SurveyResponse extends Model
         'blok5_completed',
         'last_saved_at',
         'is_completed',
+        'annual_survey_status',
     ];
 
     /**
@@ -215,6 +216,268 @@ class SurveyResponse extends Model
     }
 
     /**
+     * Return true when the KBLI falls in the Industri range (KBLI prefix 10–33).
+     */
+    public function isKbliIndustri(): bool
+    {
+        $kbli = $this->kbli_utama;
+        if (empty($kbli) || !preg_match('/^(\d{2})/', $kbli, $m)) {
+            return false;
+        }
+        $prefix = (int) $m[1];
+        return $prefix >= 10 && $prefix <= 33;
+    }
+
+    /**
+     * Return true when Block I (identity) has all required fields filled.
+     * Mirrors the required-field rules in SurveyController::saveAll().
+     * Used by the sequential block access guard.
+     */
+    public function isBlok1Complete(): bool
+    {
+        $required = [
+            'nama_perusahaan',
+            'alamat_pabrik',
+            'kabupaten_kota',
+            'telepon_fax',
+            'penghubung',
+            'email',
+            'nib',
+            'jenis_kawasan',
+            'nama_kawasan',
+            'nama_pengelola_kawasan',
+            'legalisasi_nama',
+            'legalisasi_jabatan',
+        ];
+
+        foreach ($required as $field) {
+            if (empty($this->{$field})) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Return true when Block II has been fully submitted.
+     * Mirrors the required-field rules in SurveyController::saveAllBlok2().
+     * Uses !== null (not empty()) for integer fields because 0 is a valid entry.
+     */
+    public function isBlok2Complete(): bool
+    {
+        // R201: always required
+        if (empty($this->kondisi_perusahaan)) {
+            return false;
+        }
+
+        // Non-active companies: only kondisi_perusahaan is required
+        if ($this->kondisi_perusahaan !== 'masih_aktif') {
+            return true;
+        }
+
+        // Active companies: R202 required
+        if (empty($this->jaringan_unit_kegiatan)) {
+            return false;
+        }
+
+        // unit_pembantu_penunjang: no further fields required
+        if ($this->jaringan_unit_kegiatan === 'unit_pembantu_penunjang') {
+            return true;
+        }
+
+        // All other jaringan types: kbli_utama and kegiatan_utama_perusahaan required
+        if (empty($this->kbli_utama) || empty($this->kegiatan_utama_perusahaan)) {
+            return false;
+        }
+
+        $isTahunan = ((int) $this->triwulan) === 0;
+
+        // 208b: produk_utama_perusahaan — required in the blade form for tahunan
+        // (nullable in saveAllBlok2() but shown as required on the page)
+        if ($isTahunan && empty($this->produk_utama_perusahaan)) {
+            return false;
+        }
+
+        if ($isTahunan) {
+            // Q205/206: bulan & hari kerja (integer, 0 is valid → !== null)
+            if ($this->jumlah_bulan_aktif_2025 === null || $this->rata_hari_kerja_bulanan_2025 === null) {
+                return false;
+            }
+
+            // Q207: detailed worker breakdown (integers, 0 is valid → !== null)
+            $workerFields = [
+                'jumlah_seluruh_pekerja',
+                'tenaga_kerja_laki_laki',
+                'tenaga_kerja_perempuan',
+                'pekerja_bukan_outsourcing_produksi',
+                'pekerja_bukan_outsourcing_lainnya',
+                'pekerja_outsourcing_produksi',
+                'pekerja_outsourcing_lainnya',
+                'tenaga_kerja_asing',
+            ];
+            foreach ($workerFields as $field) {
+                if ($this->{$field} === null) {
+                    return false;
+                }
+            }
+
+            // Q209: produksi & layanan flags (ya/tidak strings)
+            if (empty($this->memproduksi_barang_sendiri) ||
+                empty($this->menyediakan_layanan_makan_minum) ||
+                empty($this->penjualan_barang_pihak_lain) ||
+                empty($this->aktivitas_jasa)) {
+                return false;
+            }
+
+            // Q212: penggunaan internet
+            if (empty($this->penggunaan_internet)) {
+                return false;
+            }
+
+            // Q213: ramah lingkungan
+            if (empty($this->produksi_ramah_lingkungan) ||
+                empty($this->penggunaan_input_ramah_lingkungan)) {
+                return false;
+            }
+        } else {
+            // Triwulanan: single rata_rata_tenaga_kerja (integer, 0 is valid → !== null)
+            if ($this->rata_rata_tenaga_kerja === null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Return true when Block IIIA (production revenue) has been submitted.
+     * Mirrors the required-field rules shown in the page's 'Data belum lengkap'
+     * section: at least one product, and (tahunan only) q302a–f and q305 fields
+     * must each be non-null (0 is a valid entry; use !== null, not empty()).
+     */
+    public function isBlok3aComplete(): bool
+    {
+        // Use the raw stored attribute to bypass getBlok3aProductsAttribute(),
+        // which always injects a default empty-product row even when nothing was saved.
+        $rawProducts = $this->attributes['blok3a_products'] ?? null;
+        if (empty($rawProducts)) {
+            return false;
+        }
+        $products = is_array($rawProducts) ? $rawProducts : json_decode($rawProducts, true);
+        if (!is_array($products) || count($products) === 0) {
+            return false;
+        }
+
+        // Tahunan-only required fields (section only rendered when triwulan = 0)
+        if (((int) $this->triwulan) === 0) {
+            // Q302a–f stored in blok3a_pendapatan_lainnya array
+            $pl = $this->blok3a_pendapatan_lainnya ?? [];
+            foreach (['q302a', 'q302b', 'q302c', 'q302d', 'q302e', 'q302f'] as $key) {
+                $val = $pl[$key] ?? null;
+                if ($val === null || $val === '') {
+                    return false;
+                }
+            }
+
+            // Q305a, Q305b, Q306 (decimal fields; 0.0 is valid → !== null)
+            if ($this->blok3a_q305a_maklun_nilai === null ||
+                $this->blok3a_q305b_maklun_pct  === null ||
+                $this->blok3a_q305_online        === null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Return true when Blok IIIB Industri has been genuinely completed.
+     *
+     * The completion flag alone is insufficient because `saveAllBlok3bIndustri`
+     * accepts empty-form submissions (all fields are nullable) and still sets
+     * blok3b_industri_completed = true.  On an empty submission the computed
+     * fields (q309_awal, q309_akhir, q310b_*) are always written as 0.0 while
+     * every user-entered field remains null.
+     *
+     * Required fields differ completely between tahunan and triwulan because
+     * blok3b-industri.blade.php renders entirely different question sets under
+     * @if(!$isTriwulanan) vs @if($isTriwulanan) — checking the wrong period's
+     * fields would always return false (or always true) for the other period.
+     *
+     * Tahunan required (representative subset from @if(!$isTriwulanan)):
+     *   q306_year_awal  – stok bahan baku 1-Jan (Q307a)
+     *   q310_beli_modal – nilai pembelian barang modal (Q310)
+     *   q311_jual_modal – nilai penjualan barang modal (Q311)
+     *   q312_taksir_modal – nilai taksiran barang modal (Q312)
+     *   q313_a1, q313_b1 – upah TK non-outsourcing (Q313.a.1, b.1)
+     *   q314_a1, q314_b1 – upah TK outsourcing (Q314.a.1, b.1)
+     *
+     * Triwulan required (representative subset from @if($isTriwulanan)):
+     *   q304     – pendapatan royalti/bunga/dividen (Q304)
+     *   q306_awal – persediaan bahan baku awal triwulan (Q306)
+     *   q310     – total upah dan gaji (Q310)
+     *   q311     – penambahan aset tetap (Q311)
+     */
+    public function isBlok3bIndustriComplete(): bool
+    {
+        if (!$this->blok3b_industri_completed) {
+            return false;
+        }
+
+        $data = is_array($this->blok3b_industri_data)
+            ? $this->blok3b_industri_data
+            : [];
+
+        $isNull = fn (string $key): bool =>
+            !isset($data[$key]) || $data[$key] === null || $data[$key] === '';
+
+        $isTahunan = ((int) $this->triwulan) === 0;
+
+        $required = $isTahunan
+            ? ['q306_year_awal', 'q310_beli_modal', 'q311_jual_modal',
+               'q312_taksir_modal', 'q313_a1', 'q313_b1', 'q314_a1', 'q314_b1']
+            : ['q304', 'q306_awal', 'q310', 'q311'];
+
+        foreach ($required as $field) {
+            if ($isNull($field)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Return true when Blok IV (Fenomena dan Catatan) is genuinely complete.
+     *
+     * `saveAllBlok4` sets blok4_completed = true whenever is_completed is sent
+     * as true, regardless of whether the four quarterly phenomenon textareas are
+     * filled.  A user who clears the textareas after a prior valid save will
+     * leave blok4_completed = true while all four data fields are empty.
+     *
+     * We therefore require the flag AND that all four textarea fields each hold
+     * a non-blank string.
+     */
+    public function isBlok4Complete(): bool
+    {
+        if (!$this->blok4_completed) {
+            return false;
+        }
+
+        $data = is_array($this->blok4_data) ? $this->blok4_data : [];
+
+        foreach (['triwulan1', 'triwulan2', 'triwulan3', 'triwulan4'] as $key) {
+            $val = $data[$key] ?? null;
+            if ($val === null || trim((string) $val) === '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Check whether the 2025 annual Q207 detailed worker breakdown is fully filled.
      * Used to gate Triwulanan 2026 access for existing users.
      */
@@ -252,6 +515,28 @@ class SurveyResponse extends Model
             ->first();
 
         return $row ? $row->isQ207TahunanComplete() : false;
+    }
+
+    /**
+     * Authoritative gate for 2026 Triwulan access (FINISH_SURVEY status).
+     *
+     * Returns true only when the user's 2025 Tahunan survey record has
+     * annual_survey_status = 'FINISH_SURVEY', which is set exclusively by
+     * SurveyController::finishSurvey() when the user explicitly submits
+     * Block 6 through the finish flow.
+     *
+     * Legacy rows where is_completed was set by the old mechanism will have
+     * annual_survey_status = null and will NOT pass this check — forcing those
+     * users to go through Block 6 again before Triwulanan is unlocked.
+     */
+    public static function isTahunanFullyCompletedForUser(int|string $userId): bool
+    {
+        return static::where('user_id', $userId)
+            ->where('survey_type', 'sibstr')
+            ->where('tahun', 2025)
+            ->where('triwulan', 0)
+            ->where('annual_survey_status', 'FINISH_SURVEY')
+            ->exists();
     }
 
     /**
@@ -353,13 +638,26 @@ class SurveyResponse extends Model
      */
     public function updateWithAutoSave(array $data)
     {
+        // Merge blok3a_lainnya month values instead of replacing the whole array
+        if (isset($data['blok3a_lainnya'])) {
+            $existing = $this->blok3a_lainnya ?? ['uraian' => '', 'nilai' => []];
+            $incoming = $data['blok3a_lainnya'];
+            if (isset($incoming['nilai']) && is_array($incoming['nilai'])) {
+                $existing['nilai'] = array_merge($existing['nilai'] ?? [], $incoming['nilai']);
+            }
+            if (isset($incoming['uraian'])) {
+                $existing['uraian'] = $incoming['uraian'];
+            }
+            $data['blok3a_lainnya'] = $existing;
+        }
+
         // Fill incoming changes without saving yet
         $this->fill($data);
         $this->last_saved_at = now();
 
         // If Blok IIIA data changes, recompute totals server-side to ensure accuracy
         $keys = array_keys($data);
-        $shouldRecalcTotals = array_intersect($keys, ['blok3a_products', 'blok3a_totals']);
+        $shouldRecalcTotals = array_intersect($keys, ['blok3a_products', 'blok3a_totals', 'blok3a_lainnya']);
         if (!empty($shouldRecalcTotals)) {
             $this->blok3a_totals = $this->calculateBlok3aTotals();
         }
@@ -578,13 +876,18 @@ class SurveyResponse extends Model
             }
         }
 
-        // If no products have nilai data yet, return zero-filled structure for this period
+        // Add lainnya (302) monthly nilai to totals
+        $lainnyaNilai = ($this->blok3a_lainnya['nilai'] ?? []);
+        foreach ($lainnyaNilai as $month => $nilai) {
+            if ($nilai !== null && $nilai !== '' && (float)$nilai != 0) {
+                $totals[$month] = ($totals[$month] ?? 0) + (float)$nilai;
+            }
+        }
+
+        // If no data at all, return zero-filled structure for this period
         if (empty($totals)) {
             $totals = array_fill_keys($this->getBlok3aMonthKeys(), 0);
         }
-
-        // Note: blok3a_lainnya (old Rincian 302 monthly) removed; new blok3a_pendapatan_lainnya
-        // fields are annual totals independent of the preview/totals logic.
 
         return $totals;
     }
