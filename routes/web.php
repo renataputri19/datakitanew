@@ -345,6 +345,10 @@ Route::middleware(['auth'])->group(function () {
 
         // BPS User Profile Route
         Route::get('/user/profile', [BPSUserController::class, 'profile'])->name('user.profile.show');
+
+        // User Management Routes
+        Route::get('/users', [BPSUserController::class, 'index'])->name('users.index');
+        Route::post('/users/{id}/reset-password', [BPSUserController::class, 'resetPassword'])->name('users.reset-password');
     });
 });
 
