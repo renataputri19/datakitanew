@@ -7,6 +7,7 @@
     <title>@yield('title', 'DataKita - BPS Kota Batam')</title>
     <meta name="description" content="@yield('description', 'Platform terpadu untuk akses data statistik, berita, dan sistem terintegrasi BPS Kota Batam')">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="app-version" content="{{ config('app.version', '1.0.0') }}">
 
     @stack('head')
 

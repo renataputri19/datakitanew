@@ -40,6 +40,7 @@ class Kernel extends HttpKernel
             // Dev auth gate: redirects unauthenticated requests to /dev-login
             // when DEV_AUTH_ENABLED=true.  No-op in production (flag unset).
             \App\Http\Middleware\DevAuthGate::class,
+            \App\Http\Middleware\PreventBackButtonCache::class,
         ],
 
         'api' => [
