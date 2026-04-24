@@ -31,8 +31,8 @@
                     ['key' => '506', 'label' => 'Waktu Pengiriman Pemasok', 'type' => 'delivery', 'desc' => 'Waktu pengiriman bahan baku dari pemasok'],
                     ['key' => '507', 'label' => 'Persediaan Bahan Baku',    'type' => 'normal',   'desc' => 'Jumlah persediaan bahan baku yang disimpan perusahaan'],
                 ];
-                $periods5        = $isTw5 ? ['p1','p2'] : ['p1','p2','p3','p4','p5','p6'];
-                $prospectIdx5    = $isTw5 ? [1]         : [3, 5];
+                $periods5        = $isTw5 ? ['p1','p2'] : ['p1','p2','p3','p5','p6'];
+                $prospectIdx5    = $isTw5 ? [1]         : [4];
                 $labelsNormal5   = [['value'=>'naik','text'=>'Naik'],['value'=>'tetap','text'=>'Tetap'],['value'=>'turun','text'=>'Turun']];
                 $labelsDelivery5 = [['value'=>'lebih_cepat','text'=>'Lebih cepat'],['value'=>'tetap','text'=>'Tetap'],['value'=>'lebih_lambat','text'=>'Lebih lambat']];
                 $data5 = $surveyResponse->blok5_data ?? [];
@@ -61,7 +61,6 @@
                             <th>Kondisi TW I-{{ $tahun5 }} vs TW IV-{{ $tahun5 - 1 }}</th>
                             <th>Kondisi TW II-{{ $tahun5 }} vs TW I-{{ $tahun5 }}</th>
                             <th>Kondisi TW III-{{ $tahun5 }} vs TW II-{{ $tahun5 }}</th>
-                            <th class="prospect">Prospek TW IV-{{ $tahun5 }} vs TW III-{{ $tahun5 }}</th>
                             <th>Kondisi TW IV-{{ $tahun5 }} vs TW III-{{ $tahun5 }}</th>
                             <th class="prospect">Prospek TW I-{{ $tahun5 + 1 }} vs TW IV-{{ $tahun5 }}</th>
                         </tr>
@@ -70,7 +69,6 @@
                             <th class="col-subtype">Triwulan</th>
                             <th class="col-subtype">Triwulan</th>
                             <th class="col-subtype">Triwulan</th>
-                            <th class="col-subtype prospect">Prospek</th>
                             <th class="col-subtype">Triwulan</th>
                             <th class="col-subtype prospect">Prospek</th>
                         </tr>

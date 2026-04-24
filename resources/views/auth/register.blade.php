@@ -80,6 +80,8 @@
                        class="form-input"
                        placeholder="Masukkan nama lengkap"
                        autocomplete="name">
+                <div id="nameError" class="error-message"></div>
+                <div id="nameSuccess" class="success-message"></div>
             </div>
 
             <!-- Email Field -->

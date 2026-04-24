@@ -186,7 +186,14 @@ class SurveyBlok6Manager {
                             redirectDelay: 4000,
                         });
                     } else {
-                        window.location.href = '/dashboard/surveys/sibstr/results';
+                        showSurveyModal({
+                            type: 'success',
+                            title: 'Survei Selesai!',
+                            body: 'Data survei Triwulanan Anda telah berhasil disimpan. Anda akan diarahkan ke halaman dashboard.',
+                            confirmText: 'Ke Dashboard',
+                            redirectUrl: '/dashboard/surveys/sibstr/results',
+                            redirectDelay: 3000,
+                        });
                     }
                     return;
                 }

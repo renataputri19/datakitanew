@@ -416,6 +416,25 @@
             // 2. Required-field validation (Q318a/b/d, Q319a-h)
             const errors = collectClientValidationErrors();
 
+            // Collect specific 304 field errors into the summary list
+            if (!cardsValid) {
+                const cardErrors304 = [];
+                const firstCard = document.getElementById('pc-0');
+                if (firstCard) {
+                    firstCard.querySelectorAll('[data-req-err]').forEach(errEl => {
+                        const msg = errEl.textContent.trim();
+                        if (msg) cardErrors304.push('304. Bahan baku & penolong \u2013 ' + msg);
+                    });
+                    const rincianErr = firstCard.querySelector('.rincian-provinsi-error');
+                    if (rincianErr && rincianErr.style.display !== 'none') {
+                        const rMsg = rincianErr.textContent.trim();
+                        if (rMsg) cardErrors304.push('304. Bahan baku & penolong \u2013 ' + rMsg);
+                    }
+                }
+                // Prepend 304 errors so they appear at the top of the summary
+                errors.unshift(...cardErrors304);
+            }
+
             // 3. Q319 total must equal 100%
             const totalEl = document.getElementById('q319i_display');
             const total = parseFloat(totalEl?.value || 0);

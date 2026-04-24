@@ -100,6 +100,28 @@
                                 <td style="border:1px solid #e5e7eb; text-align:right; padding:3px 5px;">{{ $price !== null ? _nf_price($price) : '-' }}</td>
                             @endforeach
                         </tr>
+                        @if(!$isTw3a && !empty($p['rincian_ekspor']) && is_array($p['rincian_ekspor']))
+                        @foreach($p['rincian_ekspor'] as $pdfReIdx => $pdfRe)
+                        @php
+                            $pdfReJml = preg_replace('/[^0-9]/', '', $pdfRe['jumlah'] ?? '');
+                            $pdfReNil = preg_replace('/[^0-9]/', '', $pdfRe['nilai'] ?? '');
+                            $pdfReHas = !empty($pdfRe['provinsi']) || $pdfReJml !== '' || $pdfReNil !== '';
+                        @endphp
+                        @if($pdfReHas)
+                        <tr style="background:#f0fdf4;">
+                            <td style="border:1px solid #bbf7d0; vertical-align:top; padding:2px 5px; font-size:8px; color:#15803d; font-weight:700;">↳{{ $pdfReIdx+1 }}</td>
+                            @if(!$isTw3a)
+                            <td style="border:1px solid #bbf7d0; padding:2px 5px; color:#15803d; font-size:9px; font-style:italic;">{{ !empty($pdfRe['provinsi']) ? $pdfRe['provinsi'] : '—' }}</td>
+                            @endif
+                            <td style="border:1px solid #bbf7d0; padding:2px 5px; font-size:8px; color:#6b7280;">Prov. Tujuan</td>
+                            <td colspan="{{ count($secMonths) }}" style="border:1px solid #bbf7d0; padding:2px 5px; font-size:9px;">
+                                Banyaknya: {{ $pdfReJml !== '' ? number_format((int)$pdfReJml, 0, ',', '.') : '—' }}
+                                &nbsp;&nbsp; Nilai: Rp {{ $pdfReNil !== '' ? number_format((int)$pdfReNil, 0, ',', '.') : '—' }}
+                            </td>
+                        </tr>
+                        @endif
+                        @endforeach
+                        @endif
                     @endforeach
 
                     @if($isTw3a && !empty($lainnya))

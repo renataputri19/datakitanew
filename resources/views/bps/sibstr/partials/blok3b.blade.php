@@ -227,6 +227,56 @@
                         <div class="form-subrow"><label class="form-sublabel">i. Pengeluaran lainnya (Rp)</label><input type="text" value="{{ formatCurrencyBps($data['q317_k'] ?? '') }}" class="form-control" readonly disabled></div>
                     </div>
                 </div>
+
+                {{-- Q318: Moda Transportasi --}}
+                <div class="form-row">
+                    <label class="form-label"><span class="question-number">318.</span> Jenis moda transportasi yang digunakan untuk pengangkutan barang selama tahun {{ $tahunBps }}</label>
+                    <div style="overflow-x:auto;margin-top:0.75rem;">
+                        <table style="width:100%;border-collapse:collapse;font-size:0.875rem;border:1px solid #d1d5db;">
+                            <thead>
+                                <tr style="background-color:#f9fafb;">
+                                    <th style="padding:0.625rem 0.75rem;text-align:left;border:1px solid #d1d5db;font-weight:600;color:#374151;width:45%;">
+                                        Jenis Angkutan<br><span style="font-weight:400;color:#6b7280;font-size:0.8rem;">(1)</span>
+                                    </th>
+                                    <th style="padding:0.625rem 0.75rem;text-align:center;border:1px solid #d1d5db;font-weight:600;color:#374151;width:27.5%;">
+                                        Frekuensi Penggunaan Angkutan (kali)<br><span style="font-weight:400;color:#6b7280;font-size:0.8rem;">(2)</span>
+                                    </th>
+                                    <th style="padding:0.625rem 0.75rem;text-align:center;border:1px solid #d1d5db;font-weight:600;color:#374151;width:27.5%;">
+                                        Total Biaya Pengangkutan (Rp)<br><span style="font-weight:400;color:#6b7280;font-size:0.8rem;">(3)</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach([
+                                    'a' => ['label' => 'a. Angkutan jalan',                                  'note' => 'Contoh: truk, pick up, mobil, dan sepeda motor'],
+                                    'b' => ['label' => 'b. Angkutan kereta api',                             'note' => ''],
+                                    'c' => ['label' => 'c. Angkutan air sungai, danau, dan penyeberangan',   'note' => 'Contoh: kapal ponton, getek, kapal ferry'],
+                                    'd' => ['label' => 'd. Angkutan air laut',                               'note' => 'Contoh: kapal laut, tol laut, dll'],
+                                    'e' => ['label' => 'e. Angkutan udara',                                  'note' => 'Contoh: pesawat dan helikopter'],
+                                ] as $key => $row)
+                                <tr>
+                                    <td style="padding:0.625rem 0.75rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <strong>{{ $row['label'] }}</strong>
+                                        @if($row['note'])<br><span style="font-size:0.8rem;color:#6b7280;font-style:italic;">{{ $row['note'] }}</span>@endif
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="text" value="{{ $data['q318'.$key.'_freq'] ?? '' }}" class="form-control" readonly disabled style="text-align:right;">
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="text" value="{{ formatCurrencyBps($data['q318'.$key.'_biaya'] ?? '') }}" class="form-control" readonly disabled style="text-align:right;">
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {{-- Q319: Persentase Pihak Ketiga --}}
+                <div class="form-row">
+                    <label class="form-label"><span class="question-number">319.</span> Persentase moda angkutan yang menggunakan jasa pihak ketiga (%)</label>
+                    <input type="text" value="{{ $data['q319_persen_pihak_ketiga'] ?? '' }}" class="form-control" readonly disabled>
+                </div>
             </div>
         </div>
         @endif {{-- end industri triwulanan/tahunan --}}

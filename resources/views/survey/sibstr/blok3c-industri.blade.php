@@ -171,6 +171,34 @@
         .dn-ln-grid { grid-template-columns: 1fr; }
         .preview-scroll-wrap { padding: 0 1.5rem; }
     }
+
+    /* ── Rincian rows: horizontal grid on desktop, vertical on mobile ── */
+    .rincian-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr auto;
+        gap: 0.5rem;
+        align-items: end;
+        margin-bottom: 0.5rem;
+    }
+    @media (max-width: 600px) {
+        .rincian-row {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            padding: 0.6rem 3rem 0.6rem 0.6rem;
+            margin-bottom: 0.5rem;
+            background: #f9fafb;
+            border: 1px solid #bfdbfe;
+            border-radius: 0.5rem;
+        }
+        .rincian-row > div:last-child {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding-bottom: 0 !important;
+        }
+    }
 </style>
 @endpush
 

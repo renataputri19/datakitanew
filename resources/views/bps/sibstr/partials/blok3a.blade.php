@@ -115,6 +115,28 @@
                                             <td style="text-align:right;border:1px solid #e5e7eb;padding:0.4rem 0.5rem;">{{ _bps3a_pf($price) }}</td>
                                         @endforeach
                                     </tr>
+                                    @if(!$isTw3a && !empty($p['rincian_ekspor']) && is_array($p['rincian_ekspor']))
+                                    @foreach($p['rincian_ekspor'] as $reIdx => $re)
+                                    @php
+                                        $reJml = preg_replace('/[^0-9]/', '', $re['jumlah'] ?? '');
+                                        $reNil = preg_replace('/[^0-9]/', '', $re['nilai'] ?? '');
+                                        $reHas = !empty($re['provinsi']) || $reJml !== '' || $reNil !== '';
+                                    @endphp
+                                    @if($reHas)
+                                    <tr style="background:#f0fdf4;">
+                                        <td class="sticky-col" style="border:1px solid #bbf7d0;padding:0.3rem 0.5rem;text-align:center;color:#15803d;font-size:0.72rem;font-weight:700;">↳{{ $reIdx+1 }}</td>
+                                        <td style="border:1px solid #bbf7d0;padding:0.3rem 0.6rem;color:#15803d;font-size:0.78rem;font-style:italic;">
+                                            {{ !empty($re['provinsi']) ? e($re['provinsi']) : '—' }}
+                                        </td>
+                                        <td style="border:1px solid #bbf7d0;padding:0.3rem 0.5rem;font-size:0.72rem;color:#6b7280;">Prov. Tujuan</td>
+                                        <td colspan="{{ count($months) }}" style="border:1px solid #bbf7d0;padding:0.3rem 0.75rem;font-size:0.78rem;">
+                                            <span style="margin-right:1.5rem;color:#374151;">Banyaknya:&nbsp;<strong>{{ $reJml !== '' ? number_format((int)$reJml, 0, ',', '.') : '—' }}</strong></span>
+                                            <span style="color:#374151;">Nilai:&nbsp;<strong>Rp&nbsp;{{ $reNil !== '' ? number_format((int)$reNil, 0, ',', '.') : '—' }}</strong></span>
+                                        </td>
+                                    </tr>
+                                    @endif
+                                    @endforeach
+                                    @endif
                                 @endforeach
 
                                 @if($isTw3a)

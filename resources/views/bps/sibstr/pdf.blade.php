@@ -341,6 +341,22 @@
             <div class="k">315a. Biaya non-operasional (triwulan lalu)</div><div class="v">{{ nf_idr($d['q315a'] ?? null) }}</div>
             <div class="k">315b. Biaya non-operasional (tahun {{ $surveyTahun }})</div><div class="v">{{ nf_idr($d['q315b'] ?? null) }}</div>
 
+            @if(!empty($showBlocks['blok3bIndustri']))
+            {{-- Q318: Moda Transportasi (industri tahunan) --}}
+            <div class="k" style="grid-column:1/-1;font-weight:600;background:#eff6ff;color:#1e3a8a;padding:4px 8px;margin-top:4px;">318. Moda Transportasi — Pengangkutan Barang Tahun {{ $surveyTahun }}</div>
+            @foreach(['a'=>'Angkutan jalan','b'=>'Angkutan kereta api','c'=>'Angkutan air sungai, danau, dan penyeberangan','d'=>'Angkutan air laut','e'=>'Angkutan udara'] as $mKey=>$mLabel)
+                @if(($d['q318'.$mKey.'_freq'] ?? '') !== '' || ($d['q318'.$mKey.'_biaya'] ?? '') !== '')
+                <div class="k">318{{ $mKey }}. {{ $mLabel }} — Frekuensi (kali)</div>
+                <div class="v">{{ nf_plain($d['q318'.$mKey.'_freq'] ?? null) }}</div>
+                <div class="k">318{{ $mKey }}. {{ $mLabel }} — Biaya (Rp)</div>
+                <div class="v">{{ nf_idr($d['q318'.$mKey.'_biaya'] ?? null) }}</div>
+                @endif
+            @endforeach
+            {{-- Q319: Persentase Pihak Ketiga (industri tahunan) --}}
+            <div class="k">319. % angkutan menggunakan jasa pihak ketiga</div>
+            <div class="v">{{ nf_plain($d['q319_persen_pihak_ketiga'] ?? null) }}{{ ($d['q319_persen_pihak_ketiga'] ?? '') !== '' ? ' %' : '' }}</div>
+            @endif
+
             @if(!empty($showBlocks['blok3bNonIndustri']))
             @php
                 $d_ni_318a = (float)($d['q318a'] ?? 0); $d_ni_318b = (float)($d['q318b'] ?? 0);
@@ -485,12 +501,11 @@
                     "Prospek TW {$twLbls5[$nextTw5-1]}-{$nextYr5} vs TW {$twLbls5[$tw5pdf-1]}-{$yr5pdf}",
                 ];
             } else {
-                $periods5 = ['p1','p2','p3','p4','p5','p6'];
+                $periods5 = ['p1','p2','p3','p5','p6'];
                 $headers5 = [
                     "TW I-{$yr5pdf} vs TW IV-".($yr5pdf-1),
                     "TW II-{$yr5pdf} vs TW I-{$yr5pdf}",
                     "TW III-{$yr5pdf} vs TW II-{$yr5pdf}",
-                    "Prospek TW IV-{$yr5pdf} vs TW III-{$yr5pdf}",
                     "TW IV-{$yr5pdf} vs TW III-{$yr5pdf}",
                     "Prospek TW I-".($yr5pdf+1)." vs TW IV-{$yr5pdf}",
                 ];

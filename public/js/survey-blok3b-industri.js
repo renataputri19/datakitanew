@@ -19,6 +19,7 @@ class SurveyBlok3bIndustriManager {
         this.updateInventoryTotals();
         this.updateAssetTotal();
         this.updateAssetRequiredIndicators();
+        this.updateQ318RequiredIndicators();
         this.updateOwnershipTotal();
         this.updateWorkerTotals();
     }
@@ -260,6 +261,35 @@ class SurveyBlok3bIndustriManager {
         }
     }
 
+    // Show required indicators for Q318 sub-fields (318a through 318e)
+    updateQ318RequiredIndicators() {
+        // Add required class to Q318 table header labels
+        const q318Label = this.form.querySelector('.form-row .form-label .question-number');
+        if (q318Label && q318Label.textContent.includes('318.')) {
+            const formLabel = q318Label.closest('.form-label');
+            if (formLabel && !formLabel.classList.contains('required')) {
+                formLabel.classList.add('required');
+            }
+        }
+
+        // Add required indicators to table cell labels for Q318 sub-fields
+        const q318Table = this.form.querySelector('table');
+        if (q318Table) {
+            const rows = q318Table.querySelectorAll('tbody tr');
+            rows.forEach((row, index) => {
+                if (index < 5) { // Only process rows 318a through 318e
+                    const firstCell = row.querySelector('td:first-child strong');
+                    if (firstCell) {
+                        // Add required indicator if not already present
+                        if (!firstCell.classList.contains('required')) {
+                            firstCell.classList.add('required');
+                        }
+                    }
+                }
+            });
+        }
+    }
+
     updateOwnershipTotal() {
         const keys = ['a','b','c','d','e','f','g','h'];
         let sum = 0;
@@ -382,6 +412,36 @@ class SurveyBlok3bIndustriManager {
                     return (qNum + ' ' + text).trim() || null;
                 }
             }
+            // Table cell label for Q318 sub-fields
+            const tableCell = el.closest('td');
+            if (tableCell) {
+                const row = tableCell.closest('tr');
+                const firstCell = row?.querySelector('td:first-child strong');
+                if (firstCell) {
+                    const qNum = '318.';
+                    let text = firstCell.textContent.trim();
+                    // Extract the sub-question letter and clean transport type (remove examples)
+                    const match = text.match(/^([a-e])\.\s*(.+?)(?:\s*Contoh:|$)/); 
+                    if (match) {
+                        const subLetter = match[1];
+                        const transportType = match[2].trim();
+                        const fieldName = el.getAttribute('name');
+                        const isFreq = fieldName?.includes('_freq');
+                        const labelText = isFreq ? `Frekuensi` : `Biaya`;
+                        return `${qNum}${subLetter} ${transportType} - ${labelText}`;
+                    }
+                    // Fallback if regex doesn't match
+                    const fallbackMatch = text.match(/^([a-e])\.\s*(.+)/);
+                    if (fallbackMatch) {
+                        const subLetter = fallbackMatch[1];
+                        const transportType = fallbackMatch[2].trim();
+                        const fieldName = el.getAttribute('name');
+                        const isFreq = fieldName?.includes('_freq');
+                        const labelText = isFreq ? `Frekuensi` : `Biaya`;
+                        return `${qNum}${subLetter} ${transportType} - ${labelText}`;
+                    }
+                }
+            }
             // Top-level row label
             const formRow = el.closest('.form-row');
             if (!formRow) return null;
@@ -394,6 +454,7 @@ class SurveyBlok3bIndustriManager {
             return (qNum + ' ' + title).trim() || null;
         };
 
+        // Validate standard required fields
         this.form.querySelectorAll('[required]').forEach(el => {
             // Hidden inputs are validated indirectly through their display counterparts
             if (el.type === 'hidden') return;
@@ -420,6 +481,40 @@ class SurveyBlok3bIndustriManager {
                 addError(el.name || el.id, getLabel(el));
             } else {
                 this.clearFieldError(el);
+            }
+        });
+
+        // Validate Q318 sub-fields (318a through 318e - both frequency and cost fields)
+        const q318Fields = [
+            'blok3b_industri[q318a_freq]', 'blok3b_industri[q318a_biaya]',
+            'blok3b_industri[q318b_freq]', 'blok3b_industri[q318b_biaya]', 
+            'blok3b_industri[q318c_freq]', 'blok3b_industri[q318c_biaya]',
+            'blok3b_industri[q318d_freq]', 'blok3b_industri[q318d_biaya]',
+            'blok3b_industri[q318e_freq]', 'blok3b_industri[q318e_biaya]'
+        ];
+
+        q318Fields.forEach(fieldName => {
+            const field = this.form.querySelector(`[name="${fieldName}"]`);
+            if (!field) return;
+
+            let isEmpty;
+            if (field.classList.contains('currency-display')) {
+                // For currency display inputs, check the hidden value
+                const targetName = field.getAttribute('data-target-name');
+                const hidden = targetName 
+                    ? this.form.querySelector(`input[type="hidden"][name="${targetName}"]`)
+                    : null;
+                isEmpty = hidden ? (hidden.value ?? '').toString().trim() === '' : true;
+            } else {
+                // For number inputs (frequency fields)
+                isEmpty = (field.value ?? '').toString().trim() === '';
+            }
+
+            if (isEmpty) {
+                this.showFieldError(field, 'Field ini wajib diisi');
+                addError(fieldName, getLabel(field));
+            } else {
+                this.clearFieldError(field);
             }
         });
 

@@ -12,9 +12,17 @@ class SurveyBlok3aManager {
         this.form = document.getElementById('survey-form');
         this.previewContainer = document.getElementById('blok3a-preview-table');
 
+        // Delete modal references
+        this.deleteOverlay    = document.getElementById('delete-confirm-overlay');
+        this.deleteCancelBtn  = document.getElementById('delete-cancel-btn');
+        this.deleteConfirmBtn = document.getElementById('delete-confirm-btn');
+        this.deleteModalDesc  = document.getElementById('del-modal-desc');
+        this._pendingDeleteIndex = null;
+
         // State
         this.products = []; // Array to store current product structures
         this.cardActiveQuarters = {}; // per-card quarter state: { index: quarter }
+        this._autoSaveTimer = null;
 
         // Month Definitions — overridden by server config if available
         const serverConf = window.surveyData?.quarterConf;
@@ -69,6 +77,7 @@ class SurveyBlok3aManager {
         if (!this.container) return;
 
         console.log('Blok IIIA Manager Initializing...');
+        this._setupDeleteModal();
         this.setupEventListeners();
 
         // Render Static Sections (Lainnya & Total)
@@ -181,12 +190,26 @@ class SurveyBlok3aManager {
         this.form.addEventListener('input', (e) => this.handleInput(e));
         // Format on blur for display inputs
         this.form.addEventListener('blur', (e) => this.handleBlur(e), true);
+        // Format numeric fields on blur
+        this.form.addEventListener('blur', (e) => this.formatNumericOnBlur(e), true);
         this.form.addEventListener('click', (e) => {
+            // 0a. Handle Add Ekspor Row
+            const addEksporBtn = e.target.closest('.btn-add-ekspor-row');
+            if (addEksporBtn) {
+                this.addEksporRow(addEksporBtn.dataset.cardIndex);
+                return;
+            }
+            // 0b. Handle Delete Ekspor Row
+            const delEksporBtn = e.target.closest('.btn-delete-ekspor-row');
+            if (delEksporBtn) {
+                this.deleteEksporRow(delEksporBtn.dataset.cardIndex, delEksporBtn.dataset.rowIndex);
+                return;
+            }
             // 1. Handle Delete
             const deleteBtn = e.target.closest('.btn-delete');
             if (deleteBtn) {
                 const index = deleteBtn.dataset.index;
-                this.deleteProduct(index);
+                this._requestDelete(index);
                 return;
             }
 
@@ -230,6 +253,7 @@ class SurveyBlok3aManager {
             kbli_5digit: '',
             persen_ekspor: '',
             negara_ekspor: '',
+            rincian_ekspor: [],
             banyaknya: {},
             nilai: {},
             harga_satuan: {}
@@ -248,48 +272,74 @@ class SurveyBlok3aManager {
         if (card) this.setCardActiveQuarter(card, this.cardActiveQuarters[index]);
     }
 
-    deleteProduct(indexStr) {
-        if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
+    _setupDeleteModal() {
+        if (!this.deleteOverlay) return;
 
+        this.deleteCancelBtn && this.deleteCancelBtn.addEventListener('click', () => this._closeDeleteModal());
+        this.deleteConfirmBtn && this.deleteConfirmBtn.addEventListener('click', () => this._doDelete());
+
+        this.deleteOverlay.addEventListener('click', (e) => {
+            if (e.target === this.deleteOverlay) this._closeDeleteModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.deleteOverlay.classList.contains('active')) {
+                this._closeDeleteModal();
+            }
+        });
+    }
+
+    _openDeleteModal() {
+        if (this.deleteOverlay) this.deleteOverlay.classList.add('active');
+    }
+
+    _closeDeleteModal() {
+        if (this.deleteOverlay) this.deleteOverlay.classList.remove('active');
+        this._pendingDeleteIndex = null;
+    }
+
+    _requestDelete(indexStr) {
         const index = parseInt(indexStr);
-        // We can't easily "remove" from the array and preserve indices without weirdness in PHP reception 
-        // unless we re-index everything.
-        // Simplest approach: Remove DOM, rebuild data or just re-submit everything.
-        // For dynamic UI, removing the DOM element is key.
+        const card = document.getElementById(`product-card-${index}`);
+        if (!card) return;
+
+        const nameInput = card.querySelector('input[name*="[jenis_barang]"]');
+        const label = nameInput && nameInput.value ? `"${nameInput.value}"` : 'produk ini';
+
+        if (this.deleteModalDesc) {
+            if (index === 0) {
+                this.deleteModalDesc.innerHTML = `Produk pertama <strong>${label}</strong> tidak dapat dihapus. Semua isian akan <strong>dikosongkan/direset</strong>.`;
+            } else {
+                this.deleteModalDesc.innerHTML = `Produk <strong>${label}</strong> akan dihapus secara permanen dari daftar.`;
+            }
+        }
+
+        this._pendingDeleteIndex = index;
+        this._openDeleteModal();
+    }
+
+    _doDelete() {
+        const index = this._pendingDeleteIndex;
+        this._closeDeleteModal();
+        if (index === null || index === undefined) return;
 
         const card = document.getElementById(`product-card-${index}`);
-        if (card) {
-            card.remove();
-            // We should also probably mark it as deleted or actually remove it from our local state
-            // But re-indexing is complex with auto-save. 
-            // Better: Just hide it and empty values? 
-            // Robust: Re-index everything in DOM and backend?
+        if (!card) return;
 
-            // Let's go with: Remove from DOM, and when Saving, we parse DOM to build array.
-            // But AutoSave saves individual fields. 
-            // *Correction*: The prompt asks to FIX bugs causing data duplication.
-            // Best fix: Remove the element. If using `blok3a_products[index]`, leaving holes is fine for PHP 
-            // (it becomes an assoc array), but `array_values` might be needed on backend.
-            // Let's assume backend handles standard form encoding.
-
-            // For autosave to strictly work with "delete", we might need to send a specific delete command 
-            // or just rely on the final save. 
-            // Current `survey.js` usually handles individual field updates.
-            // To properly delete, we might need to clear values and trigger save, then remove DOM.
-
-            // Clear values to trigger DB clears if autosave supports it
+        if (index === 0) {
+            // First card: clear all inputs and autosave instead of removing
             card.querySelectorAll('input').forEach(input => {
                 input.value = '';
-                this.handleInput({ target: input }, false); // Trigger autosave with empty
+                this.handleInput({ target: input });
             });
-
-            // If we have a specific delete route, use it. If not, just remove DOM and hope 
-            // the full save overwrites.
-            // Ideally, we re-index the 'name' attributes of remaining cards to be 0,1,2...
-            // so PHP receives a clean 0-indexed array.
-
+            this.calculateTotals();
+        } else {
+            // Subsequent cards: clear inputs first so autosave sends empty values, then remove
+            card.querySelectorAll('input').forEach(input => { input.value = ''; });
+            card.remove();
             this.reindexProducts();
             this.calculateTotals();
+            this._scheduleAutoSave();
         }
     }
 
@@ -311,6 +361,15 @@ class SurveyBlok3aManager {
             // Update delete button
             const delBtn = card.querySelector('.btn-delete');
             if (delBtn) delBtn.dataset.index = newIndex;
+
+            // Update ekspor rows container ID and button data-card-index
+            const eksporContainer = card.querySelector('.ekspor-rows-container');
+            if (eksporContainer) eksporContainer.id = `ekspor-rows-${newIndex}`;
+            const addEkspBtn = card.querySelector('.btn-add-ekspor-row');
+            if (addEkspBtn) addEkspBtn.dataset.cardIndex = newIndex;
+            card.querySelectorAll('.btn-delete-ekspor-row').forEach(btn => {
+                btn.dataset.cardIndex = newIndex;
+            });
         });
 
         // Update local state length
@@ -387,6 +446,22 @@ class SurveyBlok3aManager {
                                value="${data.negara_ekspor || ''}"
                                class="form-control negara-ekspor-input"
                                placeholder="Contoh: Amerika Serikat">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:1rem;padding:0.875rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:0.5rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                        <label class="form-label" style="margin-bottom:0;color:#166534;font-weight:600;font-size:0.875rem;">Rincian Provinsi Tujuan Ekspor <span style="color:#ef4444;">*</span></label>
+                        <button type="button" class="btn-add-ekspor-row" data-card-index="${index}"
+                                style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;
+                                       border-radius:0.4rem;border:1px solid #86efac;background:#dcfce7;color:#166534;
+                                       font-size:0.75rem;font-weight:600;cursor:pointer;transition:background 0.15s;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Tambah
+                        </button>
+                    </div>
+                    <span class="ekspor-provinsi-error" style="display:none;color:#dc2626;font-size:0.8rem;margin-bottom:0.4rem;"></span>
+                    <div class="ekspor-rows-container" id="ekspor-rows-${index}">
+                        ${this.generateEksporRows(index, data.rincian_ekspor || [])}
                     </div>
                 </div>` : ''}
 
@@ -678,6 +753,13 @@ class SurveyBlok3aManager {
         const card = input.closest('.product-card');
         const month = input.dataset ? input.dataset.month : null;
 
+        // Clear first-card required field errors on input
+        if (input.name && input.name.startsWith('blok3a_products[0]') && input.value.trim() !== '') {
+            input.classList.remove('input-invalid');
+            const errEl = input.parentNode.querySelector('[data-req-err]');
+            if (errEl) errEl.remove();
+        }
+
         // Handle formatted display inputs
         if (input.classList && input.classList.contains('numeric-display')) {
             const targetName = input.getAttribute('data-target-name');
@@ -715,6 +797,31 @@ class SurveyBlok3aManager {
 
             // Update preview
             this.renderPreviewTable();
+            return;
+        }
+
+        // Attach numeric restriction once for rincian_ekspor numeric fields
+        if (input.name && input.name.includes('[rincian_ekspor]') && (input.name.includes('[jumlah]') || input.name.includes('[nilai]'))) {
+            if (!input.hasAttribute('data-numeric-restricted')) {
+                input.setAttribute('data-numeric-restricted', '1');
+                input.addEventListener('input', () => {
+                    const val = input.value;
+                    const cleaned = val.replace(/[^0-9,.]/g, '');
+                    if (val !== cleaned) input.value = cleaned;
+                });
+            }
+        }
+
+        // Full-form autosave for rincian_ekspor fields (individual saves can't handle nested arrays)
+        if (input.name && input.name.includes('[rincian_ekspor]')) {
+            if (input.name.includes('[provinsi]') && input.value.trim() !== '') {
+                const cardEl = input.closest('.product-card');
+                if (cardEl) {
+                    const errSpan = cardEl.querySelector('.ekspor-provinsi-error');
+                    if (errSpan) errSpan.style.display = 'none';
+                }
+            }
+            this._scheduleAutoSave();
             return;
         }
 
@@ -1050,6 +1157,13 @@ class SurveyBlok3aManager {
             if (errSpan) errSpan.style.display = 'none';
         });
 
+        // Clear previous first-card product field errors
+        const _p0Card = document.getElementById('product-card-0');
+        if (_p0Card) {
+            _p0Card.querySelectorAll('[data-req-err]').forEach(el => el.remove());
+            _p0Card.querySelectorAll('.input-invalid').forEach(el => el.classList.remove('input-invalid'));
+        }
+
         // Check each field
         requiredFields.forEach(({ id, label }) => {
             const input = document.getElementById(id);
@@ -1062,6 +1176,76 @@ class SurveyBlok3aManager {
                 if (!firstErrorField) firstErrorField = input;
             }
         });
+
+        // ── Validate first product card required fields (index 0 only) ───────────
+        const p0Card = document.getElementById('product-card-0');
+        if (p0Card) {
+            const p0Checks = [
+                { sel: 'input[name="blok3a_products[0][jenis_barang]"]', label: 'Produk 1: Nama/Jenis Barang wajib diisi' },
+                { sel: 'input[name="blok3a_products[0][satuan]"]',       label: 'Produk 1: Satuan/Unit wajib diisi' },
+            ];
+            if (!this.isTriwulanan) {
+                p0Checks.push(
+                    { sel: 'input[name="blok3a_products[0][kbli_5digit]"]',  label: 'Produk 1: KBLI 5 Digit wajib diisi' },
+                    { sel: 'input[name="blok3a_products[0][persen_ekspor]"]', label: 'Produk 1: Persentase yang diekspor wajib diisi' },
+                    { sel: 'input[name="blok3a_products[0][negara_ekspor]"]', label: 'Produk 1: Negara tujuan utama ekspor wajib diisi' },
+                );
+            }
+            let p0HasError = false;
+            p0Checks.forEach(({ sel, label }) => {
+                const inp = p0Card.querySelector(sel);
+                if (!inp) return;
+                if (inp.value.trim() === '') {
+                    inp.classList.add('input-invalid');
+                    if (!inp.parentNode.querySelector('[data-req-err]')) {
+                        const errEl = document.createElement('span');
+                        errEl.className = 'field-error visible';
+                        errEl.setAttribute('data-req-err', '1');
+                        errEl.textContent = 'Wajib diisi';
+                        inp.insertAdjacentElement('afterend', errEl);
+                    }
+                    errors.push(label);
+                    p0HasError = true;
+                    if (!firstErrorField) firstErrorField = inp;
+                }
+            });
+            if (p0HasError) {
+                p0Card.classList.remove('collapsed');
+                const icon = p0Card.querySelector('.toggle-icon-svg');
+                if (icon) icon.style.transform = '';
+            }
+        }
+
+        // Validate rincian_ekspor: first product card (index 0) only — needs ≥1 provinsi filled
+        if (!this.isTriwulanan) {
+            const p0CardEkspor = document.getElementById('product-card-0');
+            if (p0CardEkspor) {
+                const eksporRows = Array.from(p0CardEkspor.querySelectorAll('.ekspor-rows-container .ekspor-row'));
+                const hasProvinsi = eksporRows.some(row => {
+                    const pInp = row.querySelector('input[name*="[provinsi]"]');
+                    return pInp && pInp.value.trim() !== '';
+                });
+                const errSpan = p0CardEkspor.querySelector('.ekspor-provinsi-error');
+                if (!hasProvinsi) {
+                    if (errSpan) {
+                        errSpan.textContent = 'Minimal 1 rincian provinsi tujuan ekspor wajib diisi.';
+                        errSpan.style.display = 'block';
+                    }
+                    p0CardEkspor.classList.remove('collapsed');
+                    const icon = p0CardEkspor.querySelector('.toggle-icon-svg');
+                    if (icon) icon.style.transform = '';
+                    if (!firstErrorField) firstErrorField = errSpan || p0CardEkspor;
+                    errors.push('Produk 1: Minimal 1 provinsi tujuan ekspor wajib diisi');
+                } else {
+                    if (errSpan) errSpan.style.display = 'none';
+                }
+            }
+            // Clear rincian ekspor errors on subsequent cards (index 1+)
+            Array.from(this.container.querySelectorAll('.product-card')).slice(1).forEach(card => {
+                const errSpan = card.querySelector('.ekspor-provinsi-error');
+                if (errSpan) errSpan.style.display = 'none';
+            });
+        }
 
         if (errors.length > 0) {
             // Build and inject validation summary before form actions
@@ -1111,6 +1295,26 @@ class SurveyBlok3aManager {
     }
 
     // Actions
+    _scheduleAutoSave() {
+        clearTimeout(this._autoSaveTimer);
+        this._autoSaveTimer = setTimeout(() => this._saveDraftSilent(), 800);
+    }
+
+    _saveDraftSilent() {
+        if (!window.surveyRoutes?.saveAll) return;
+        const token = document.querySelector('meta[name="csrf-token"]');
+        if (!token) return;
+        const fd = new FormData(this.form);
+        fetch(window.surveyRoutes.saveAll, {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-CSRF-TOKEN': token.content }
+        })
+        .then(r => r.json())
+        .then(() => {})
+        .catch(() => {});
+    }
+
     saveDraft() {
         // Collect form data and submit
         const data = new FormData(this.form);
@@ -1206,6 +1410,111 @@ class SurveyBlok3aManager {
                 btn.innerHTML = 'Simpan dan Lanjutkan';
                 btn.disabled = false;
             });
+    }
+
+    generateEksporRows(cardIndex, rows) {
+        if (!rows || rows.length === 0) {
+            return this.generateEksporRowHTML(cardIndex, 0, {});
+        }
+        return rows.map((row, ri) => this.generateEksporRowHTML(cardIndex, ri, row)).join('');
+    }
+
+    generateEksporRowHTML(cardIndex, rowIndex, rowData) {
+        const v = rowData || {};
+        return `<div class="ekspor-row" data-row-index="${rowIndex}">
+            <div>
+                <label style="font-size:0.75rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Provinsi Tujuan</label>
+                <input type="text" name="blok3a_products[${cardIndex}][rincian_ekspor][${rowIndex}][provinsi]"
+                       value="${this.escapeHtml(v.provinsi || '')}" class="form-control" placeholder="Nama provinsi">
+            </div>
+            <div>
+                <label style="font-size:0.75rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Banyaknya</label>
+                <input type="text" inputmode="numeric" name="blok3a_products[${cardIndex}][rincian_ekspor][${rowIndex}][jumlah]"
+                       value="${this.escapeHtml(v.jumlah || '')}" class="form-control" placeholder="0">
+            </div>
+            <div>
+                <label style="font-size:0.75rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Nilai (Rp)</label>
+                <input type="text" inputmode="numeric" name="blok3a_products[${cardIndex}][rincian_ekspor][${rowIndex}][nilai]"
+                       value="${this.escapeHtml(v.nilai || '')}" class="form-control" placeholder="0">
+            </div>
+            <div>
+                <button type="button" class="btn-delete-ekspor-row" data-card-index="${cardIndex}" data-row-index="${rowIndex}"
+                        title="Hapus baris ini"
+                        style="display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;
+                               border-radius:0.375rem;border:1px solid #fca5a5;background:#fee2e2;color:#b91c1c;
+                               cursor:pointer;flex-shrink:0;transition:background 0.15s;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>`;
+    }
+
+    addEksporRow(cardIndex) {
+        const container = document.getElementById(`ekspor-rows-${cardIndex}`);
+        if (!container) return;
+        const hint = container.querySelector('.ekspor-empty-hint');
+        if (hint) hint.remove();
+        const rowCount = container.querySelectorAll('.ekspor-row').length;
+        container.insertAdjacentHTML('beforeend', this.generateEksporRowHTML(cardIndex, rowCount, {}));
+    }
+
+    deleteEksporRow(cardIndex, rowIndexStr) {
+        const container = document.getElementById(`ekspor-rows-${cardIndex}`);
+        if (!container) return;
+        const rows = container.querySelectorAll('.ekspor-row');
+        const rowIndex = parseInt(rowIndexStr);
+        if (rows[rowIndex]) {
+            rows[rowIndex].remove();
+            container.querySelectorAll('.ekspor-row').forEach((row, ni) => {
+                row.dataset.rowIndex = ni;
+                row.querySelectorAll('input').forEach(inp => {
+                    inp.name = inp.name.replace(
+                        /blok3a_products\[(\d+)\]\[rincian_ekspor\]\[\d+\]/,
+                        (_, ci) => `blok3a_products[${ci}][rincian_ekspor][${ni}]`
+                    );
+                });
+                const delBtn = row.querySelector('.btn-delete-ekspor-row');
+                if (delBtn) delBtn.dataset.rowIndex = ni;
+            });
+            if (container.querySelectorAll('.ekspor-row').length === 0) {
+                container.insertAdjacentHTML('beforeend', this.generateEksporRowHTML(cardIndex, 0, {}));
+            }
+        }
+    }
+
+    formatNumericOnBlur(e) {
+        const inp = e.target;
+        if (!inp || !inp.name || !inp.name.startsWith('blok3a_products')) return;
+        const isNumeric = (inp.name.includes('[banyaknya]') || inp.name.includes('[nilai]') || inp.name.includes('[harga_satuan]') || (inp.name.includes('[rincian_ekspor]') && (inp.name.includes('[jumlah]') || inp.name.includes('[nilai]'))));
+        if (!isNumeric) return;
+        // Attach numeric restriction once per input
+        if (!inp.hasAttribute('data-numeric-restricted')) {
+            inp.setAttribute('data-numeric-restricted', '1');
+            inp.addEventListener('input', () => {
+                const val = inp.value;
+                const cleaned = val.replace(/[^0-9,.]/g, '');
+                if (val !== cleaned) inp.value = cleaned;
+            });
+        }
+        const raw = inp.value.replace(/[^0-9]/g, '');
+        if (raw === '') {
+            inp.value = '';
+        } else {
+            const num = parseInt(raw, 10);
+            if (!isNaN(num) && num > 0) {
+                inp.value = num.toLocaleString('id-ID');
+            } else {
+                inp.value = raw;
+            }
+        }
+        // Re-save the formatted value so the persisted value matches display
+        if (inp.name && inp.name.includes('[rincian_ekspor]')) {
+            this._scheduleAutoSave();
+        } else if (window.surveyManager && inp.name) {
+            window.surveyManager.scheduleAutoSave(inp.name, inp.value);
+        }
     }
 }
 

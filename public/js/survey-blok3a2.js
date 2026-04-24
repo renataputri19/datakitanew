@@ -82,9 +82,10 @@ class SurveyBlok3a2Manager {
 
         if (this.addBtn) this.addBtn.addEventListener('click', () => this._addCard());
 
-        // Delegated events on form
+        // Global Event Delegation for Inputs (AutoSave & Calc)
         this.form.addEventListener('input', (e) => this._onInput(e));
-        this.form.addEventListener('keypress', (e) => this._onKeypress(e));
+        // Format on blur for display inputs
+        this.form.addEventListener('blur', (e) => this._formatOnBlur(e), true);
         this.form.addEventListener('click',  (e) => this._onClick(e));
     }
 
@@ -143,6 +144,8 @@ class SurveyBlok3a2Manager {
         } else {
             this._addCard();
         }
+        // Recalculate DN totals from rincian after all cards are rendered
+        this._recalcAllDnTotals();
     }
 
     /* ══════════════════════════════════════════════════════════
@@ -151,7 +154,7 @@ class SurveyBlok3a2Manager {
 
     _addCard(data, expand) {
         const index = this.container.querySelectorAll('.product-card').length;
-        const d = Object.assign({ nama_bahan:'', satuan_standar:'', dn_banyaknya:'', dn_nilai:'', ln_banyaknya:'', ln_nilai:'', negara_asal:'' }, data || {});
+        const d = Object.assign({ nama_bahan:'', satuan_standar:'', dn_banyaknya:'', dn_nilai:'', ln_banyaknya:'', ln_nilai:'', negara_asal:'', rincian_asal:[] }, data || {});
         const collapsed = (expand === false || (!data && index > 0));
         this.container.insertAdjacentHTML('beforeend', this._cardHTML(index, d, !collapsed));
         // Trigger preview update
@@ -159,10 +162,17 @@ class SurveyBlok3a2Manager {
     }
 
     _requestDelete(card) {
-        const name = card.querySelector('input[name*="[nama_bahan]"]');
-        const label = name && name.value ? `"${name.value}"` : 'bahan ini';
+        const nameInp = card.querySelector('input[name*="[nama_bahan]"]');
+        const label = nameInp && nameInp.value ? `"${nameInp.value}"` : 'bahan ini';
+        const m = card.id.match(/pc-(\d+)/);
+        const cardIdx = m ? parseInt(m[1]) : -1;
+
         if (this.deleteModalDesc) {
-            this.deleteModalDesc.innerHTML = `Bahan <strong>${label}</strong> akan dihapus secara permanen dari daftar.`;
+            if (cardIdx === 0) {
+                this.deleteModalDesc.innerHTML = `Bahan pertama <strong>${label}</strong> tidak dapat dihapus. Semua isian akan <strong>dikosongkan/direset</strong>.`;
+            } else {
+                this.deleteModalDesc.innerHTML = `Bahan <strong>${label}</strong> akan dihapus secara permanen dari daftar.`;
+            }
         }
         this._pendingDeleteCard = card;
         this._openDeleteModal();
@@ -173,16 +183,27 @@ class SurveyBlok3a2Manager {
         this._closeDeleteModal();
         if (!card) return;
 
-        // Animate removal
-        card.style.transition = 'all 0.25s ease';
-        card.style.opacity = '0';
-        card.style.transform = 'translateX(20px)';
-        setTimeout(() => {
-            card.remove();
-            this._reindex();
+        const m = card.id.match(/pc-(\d+)/);
+        const cardIdx = m ? parseInt(m[1]) : -1;
+
+        if (cardIdx === 0) {
+            // First card: clear all inputs instead of removing
+            card.querySelectorAll('input').forEach(inp => { inp.value = ''; });
+            this._recalcDnTotals(0);
             this._renderPreview();
             this._scheduleAutoSave();
-        }, 260);
+        } else {
+            // Subsequent cards: animate removal
+            card.style.transition = 'all 0.25s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(20px)';
+            setTimeout(() => {
+                card.remove();
+                this._reindex();
+                this._renderPreview();
+                this._scheduleAutoSave();
+            }, 260);
+        }
     }
 
     _openDeleteModal() {
@@ -208,6 +229,15 @@ class SurveyBlok3a2Manager {
                 }
             });
 
+            // Update rincian rows container ID and button data-card-index
+            const rincianContainer = card.querySelector('.rincian-rows-container');
+            if (rincianContainer) rincianContainer.id = `rincian-rows-${newIdx}`;
+            const addRincianBtn = card.querySelector('.btn-add-rincian-row');
+            if (addRincianBtn) addRincianBtn.dataset.cardIndex = newIdx;
+            card.querySelectorAll('.btn-delete-rincian-row').forEach(btn => {
+                btn.dataset.cardIndex = newIdx;
+            });
+
             card.querySelectorAll('.field-error').forEach(el => {
                 el.id = el.id.replace(/\d+/, newIdx);
             });
@@ -222,6 +252,20 @@ class SurveyBlok3a2Manager {
     ══════════════════════════════════════════════════════════ */
 
     _onClick(e) {
+        // Add rincian row
+        const addRincianBtn = e.target.closest('.btn-add-rincian-row');
+        if (addRincianBtn) {
+            e.stopPropagation();
+            this._addRincianRow(addRincianBtn.dataset.cardIndex);
+            return;
+        }
+        // Delete rincian row
+        const delRincianBtn = e.target.closest('.btn-delete-rincian-row');
+        if (delRincianBtn) {
+            e.stopPropagation();
+            this._deleteRincianRow(delRincianBtn.dataset.cardIndex, delRincianBtn.dataset.rowIndex);
+            return;
+        }
         // Delete button — must check before header toggle
         const delBtn = e.target.closest('.btn-delete-material');
         if (delBtn) {
@@ -249,15 +293,45 @@ class SurveyBlok3a2Manager {
         if (!inp || !inp.name || !inp.name.startsWith('blok3a2_')) return;
 
         // Clear required-field error as soon as the user types a non-empty value
-        const requiredFields = ['nama_bahan', 'dn_banyaknya', 'dn_nilai'];
+        const requiredFields = ['nama_bahan', 'satuan_standar', 'ln_banyaknya', 'ln_nilai', 'negara_asal'];
         if (requiredFields.some(f => inp.name.includes('[' + f + ']')) && inp.value.trim() !== '') {
             this._clearRequiredError(inp);
         }
 
-        // Integer validation for numeric fields
-        const numericFields = ['dn_banyaknya', 'dn_nilai', 'ln_banyaknya', 'ln_nilai'];
+        // Clear rincian provinsi error when a provinsi is filled
+        if (inp.name.includes('[rincian_asal]') && inp.name.includes('[provinsi]') && inp.value.trim() !== '') {
+            const card = inp.closest('.product-card');
+            if (card) {
+                const errEl = card.querySelector('.rincian-provinsi-error');
+                if (errEl) errEl.style.display = 'none';
+            }
+        }
+
+        // Recalculate DN totals when rincian jumlah/nilai changes
+        if (inp.name.includes('[rincian_asal]') && (inp.name.includes('[jumlah]') || inp.name.includes('[nilai]'))) {
+            const card = inp.closest('.product-card');
+            if (card) {
+                const m = card.id.match(/pc-(\d+)/);
+                if (m) this._recalcDnTotals(m[1]);
+            }
+        }
+
+        // Integer validation for numeric fields (LN only; DN is auto-calculated)
+        const numericFields = ['ln_banyaknya', 'ln_nilai'];
         const isNumeric = numericFields.some(f => inp.name.includes('[' + f + ']'));
         if (isNumeric) this._validateInteger(inp);
+
+        // Attach numeric restriction once per input
+        if (inp.name.includes('[dn_banyaknya]') || inp.name.includes('[dn_nilai]') || inp.name.includes('[ln_banyaknya]') || inp.name.includes('[ln_nilai]') || (inp.name.includes('[rincian_asal]') && (inp.name.includes('[jumlah]') || inp.name.includes('[nilai]')))) {
+            if (!inp.hasAttribute('data-numeric-restricted')) {
+                inp.setAttribute('data-numeric-restricted', '1');
+                inp.addEventListener('input', () => {
+                    const val = inp.value;
+                    const cleaned = val.replace(/[^0-9,.]/g, '');
+                    if (val !== cleaned) inp.value = cleaned;
+                });
+            }
+        }
 
         // Update name preview in card header
         if (inp.name.includes('[nama_bahan]')) {
@@ -271,9 +345,8 @@ class SurveyBlok3a2Manager {
         // Live preview update
         this._renderPreview();
 
-        // Debounced autosave
-        clearTimeout(this._autoSaveTimer);
-        this._autoSaveTimer = setTimeout(() => this._autoSaveField(inp.name, inp.value), 1200);
+        // Debounced full-form autosave (handles nested arrays like rincian correctly)
+        this._scheduleAutoSave();
     }
 
     _onKeypress(e) {
@@ -295,6 +368,9 @@ class SurveyBlok3a2Manager {
         const val = inp.value.trim();
         const errId = 'err-' + inp.name.replace(/[\[\]]/g, '_');
         let errEl = document.getElementById(errId);
+
+        // If value contains thousand separators, it's already formatted and valid
+        if (val.includes('.')) return true;
 
         const valid = val === '' || /^\d+$/.test(val);
 
@@ -332,49 +408,80 @@ class SurveyBlok3a2Manager {
         if (errEl) errEl.remove();
     }
 
-    // ── Validate all required fields in every material card ──────────────────
-    // Returns true if all cards pass; false + expands failing cards otherwise.
+    // ── Validate required fields in the first material card (index 0) only ────────
+    // Subsequent cards (index 1+) are optional and skipped entirely.
+    // Returns true if the first card passes; false + expands failing card otherwise.
     _validateCards() {
         let allValid = true;
         const cards = Array.from(this.container.querySelectorAll('.product-card'));
 
+        // Clear errors on all cards first, then only re-validate index 0
         cards.forEach(card => {
-            const m = card.id.match(/pc-(\d+)/);
-            const ci = m ? m[1] : '0';
-            let cardValid = true;
+            card.querySelectorAll('[data-req-err]').forEach(el => el.remove());
+            card.querySelectorAll('.input-invalid').forEach(el => el.classList.remove('input-invalid'));
+            const rErr = card.querySelector('.rincian-provinsi-error');
+            if (rErr) rErr.style.display = 'none';
+        });
 
-            const checks = [
-                { name: `blok3a2_materials[${ci}][nama_bahan]`,   msg: 'Nama bahan wajib diisi.' },
-                { name: `blok3a2_materials[${ci}][dn_banyaknya]`, msg: 'Banyaknya Dalam Negeri wajib diisi.' },
-                { name: `blok3a2_materials[${ci}][dn_nilai]`,     msg: 'Nilai Dalam Negeri wajib diisi.' },
-            ];
+        const firstCard = cards[0];
+        if (!firstCard) return true;
 
-            checks.forEach(({ name, msg }) => {
-                const inp = card.querySelector(`input[name="${name}"]`);
-                if (!inp) return;
-                if (inp.value.trim() === '') {
-                    this._showRequiredError(inp, msg);
-                    cardValid = false;
-                } else {
-                    this._clearRequiredError(inp);
-                }
-            });
+        const m = firstCard.id.match(/pc-(\d+)/);
+        const ci = m ? m[1] : '0';
+        let cardValid = true;
 
-            // Expand the card so the user can see the highlighted fields
-            if (!cardValid) {
-                card.classList.remove('collapsed');
-                const icon = card.querySelector('.toggle-icon-svg');
-                if (icon) icon.style.transform = '';
-                const header = card.querySelector('.card-header');
-                if (header) header.setAttribute('aria-expanded', 'true');
-                allValid = false;
+        const checks = [
+            { name: `blok3a2_materials[${ci}][nama_bahan]`,    msg: 'Nama bahan wajib diisi.' },
+            { name: `blok3a2_materials[${ci}][satuan_standar]`, msg: 'Satuan standar wajib diisi.' },
+            { name: `blok3a2_materials[${ci}][dn_banyaknya]`,  msg: 'Banyaknya Dalam Negeri wajib diisi.' },
+            { name: `blok3a2_materials[${ci}][dn_nilai]`,       msg: 'Nilai Dalam Negeri wajib diisi.' },
+            { name: `blok3a2_materials[${ci}][ln_banyaknya]`,  msg: 'Banyaknya Luar Negeri wajib diisi.' },
+            { name: `blok3a2_materials[${ci}][ln_nilai]`,       msg: 'Nilai Luar Negeri wajib diisi.' },
+            { name: `blok3a2_materials[${ci}][negara_asal]`,   msg: 'Negara asal wajib diisi.' },
+        ];
+
+        checks.forEach(({ name, msg }) => {
+            const inp = firstCard.querySelector(`input[name="${name}"]`);
+            if (!inp) return;
+            if (inp.value.trim() === '') {
+                this._showRequiredError(inp, msg);
+                cardValid = false;
+            } else {
+                this._clearRequiredError(inp);
             }
         });
 
-        // Scroll to the first failing card
+        // Require at least 1 rincian_asal entry with provinsi filled (first card only)
+        const rincianErrEl = firstCard.querySelector('.rincian-provinsi-error');
+        const rincianRows = Array.from(firstCard.querySelectorAll('.rincian-row'));
+        const hasProvinsi = rincianRows.some(row => {
+            const pInp = row.querySelector('input[name*="[provinsi]"]');
+            return pInp && pInp.value.trim() !== '';
+        });
+        if (!hasProvinsi) {
+            if (rincianErrEl) {
+                rincianErrEl.textContent = 'Minimal 1 rincian provinsi asal/tujuan wajib diisi.';
+                rincianErrEl.style.display = 'block';
+            }
+            cardValid = false;
+        } else {
+            if (rincianErrEl) rincianErrEl.style.display = 'none';
+        }
+
+        // Expand the first card so the user can see the highlighted fields
+        if (!cardValid) {
+            firstCard.classList.remove('collapsed');
+            const icon = firstCard.querySelector('.toggle-icon-svg');
+            if (icon) icon.style.transform = '';
+            const header = firstCard.querySelector('.card-header');
+            if (header) header.setAttribute('aria-expanded', 'true');
+            allValid = false;
+        }
+
+        // Scroll to the first failing field in the first card
         if (!allValid) {
-            const firstBad = this.container.querySelector('.product-card .input-invalid');
-            if (firstBad) firstBad.closest('.product-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const firstBad = firstCard.querySelector('.input-invalid');
+            if (firstBad) firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         return allValid;
@@ -474,20 +581,22 @@ class SurveyBlok3a2Manager {
 
     <div class="dn-ln-grid">
       <div class="dn-box">
-        <div class="box-label">Dalam Negeri</div>
+        <div class="box-label">Dalam Negeri <span style="font-size:0.7rem;font-weight:400;color:#92400e;">(∑ Rincian)</span></div>
         <div class="form-group">
-          <label class="form-label" style="font-size:0.8rem;">(4) Banyaknya <span style="color:#ef4444;">*</span></label>
-          <input type="text" inputmode="numeric"
+          <label class="form-label" style="font-size:0.8rem;">(4) Banyaknya</label>
+          <input type="text" inputmode="numeric" readonly tabindex="-1"
                  name="blok3a2_materials[${index}][dn_banyaknya]"
                  value="${esc(d.dn_banyaknya)}" class="form-control"
-                 placeholder="0">
+                 placeholder="0" style="background:#fef9c3;color:#92400e;cursor:default;">
+          <p style="margin-top:0.2rem;font-size:0.7rem;color:#9ca3af;margin-bottom:0;">Dijumlah otomatis dari rincian</p>
         </div>
         <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label" style="font-size:0.8rem;">(5) Nilai (Rp) <span style="color:#ef4444;">*</span></label>
-          <input type="text" inputmode="numeric"
+          <label class="form-label" style="font-size:0.8rem;">(5) Nilai (Rp)</label>
+          <input type="text" inputmode="numeric" readonly tabindex="-1"
                  name="blok3a2_materials[${index}][dn_nilai]"
                  value="${esc(d.dn_nilai)}" class="form-control"
-                 placeholder="0">
+                 placeholder="0" style="background:#fef9c3;color:#92400e;cursor:default;">
+          <p style="margin-top:0.2rem;font-size:0.7rem;color:#9ca3af;margin-bottom:0;">Dijumlah otomatis dari rincian</p>
         </div>
       </div>
       <div class="ln-box">
@@ -515,6 +624,22 @@ class SurveyBlok3a2Manager {
              value="${esc(d.negara_asal)}" class="form-control"
              placeholder="Contoh: Indonesia, Tiongkok" autocomplete="off">
       <p style="margin-top:0.3rem;font-size:0.75rem;color:#9ca3af;">Jika lebih dari satu negara, tuliskan negara dengan nilai impor terbesar.</p>
+    </div>
+    <div class="rincian-asal-section" style="margin-top:1rem;margin-bottom:0;border-top:1px solid #e5e7eb;padding-top:0.875rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+        <label class="form-label" style="margin-bottom:0;font-size:0.875rem;font-weight:600;color:#1e40af;">Rincian Provinsi Asal/Tujuan <span style="color:#ef4444;">*</span></label>
+        <button type="button" class="btn-add-rincian-row" data-card-index="${index}"
+                style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.75rem;
+                       border-radius:0.4rem;border:1px solid #86efac;background:#dcfce7;color:#166534;
+                       font-size:0.75rem;font-weight:600;cursor:pointer;transition:background 0.15s;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Tambah
+        </button>
+      </div>
+      <span class="rincian-provinsi-error" style="display:none;color:#dc2626;font-size:0.8rem;margin-bottom:0.4rem;"></span>
+      <div class="rincian-rows-container" id="rincian-rows-${index}">
+        ${this._generateRincianRows(index, d.rincian_asal || [])}
+      </div>
     </div>
   </div>
 </div>`;
@@ -647,8 +772,9 @@ class SurveyBlok3a2Manager {
         })
         .then(r => r.json())
         .then(d => {
-            if (d.success) this._showSaved('Draft disimpan pukul ' + (d.last_saved_at || ''));
-            else if (!silent) this._notify('Gagal menyimpan: ' + (d.message || ''));
+            if (d.success) {
+                if (!silent) this._showSaved('Draft disimpan');
+            } else if (!silent) this._notify('Gagal menyimpan: ' + (d.message || ''));
         })
         .catch(() => { if (!silent) this._notify('Terjadi kesalahan saat menyimpan draft.'); })
         .finally(() => { if (btn) { btn.innerHTML = orig; btn.disabled = false; } });
@@ -695,6 +821,143 @@ class SurveyBlok3a2Manager {
             this._notify('Gagal menyimpan: ' + err.message);
             if (btn) { btn.innerHTML = 'Simpan dan Lanjutkan'; btn.disabled = false; }
         });
+    }
+
+    _generateRincianRows(cardIndex, rows) {
+        if (!rows || rows.length === 0) {
+            return this._generateRincianRowHTML(cardIndex, 0, {});
+        }
+        return rows.map((row, ri) => this._generateRincianRowHTML(cardIndex, ri, row)).join('');
+    }
+
+    _generateRincianRowHTML(cardIndex, rowIndex, rowData) {
+        const esc = v => String(v || '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+        const v = rowData || {};
+        return `<div class="rincian-row" data-row-index="${rowIndex}">
+          <div>
+            <label style="font-size:0.75rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Provinsi Asal/Tujuan</label>
+            <input type="text" name="blok3a2_materials[${cardIndex}][rincian_asal][${rowIndex}][provinsi]"
+                   value="${esc(v.provinsi || '')}" class="form-control" placeholder="Nama provinsi" autocomplete="off">
+          </div>
+          <div>
+            <label style="font-size:0.75rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Banyaknya</label>
+            <input type="text" inputmode="numeric" name="blok3a2_materials[${cardIndex}][rincian_asal][${rowIndex}][jumlah]"
+                   value="${esc(v.jumlah || '')}" class="form-control" placeholder="0">
+          </div>
+          <div>
+            <label style="font-size:0.75rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Nilai (Rp)</label>
+            <input type="text" inputmode="numeric" name="blok3a2_materials[${cardIndex}][rincian_asal][${rowIndex}][nilai]"
+                   value="${esc(v.nilai || '')}" class="form-control" placeholder="0">
+          </div>
+          <div>
+            <button type="button" class="btn-delete-rincian-row"
+                    data-card-index="${cardIndex}" data-row-index="${rowIndex}"
+                    title="Hapus baris ini"
+                    style="display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;
+                           border-radius:0.375rem;border:1px solid #fca5a5;background:#fee2e2;color:#b91c1c;
+                           cursor:pointer;flex-shrink:0;transition:background 0.15s;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>`;
+    }
+
+    _addRincianRow(cardIndex) {
+        const container = document.getElementById(`rincian-rows-${cardIndex}`);
+        if (!container) return;
+        const hint = container.querySelector('.rincian-empty-hint');
+        if (hint) hint.remove();
+        const rowCount = container.querySelectorAll('.rincian-row').length;
+        container.insertAdjacentHTML('beforeend', this._generateRincianRowHTML(cardIndex, rowCount, {}));
+        this._recalcDnTotals(cardIndex);
+    }
+
+    _deleteRincianRow(cardIndex, rowIndexStr) {
+        const container = document.getElementById(`rincian-rows-${cardIndex}`);
+        if (!container) return;
+        const rows = container.querySelectorAll('.rincian-row');
+        const rowIndex = parseInt(rowIndexStr);
+        if (rows[rowIndex]) {
+            rows[rowIndex].remove();
+            container.querySelectorAll('.rincian-row').forEach((row, ni) => {
+                row.dataset.rowIndex = ni;
+                row.querySelectorAll('input').forEach(inp => {
+                    inp.name = inp.name.replace(
+                        /blok3a2_materials\[(\d+)\]\[rincian_asal\]\[\d+\]/,
+                        (_, ci) => `blok3a2_materials[${ci}][rincian_asal][${ni}]`
+                    );
+                });
+                const delBtn = row.querySelector('.btn-delete-rincian-row');
+                if (delBtn) delBtn.dataset.rowIndex = ni;
+            });
+            if (container.querySelectorAll('.rincian-row').length === 0) {
+                container.insertAdjacentHTML('beforeend', this._generateRincianRowHTML(cardIndex, 0, {}));
+            }
+        }
+        this._recalcDnTotals(cardIndex);
+        this._scheduleAutoSave();
+    }
+
+    _recalcDnTotals(cardIndex) {
+        const card = document.getElementById(`pc-${cardIndex}`);
+        if (!card) return;
+        let totalJumlah = 0;
+        let totalNilai  = 0;
+        card.querySelectorAll('.rincian-row').forEach(row => {
+            const jumlahInp = row.querySelector('input[name*="[jumlah]"]');
+            const nilaiInp  = row.querySelector('input[name*="[nilai]"]');
+            if (jumlahInp) totalJumlah += parseInt(String(jumlahInp.value).replace(/\D/g, ''), 10) || 0;
+            if (nilaiInp)  totalNilai  += parseInt(String(nilaiInp.value).replace(/\D/g, ''), 10) || 0;
+        });
+        const dnB = card.querySelector(`input[name="blok3a2_materials[${cardIndex}][dn_banyaknya]"]`);
+        const dnN = card.querySelector(`input[name="blok3a2_materials[${cardIndex}][dn_nilai]"]`);
+        if (dnB) dnB.value = totalJumlah > 0 ? totalJumlah : '';
+        if (dnN) dnN.value = totalNilai  > 0 ? totalNilai  : '';
+
+        // Clear validation errors for DN fields on the first card when now non-empty
+        if (parseInt(cardIndex) === 0) {
+            if (dnB && dnB.value.trim() !== '') this._clearRequiredError(dnB);
+            if (dnN && dnN.value.trim() !== '') this._clearRequiredError(dnN);
+        }
+
+        this._renderPreview();
+    }
+
+    _recalcAllDnTotals() {
+        this.container.querySelectorAll('.product-card').forEach(card => {
+            const m = card.id.match(/pc-(\d+)/);
+            if (m) this._recalcDnTotals(m[1]);
+        });
+    }
+
+
+    // ── Blur formatting for thousand separators ───────────────
+    _formatOnBlur(e) {
+        const inp = e.target;
+        if (!inp || !inp.name || !inp.name.startsWith('blok3a2_')) return;
+        const isNumeric = (inp.name.includes('[dn_banyaknya]') || inp.name.includes('[dn_nilai]') || inp.name.includes('[ln_banyaknya]') || inp.name.includes('[ln_nilai]') || (inp.name.includes('[rincian_asal]') && (inp.name.includes('[jumlah]') || inp.name.includes('[nilai]'))));
+        if (!isNumeric) return;
+        const raw = inp.value.replace(/[^0-9]/g, '');
+        if (raw === '') {
+            inp.value = '';
+        } else {
+            const num = parseInt(raw, 10);
+            if (!isNaN(num) && num > 0) {
+                inp.value = num.toLocaleString('id-ID');
+            } else {
+                inp.value = raw;
+            }
+        }
+        // Trigger recalc for DN fields when blurred (rincian rows)
+        if (inp.name.includes('[rincian_asal]') && (inp.name.includes('[jumlah]') || inp.name.includes('[nilai]'))) {
+            const card = inp.closest('.product-card');
+            if (card) {
+                const m = card.id.match(/pc-(\d+)/);
+                if (m) this._recalcDnTotals(m[1]);
+            }
+        }
     }
 }
 

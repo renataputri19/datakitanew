@@ -100,16 +100,34 @@
                                 <td style="text-align:right;background:#eff6ff;border:1px solid #e5e7eb;padding:0.4rem 0.5rem;">{{ _bps3c_nf($mat['ln_nilai'] ?? null) }}</td>
                                 <td style="text-align:center;border:1px solid #e5e7eb;padding:0.4rem 0.5rem;">{{ !empty($mat['negara_asal']) ? e($mat['negara_asal']) : '-' }}</td>
                             </tr>
-                            @endforeach
-                            {{-- Total row --}}
-                            <tr style="background:#dcfce7;font-weight:600;">
-                                <td colspan="3" style="border:1px solid #d1fae5;padding:0.4rem 0.5rem;font-weight:700;">Total</td>
-                                <td style="text-align:right;background:#fef9c3;border:1px solid #d1fae5;padding:0.4rem 0.5rem;">—</td>
-                                <td style="text-align:right;background:#fef9c3;border:1px solid #d1fae5;padding:0.4rem 0.5rem;">{{ _bps3c_nf($totalDnNilai > 0 ? $totalDnNilai : null) }}</td>
-                                <td style="text-align:right;background:#dbeafe;border:1px solid #d1fae5;padding:0.4rem 0.5rem;">—</td>
-                                <td style="text-align:right;background:#dbeafe;border:1px solid #d1fae5;padding:0.4rem 0.5rem;">{{ _bps3c_nf($totalLnNilai > 0 ? $totalLnNilai : null) }}</td>
-                                <td style="border:1px solid #d1fae5;padding:0.4rem 0.5rem;"></td>
+                            @if(!empty($mat['rincian_asal']) && is_array($mat['rincian_asal']))
+                            @foreach($mat['rincian_asal'] as $ra)
+                            @php
+                                $raJml = preg_replace('/[^0-9]/', '', $ra['jumlah'] ?? '');
+                                $raNil = preg_replace('/[^0-9]/', '', $ra['nilai'] ?? '');
+                                $raHasData = !empty($ra['provinsi']) || $raJml !== '' || $raNil !== '';
+                            @endphp
+                            @if($raHasData)
+                            <tr style="background:#f0f9ff;">
+                                <td style="text-align:center;border:1px solid #dbeafe;padding:0.3rem 0.5rem;color:#93c5fd;font-size:0.7rem;">↳</td>
+                                <td style="border:1px solid #dbeafe;padding:0.3rem 0.75rem;color:#1d4ed8;font-size:0.78rem;font-style:italic;">
+                                    {{ !empty($ra['provinsi']) ? e($ra['provinsi']) : '—' }}
+                                </td>
+                                <td style="border:1px solid #dbeafe;padding:0.3rem 0.5rem;"></td>
+                                <td style="text-align:right;background:#fffde7;border:1px solid #dbeafe;padding:0.3rem 0.5rem;font-size:0.78rem;color:#374151;">
+                                    {{ $raJml !== '' ? number_format((int)$raJml, 0, ',', '.') : '—' }}
+                                </td>
+                                <td style="text-align:right;background:#fffde7;border:1px solid #dbeafe;padding:0.3rem 0.5rem;font-size:0.78rem;color:#374151;">
+                                    {{ $raNil !== '' ? number_format((int)$raNil, 0, ',', '.') : '—' }}
+                                </td>
+                                <td style="background:#eff6ff;border:1px solid #dbeafe;padding:0.3rem 0.5rem;"></td>
+                                <td style="background:#eff6ff;border:1px solid #dbeafe;padding:0.3rem 0.5rem;"></td>
+                                <td style="border:1px solid #dbeafe;padding:0.3rem 0.5rem;"></td>
                             </tr>
+                            @endif
+                            @endforeach
+                            @endif
+                            @endforeach
                         </tbody>
                     </table>
                 </div>

@@ -721,6 +721,114 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Q318: Moda Transportasi --}}
+                <div class="form-row">
+                    <label class="form-label">
+                        <span class="question-number">318.</span>
+                        <span>Jenis moda transportasi yang digunakan untuk pengangkutan barang selama tahun 2025</span>
+                    </label>
+                    <div style="overflow-x:auto;margin-top:0.75rem;">
+                        <table style="width:100%;border-collapse:collapse;font-size:0.875rem;border:1px solid #d1d5db;">
+                            <thead>
+                                <tr style="background-color:#f9fafb;">
+                                    <th style="padding:0.625rem 0.75rem;text-align:left;border:1px solid #d1d5db;font-weight:600;color:#374151;width:45%;">
+                                        Jenis Angkutan<br><span style="font-weight:400;color:#6b7280;font-size:0.8rem;">(1)</span>
+                                    </th>
+                                    <th style="padding:0.625rem 0.75rem;text-align:center;border:1px solid #d1d5db;font-weight:600;color:#374151;width:27.5%;">
+                                        Frekuensi Penggunaan Angkutan (kali)<br><span style="font-weight:400;color:#6b7280;font-size:0.8rem;">(2)</span>
+                                    </th>
+                                    <th style="padding:0.625rem 0.75rem;text-align:center;border:1px solid #d1d5db;font-weight:600;color:#374151;width:27.5%;">
+                                        Total Biaya Pengangkutan (Rp)<br><span style="font-weight:400;color:#6b7280;font-size:0.8rem;">(3)</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="padding:0.625rem 0.75rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <strong>a. Angkutan jalan</strong><br>
+                                        <span style="font-size:0.8rem;color:#6b7280;font-style:italic;">Contoh: truk, pick up, mobil, dan sepeda motor</span>
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="number" name="blok3b_industri[q318a_freq]" class="form-control" min="0" step="1" placeholder="0" value="{{ $surveyResponse->blok3b_industri_data['q318a_freq'] ?? '' }}" style="width:100%;text-align:right;" required>
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="text" id="q318a_biaya_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_industri[q318a_biaya]" style="width:100%;text-align:right;" required>
+                                        <input type="hidden" name="blok3b_industri[q318a_biaya]" id="q318a_biaya" value="{{ $surveyResponse->blok3b_industri_data['q318a_biaya'] ?? '' }}">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0.625rem 0.75rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <strong>b. Angkutan kereta api</strong>
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="number" name="blok3b_industri[q318b_freq]" class="form-control" min="0" step="1" placeholder="0" value="{{ $surveyResponse->blok3b_industri_data['q318b_freq'] ?? '' }}" style="width:100%;text-align:right;" required>
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="text" id="q318b_biaya_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_industri[q318b_biaya]" style="width:100%;text-align:right;" required>
+                                        <input type="hidden" name="blok3b_industri[q318b_biaya]" id="q318b_biaya" value="{{ $surveyResponse->blok3b_industri_data['q318b_biaya'] ?? '' }}">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0.625rem 0.75rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <strong>c. Angkutan air sungai, danau, dan penyeberangan</strong><br>
+                                        <span style="font-size:0.8rem;color:#6b7280;font-style:italic;">Contoh: kapal ponton, getek, kapal ferry</span>
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="number" name="blok3b_industri[q318c_freq]" class="form-control" min="0" step="1" placeholder="0" value="{{ $surveyResponse->blok3b_industri_data['q318c_freq'] ?? '' }}" style="width:100%;text-align:right;" required>
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="text" id="q318c_biaya_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_industri[q318c_biaya]" style="width:100%;text-align:right;" required>
+                                        <input type="hidden" name="blok3b_industri[q318c_biaya]" id="q318c_biaya" value="{{ $surveyResponse->blok3b_industri_data['q318c_biaya'] ?? '' }}">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0.625rem 0.75rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <strong>d. Angkutan air laut</strong><br>
+                                        <span style="font-size:0.8rem;color:#6b7280;font-style:italic;">Contoh: kapal laut, tol laut, dll</span>
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="number" name="blok3b_industri[q318d_freq]" class="form-control" min="0" step="1" placeholder="0" value="{{ $surveyResponse->blok3b_industri_data['q318d_freq'] ?? '' }}" style="width:100%;text-align:right;" required>
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="text" id="q318d_biaya_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_industri[q318d_biaya]" style="width:100%;text-align:right;" required>
+                                        <input type="hidden" name="blok3b_industri[q318d_biaya]" id="q318d_biaya" value="{{ $surveyResponse->blok3b_industri_data['q318d_biaya'] ?? '' }}">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0.625rem 0.75rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <strong>e. Angkutan udara</strong><br>
+                                        <span style="font-size:0.8rem;color:#6b7280;font-style:italic;">Contoh: pesawat dan helikopter</span>
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="number" name="blok3b_industri[q318e_freq]" class="form-control" min="0" step="1" placeholder="0" value="{{ $surveyResponse->blok3b_industri_data['q318e_freq'] ?? '' }}" style="width:100%;text-align:right;" required>
+                                    </td>
+                                    <td style="padding:0.5rem;border:1px solid #d1d5db;vertical-align:middle;">
+                                        <input type="text" id="q318e_biaya_display" class="form-control currency-display" placeholder="0" data-target-name="blok3b_industri[q318e_biaya]" style="width:100%;text-align:right;" required>
+                                        <input type="hidden" name="blok3b_industri[q318e_biaya]" id="q318e_biaya" value="{{ $surveyResponse->blok3b_industri_data['q318e_biaya'] ?? '' }}">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="form-errors"></div>
+                    <div class="form-hint">
+                        <div class="hint-note text-muted">Isikan data penggunaan moda angkutan selama tahun 2025. Kosongkan baris jika tidak menggunakan jenis angkutan tersebut.</div>
+                    </div>
+                </div>
+
+                {{-- Q319: Persentase Pihak Ketiga --}}
+                <div class="form-row">
+                    <label class="form-label required" for="q319_persen_pihak_ketiga">
+                        <span class="question-number">319.</span>
+                        <span>Berapa persentase moda angkutan yang menggunakan jasa pihak ketiga? (%)</span>
+                    </label>
+                    <input type="number" id="q319_persen_pihak_ketiga" name="blok3b_industri[q319_persen_pihak_ketiga]" class="form-control percent-input" min="0" max="100" step="0.01" placeholder="0" value="{{ $surveyResponse->blok3b_industri_data['q319_persen_pihak_ketiga'] ?? '' }}" required>
+                    <div class="form-errors"></div>
+                    <div class="form-hint">
+                        <div class="hint-note text-muted">Maksimal 100%.</div>
+                    </div>
+                </div>
                 @endif {{-- end @if(!$isTriwulanan) tahunan pengeluaran --}}
             </div>
         </div>

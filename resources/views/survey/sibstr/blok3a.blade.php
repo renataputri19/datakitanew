@@ -7,9 +7,95 @@
 <link rel="stylesheet" href="{{ asset('css/survey-validation.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-blok3a.css') }}">
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<style>
+.ekspor-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: end;
+    margin-bottom: 0.5rem;
+}
+@media (max-width: 600px) {
+    .ekspor-row {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        padding: 0.6rem 3rem 0.6rem 0.6rem;
+        margin-bottom: 0.5rem;
+        background: #f9fafb;
+        border: 1px solid #d1fae5;
+        border-radius: 0.5rem;
+    }
+    .ekspor-row > div:last-child {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        padding-bottom: 0 !important;
+    }
+}
+.delete-overlay {
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+}
+.delete-overlay.active { display: flex; }
+.delete-modal-card {
+    background: #fff; border-radius: 1rem; padding: 2rem 2rem 1.75rem;
+    max-width: 380px; width: 92%; text-align: center;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+    animation: popIn 0.22s ease-out;
+}
+.dark .delete-modal-card { background: #1f2937; }
+@keyframes popIn {
+    from { opacity:0; transform:scale(0.85) translateY(12px); }
+    to   { opacity:1; transform:scale(1) translateY(0); }
+}
+.delete-modal-icon {
+    width: 56px; height: 56px; background: #fee2e2; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;
+}
+.delete-modal-card h3 { font-size: 1.125rem; font-weight: 700; color: #111827; margin: 0 0 0.5rem; }
+.dark .delete-modal-card h3 { color: #f9fafb; }
+.delete-modal-card p { color: #6b7280; font-size: 0.875rem; margin: 0 0 1.5rem; line-height: 1.6; }
+.delete-modal-actions { display: flex; gap: 0.75rem; justify-content: center; }
+.btn-cancel-del {
+    padding: 0.55rem 1.4rem; border-radius: 0.5rem;
+    border: 1px solid #d1d5db; background: #f9fafb; color: #374151;
+    font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
+}
+.btn-cancel-del:hover { background: #f3f4f6; }
+.btn-confirm-del {
+    padding: 0.55rem 1.4rem; border-radius: 0.5rem;
+    border: none; background: #dc2626; color: #fff;
+    font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 0.15s, transform 0.1s;
+}
+.btn-confirm-del:hover { background: #b91c1c; }
+.btn-confirm-del:active { transform: scale(0.97); }
+</style>
 @endpush
 
 @section('content')
+{{-- ══ Delete Confirmation Modal ══════════════════════════════ --}}
+<div id="delete-confirm-overlay" class="delete-overlay" role="dialog" aria-modal="true" aria-labelledby="del-modal-title">
+    <div class="delete-modal-card">
+        <div class="delete-modal-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+        </div>
+        <h3 id="del-modal-title">Konfirmasi Aksi</h3>
+        <p id="del-modal-desc">Produk ini akan dihapus secara permanen dari daftar.</p>
+        <div class="delete-modal-actions">
+            <button type="button" id="delete-cancel-btn" class="btn-cancel-del">Batal</button>
+            <button type="button" id="delete-confirm-btn" class="btn-confirm-del">Ya, Konfirmasi</button>
+        </div>
+    </div>
+</div>
+
 <div class="survey-container">
     @if(!empty($isEditMode))
     @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])

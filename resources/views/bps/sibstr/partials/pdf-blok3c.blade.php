@@ -6,11 +6,6 @@
         function _pdf3c_nf($v) { return ($v !== null && $v !== '') ? number_format((float)$v, 0, ',', '.') : '-'; }
     }
 
-    $totalDnNilai = 0; $totalLnNilai = 0;
-    foreach ($materials as $mat) {
-        $totalDnNilai += (float)($mat['dn_nilai'] ?? 0);
-        $totalLnNilai += (float)($mat['ln_nilai'] ?? 0);
-    }
 @endphp
 
 @if(count($materials) > 0)
@@ -40,16 +35,27 @@
                 <td style="border:1px solid #e5e7eb; text-align:right; padding:3px 4px; background:#eff6ff;">{{ _pdf3c_nf($mat['ln_nilai'] ?? null) }}</td>
                 <td style="border:1px solid #e5e7eb; text-align:center; padding:3px 4px;">{{ !empty($mat['negara_asal']) ? $mat['negara_asal'] : '-' }}</td>
             </tr>
-            @endforeach
-            {{-- Total row --}}
-            <tr style="background:#dcfce7; font-weight:700;">
-                <td colspan="3" style="border:1px solid #d1fae5; padding:3px 4px; font-weight:700;">Total</td>
-                <td style="border:1px solid #d1fae5; text-align:right; padding:3px 4px; background:#fef9c3;">—</td>
-                <td style="border:1px solid #d1fae5; text-align:right; padding:3px 4px; background:#fef9c3;">{{ _pdf3c_nf($totalDnNilai > 0 ? $totalDnNilai : null) }}</td>
-                <td style="border:1px solid #d1fae5; text-align:right; padding:3px 4px; background:#dbeafe;">—</td>
-                <td style="border:1px solid #d1fae5; text-align:right; padding:3px 4px; background:#dbeafe;">{{ _pdf3c_nf($totalLnNilai > 0 ? $totalLnNilai : null) }}</td>
-                <td style="border:1px solid #d1fae5; padding:3px 4px;"></td>
+            @if(!empty($mat['rincian_asal']) && is_array($mat['rincian_asal']))
+            @foreach($mat['rincian_asal'] as $pdfRa)
+            @php
+                $pdfRaJml = preg_replace('/[^0-9]/', '', $pdfRa['jumlah'] ?? '');
+                $pdfRaNil = preg_replace('/[^0-9]/', '', $pdfRa['nilai'] ?? '');
+            @endphp
+            @if(!empty($pdfRa['provinsi']) || $pdfRaJml !== '' || $pdfRaNil !== '')
+            <tr style="background:#f0f9ff;">
+                <td style="border:1px solid #dbeafe; text-align:center; padding:2px 4px; color:#93c5fd; font-size:8px;">↳</td>
+                <td style="border:1px solid #dbeafe; padding:2px 4px; color:#1d4ed8; font-style:italic; font-size:9px;">{{ !empty($pdfRa['provinsi']) ? $pdfRa['provinsi'] : '—' }}</td>
+                <td style="border:1px solid #dbeafe; padding:2px 4px;"></td>
+                <td style="border:1px solid #dbeafe; text-align:right; padding:2px 4px; background:#fffde7; font-size:9px;">{{ $pdfRaJml !== '' ? number_format((int)$pdfRaJml, 0, ',', '.') : '—' }}</td>
+                <td style="border:1px solid #dbeafe; text-align:right; padding:2px 4px; background:#fffde7; font-size:9px;">{{ $pdfRaNil !== '' ? number_format((int)$pdfRaNil, 0, ',', '.') : '—' }}</td>
+                <td style="border:1px solid #dbeafe; padding:2px 4px; background:#eff6ff;"></td>
+                <td style="border:1px solid #dbeafe; padding:2px 4px; background:#eff6ff;"></td>
+                <td style="border:1px solid #dbeafe; padding:2px 4px;"></td>
             </tr>
+            @endif
+            @endforeach
+            @endif
+            @endforeach
         </tbody>
     </table>
     <div style="margin-top:4px; font-size:9px; color:#6b7280;">

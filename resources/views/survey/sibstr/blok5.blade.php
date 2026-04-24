@@ -118,7 +118,6 @@
                             <th>Kondisi TW I-2025 vs TW IV-2024</th>
                             <th>Kondisi TW II-2025 vs TW I-2025</th>
                             <th>Kondisi TW III-2025 vs TW II-2025</th>
-                            <th class="prospect">Prospek TW IV-2025 vs TW III-2025</th>
                             <th>Kondisi TW IV-2025 vs TW III-2025</th>
                             <th class="prospect">Prospek TW I-2026 vs TW IV-2025</th>
                         </tr>
@@ -127,7 +126,6 @@
                             <th class="col-subtype">Triwulan</th>
                             <th class="col-subtype">Triwulan</th>
                             <th class="col-subtype">Triwulan</th>
-                            <th class="col-subtype prospect">Prospek</th>
                             <th class="col-subtype">Triwulan</th>
                             <th class="col-subtype prospect">Prospek</th>
                         </tr>
@@ -146,9 +144,9 @@
                             ];
                             // Triwulanan: only 2 columns (p1=kondisi, p2=prospek)
                             // Tahunan: all 6 columns
-                            $periods = $isTriwulanan ? ['p1','p2'] : ['p1','p2','p3','p4','p5','p6'];
-                            // Prospect column indices: tahunan=3,5; triwulanan=1
-                            $prospectIndices = $isTriwulanan ? [1] : [3, 5];
+                            $periods = $isTriwulanan ? ['p1','p2'] : ['p1','p2','p3','p5','p6'];
+                            // Prospect column indices: tahunan=4; triwulanan=1
+                            $prospectIndices = $isTriwulanan ? [1] : [4];
                             $labelsNormal = [ ['value'=>'naik','text'=>'Naik'], ['value'=>'tetap','text'=>'Tetap'], ['value'=>'turun','text'=>'Turun'] ];
                             $labelsDelivery = [ ['value'=>'lebih_cepat','text'=>'Lebih cepat'], ['value'=>'tetap','text'=>'Tetap'], ['value'=>'lebih_lambat','text'=>'Lebih lambat'] ];
                             $data = $surveyResponse->blok5_data ?? [];
