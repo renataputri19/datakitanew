@@ -202,6 +202,7 @@
             <h3 class="special-title">
                 <span class="text-xl">302.</span> Pendapatan Lainnya
             </h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 italic mt-1 mb-3">*) Yang termasuk dalam lainnya atau pendapatan lainnya dalam R302 antara lain keuntungan/kerugian dari penjualan barang yang sama, menyewakan gedung/ruangan/tempat, menyewakan gudang, menyewakan kendaraan/mesin/dan peralatan (tanpa operator), pendapatan dari ongkos kirim barang, penjualan energi sampingan (listrik, steam, gas), jasa pengemasan, dan jasa perbaikan kecil</p>
             <div class="quarter-tabs" id="lainnya-tabs" role="tablist" aria-label="Pilih Triwulan untuk Lainnya">
                 @foreach($quarterConf as $qKey => $qConf)
                 <button type="button" class="quarter-tab {{ $loop->first ? 'active' : '' }}" data-quarter="{{ $qKey }}">{{ $qConf['label'] }}</button>

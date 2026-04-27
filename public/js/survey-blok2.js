@@ -939,10 +939,26 @@ class SurveyBlok2Manager {
             this.clearR207ErrorById('r207-rule2-error');
         }
 
-        // Update sorotan merah pada semua field terkait
-        this._updateR207FieldHighlights(rule1Fail, rule2Fail);
+        // ── Rule 3: c1 + c2 >= 1 (min 1 pekerja bukan outsourcing) ────────
+        // Only triggers when both c1 and c2 are filled.
+        let rule3Fail = false;
+        if (c1 !== null && c2 !== null) {
+            const sumC = c1 + c2;
+            if (sumC < 1) {
+                rule3Fail = true;
+                const msg = `Jumlah pekerja bukan outsourcing (c.1 + c.2) minimal harus 1 orang (saat ini: ${c1} + ${c2} = ${sumC}).`;
+                this._showR207Rule3Error(msg);
+            } else {
+                this.clearR207ErrorById('r207-rule3-error');
+            }
+        } else {
+            this.clearR207ErrorById('r207-rule3-error');
+        }
 
-        return !rule1Fail && !rule2Fail;
+        // Update sorotan merah pada semua field terkait
+        this._updateR207FieldHighlights(rule1Fail, rule2Fail, rule3Fail);
+
+        return !rule1Fail && !rule2Fail && !rule3Fail;
     }
 
     /**
@@ -978,14 +994,42 @@ class SurveyBlok2Manager {
         if (el) el.remove();
     }
 
+    /**
+     * Insert rule-3 error after the OUTER c .form-subrow so it appears
+     * between the c and d sections — the same visual level as rule-2's error.
+     * DOM path: c.2 input → c.2 subrow → inner c subgrid → outer c subrow
+     */
+    _showR207Rule3Error(message) {
+        this.clearR207ErrorById('r207-rule3-error');
+
+        const c2Input = document.getElementById('pekerja_bukan_outsourcing_lainnya');
+        if (!c2Input) return;
+
+        const c2Subrow      = c2Input.closest('.form-subrow');   // innermost c.2 subrow
+        const innerCSubgrid = c2Subrow?.parentElement;            // inner c .form-subgrid
+        const outerCSubrow  = innerCSubgrid?.parentElement;       // outer "c." .form-subrow
+        const insertAfter   = outerCSubrow || innerCSubgrid;
+
+        const errorEl = document.createElement('div');
+        errorEl.id        = 'r207-rule3-error';
+        errorEl.className = 'field-error-message r207-consistency-error';
+        errorEl.setAttribute('role', 'alert');
+        errorEl.textContent = message;
+
+        if (insertAfter?.parentNode) {
+            insertAfter.parentNode.insertBefore(errorEl, insertAfter.nextSibling);
+        }
+    }
+
     clearR207Errors() {
         this.clearR207ErrorById('r207-rule1-error');
         this.clearR207ErrorById('r207-rule2-error');
-        this._updateR207FieldHighlights(false, false);
+        this.clearR207ErrorById('r207-rule3-error');
+        this._updateR207FieldHighlights(false, false, false);
     }
 
-    /** Tandai/hapus sorotan merah field-field R207 sesuai hasil kedua aturan. */
-    _updateR207FieldHighlights(rule1Fail, rule2Fail) {
+    /** Tandai/hapus sorotan merah field-field R207 sesuai hasil ketiga aturan. */
+    _updateR207FieldHighlights(rule1Fail, rule2Fail, rule3Fail = false) {
         const toggle = (id, hasError) => {
             const el = document.getElementById(id);
             if (el) el.classList.toggle('field-error', hasError);
@@ -995,9 +1039,9 @@ class SurveyBlok2Manager {
         // Rule 1
         toggle('tenaga_kerja_laki_laki',             rule1Fail);
         toggle('tenaga_kerja_perempuan',             rule1Fail);
-        // Rule 2
-        toggle('pekerja_bukan_outsourcing_produksi', rule2Fail);
-        toggle('pekerja_bukan_outsourcing_lainnya',  rule2Fail);
+        // Rule 2 + Rule 3 (c1/c2 highlighted by either)
+        toggle('pekerja_bukan_outsourcing_produksi', rule2Fail || rule3Fail);
+        toggle('pekerja_bukan_outsourcing_lainnya',  rule2Fail || rule3Fail);
         toggle('pekerja_outsourcing_produksi',       rule2Fail);
         toggle('pekerja_outsourcing_lainnya',        rule2Fail);
     }
@@ -1132,6 +1176,11 @@ class SurveyBlok2Manager {
         // 6. R207 konsistensi status pekerja (Rule 2)
         if (document.getElementById('r207-rule2-error')) {
             addLabel('207 Validasi status pekerja: (c.1 + c.2) + (d.1 + d.2) \u2260 a (jumlah seluruh pekerja)');
+        }
+
+        // 7. R207 minimum bukan outsourcing (Rule 3)
+        if (document.getElementById('r207-rule3-error')) {
+            addLabel('207 Validasi bukan outsourcing: jumlah c.1 + c.2 minimal harus 1 orang');
         }
 
         return errors;

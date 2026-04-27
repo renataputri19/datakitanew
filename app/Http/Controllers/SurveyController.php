@@ -1165,8 +1165,8 @@ class SurveyController extends Controller
                         // Q205/206 should NOT be required when 202 = e (unit_pembantu_penunjang)
                         'jumlah_bulan_aktif_2025' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0|max:12',
                         'rata_hari_kerja_bulanan_2025' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0|max:31',
-                        'rata_jam_kerja_per_hari_2025' => 'nullable|numeric|min:0',
-                        'rata_shift_per_hari_2025' => 'nullable|integer|min:0',
+                        'rata_jam_kerja_per_hari_2025' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0|max:24',
+                        'rata_shift_per_hari_2025' => 'required_unless:jaringan_unit_kegiatan,unit_pembantu_penunjang|integer|min:0|max:3',
                     ]);
                 }
 

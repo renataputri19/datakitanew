@@ -164,10 +164,25 @@
                 <div class="form-row">
                     <label class="form-label">
                         <span class="question-number">206.</span>
-                        <span>Rata-rata hari kerja per bulan selama tahun 2025:</span>
+                        <span>Rata-rata waktu kerja selama tahun 2025:</span>
                     </label>
-                    <input type="number" name="rata_hari_kerja_bulanan_2025" value="{{ $surveyResponse->rata_hari_kerja_bulanan_2025 ?? '' }}"
-                           class="form-control" readonly disabled>
+                    <div class="form-subgrid">
+                        <div class="form-subrow">
+                            <label class="form-sublabel">a. Rata-rata hari kerja per bulan selama tahun 2025:</label>
+                            <input type="number" name="rata_hari_kerja_bulanan_2025" value="{{ $surveyResponse->rata_hari_kerja_bulanan_2025 ?? '' }}"
+                                   class="form-control" readonly disabled>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel">b. Rata-rata jam kerja per hari selama tahun 2025:</label>
+                            <input type="number" name="rata_jam_kerja_per_hari_2025" value="{{ $surveyResponse->rata_jam_kerja_per_hari_2025 ?? '' }}"
+                                   class="form-control" readonly disabled>
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel">c. Rata-rata jumlah shift per hari selama tahun 2025:</label>
+                            <input type="number" name="rata_shift_per_hari_2025" value="{{ $surveyResponse->rata_shift_per_hari_2025 ?? '' }}"
+                                   class="form-control" readonly disabled>
+                        </div>
+                    </div>
                 </div>
                 @endif {{-- tahunan-only Q205/Q206 --}}
 

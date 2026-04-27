@@ -171,8 +171,12 @@
                     @if($isAnnualPdf)
                     <div class="k">205. Bulan aktif 2025</div>
                     <div class="v">{{ nf_plain($surveyResponse->jumlah_bulan_aktif_2025 ?? null) }}</div>
-                    <div class="k">206. Rata-rata hari kerja/bulan 2025</div>
+                    <div class="k">206a. Rata-rata hari kerja/bulan 2025</div>
                     <div class="v">{{ nf_plain($surveyResponse->rata_hari_kerja_bulanan_2025 ?? null) }}</div>
+                    <div class="k">206b. Rata-rata jam kerja/hari 2025</div>
+                    <div class="v">{{ nf_plain($surveyResponse->rata_jam_kerja_per_hari_2025 ?? null) }}</div>
+                    <div class="k">206c. Rata-rata shift/hari 2025</div>
+                    <div class="v">{{ nf_plain($surveyResponse->rata_shift_per_hari_2025 ?? null) }}</div>
                     @endif
                     @if(($surveyResponse->triwulan ?? 0) == 0)
                     <div class="k">207a. Jumlah seluruh pekerja</div><div class="v">{{ nf_plain($surveyResponse->jumlah_seluruh_pekerja ?? null) }}</div>

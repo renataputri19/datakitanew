@@ -813,7 +813,7 @@
                     </div>
                     <div class="form-errors"></div>
                     <div class="form-hint">
-                        <div class="hint-note text-muted">Isikan data penggunaan moda angkutan selama tahun 2025. Kosongkan baris jika tidak menggunakan jenis angkutan tersebut.</div>
+                        <div class="hint-note text-muted">Isikan data penggunaan moda angkutan selama tahun 2025, khusus untuk pengangkutan barang dalam negeri antar provinsi (tidak termasuk luar negeri). Kosongkan baris jika tidak menggunakan jenis angkutan tersebut.</div>
                     </div>
                 </div>
 

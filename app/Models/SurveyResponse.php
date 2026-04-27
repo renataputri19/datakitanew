@@ -300,8 +300,9 @@ class SurveyResponse extends Model
         }
 
         if ($isTahunan) {
-            // Q205/206: bulan & hari kerja (integer, 0 is valid → !== null)
-            if ($this->jumlah_bulan_aktif_2025 === null || $this->rata_hari_kerja_bulanan_2025 === null) {
+            // Q205/206a-c: bulan & waktu kerja (integer, 0 is valid → !== null)
+            if ($this->jumlah_bulan_aktif_2025 === null || $this->rata_hari_kerja_bulanan_2025 === null
+                || $this->rata_jam_kerja_per_hari_2025 === null || $this->rata_shift_per_hari_2025 === null) {
                 return false;
             }
 

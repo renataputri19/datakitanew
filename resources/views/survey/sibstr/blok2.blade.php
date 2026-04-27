@@ -332,15 +332,40 @@
                 <div class="form-row">
                     <label class="form-label required">
                         <span class="question-number">206.</span>
-                        <span>Rata-rata hari kerja per bulan selama tahun 2025:</span>
+                        <span>Rata-rata waktu kerja selama tahun 2025:</span>
                     </label>
-                    <input type="number" name="rata_hari_kerja_bulanan_2025" id="rata_hari_kerja_bulanan_2025"
-                           value="{{ $surveyResponse->rata_hari_kerja_bulanan_2025 ?? '' }}"
-                           class="form-control" required min="0" max="31" step="1"
-                           placeholder="Masukkan rata-rata hari kerja per bulan">
-                    @error('rata_hari_kerja_bulanan_2025')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
+                    <div class="form-subgrid">
+                        <div class="form-subrow">
+                            <label class="form-sublabel">a. Rata-rata hari kerja per bulan selama tahun 2025:</label>
+                            <input type="number" name="rata_hari_kerja_bulanan_2025" id="rata_hari_kerja_bulanan_2025"
+                                   value="{{ $surveyResponse->rata_hari_kerja_bulanan_2025 ?? '' }}"
+                                   class="form-control" required min="0" max="31" step="1"
+                                   placeholder="Masukkan rata-rata hari kerja per bulan (0-31)">
+                            @error('rata_hari_kerja_bulanan_2025')
+                                <div class="error-message">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel">b. Rata-rata jam kerja per hari selama tahun 2025:</label>
+                            <input type="number" name="rata_jam_kerja_per_hari_2025" id="rata_jam_kerja_per_hari_2025"
+                                   value="{{ $surveyResponse->rata_jam_kerja_per_hari_2025 ?? '' }}"
+                                   class="form-control" required min="0" max="24" step="1"
+                                   placeholder="Masukkan rata-rata jam kerja per hari (0-24)">
+                            @error('rata_jam_kerja_per_hari_2025')
+                                <div class="error-message">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="form-subrow">
+                            <label class="form-sublabel">c. Rata-rata jumlah shift per hari selama tahun 2025:</label>
+                            <input type="number" name="rata_shift_per_hari_2025" id="rata_shift_per_hari_2025"
+                                   value="{{ $surveyResponse->rata_shift_per_hari_2025 ?? '' }}"
+                                   class="form-control" required min="0" max="3" step="1"
+                                   placeholder="Masukkan rata-rata jumlah shift per hari (0-3)">
+                            @error('rata_shift_per_hari_2025')
+                                <div class="error-message">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
                 </div>
                 @endif
 
