@@ -103,6 +103,7 @@ Route::prefix('monalisa')->name('monalisa.')->group(function () {
         Route::post('/document/{documentId}/replace', [KominfoController::class, 'replaceDocument'])->name('document.replace');
         Route::delete('/document/{documentId}', [KominfoController::class, 'deleteDocument'])->name('document.delete');
         Route::get('/document/{documentId}/download', [KominfoController::class, 'downloadDocument'])->name('document.download');
+        Route::get('/document/{documentId}/view', [KominfoController::class, 'viewDocument'])->name('document.view');
 
         // Notifications
         Route::get('/notifications', [MonalisaNotificationController::class, 'index'])->name('notifications.index');
@@ -125,6 +126,7 @@ Route::prefix('monalisa')->name('monalisa.')->group(function () {
         Route::post('/assessment/{assessmentId}/reject', [MonalisaBpsController::class, 'rejectAssessment'])->name('assessment.reject');
         Route::post('/document/{documentId}/comment', [MonalisaBpsController::class, 'addDocumentComment'])->name('document.comment');
         Route::get('/document/{documentId}/download', [MonalisaBpsController::class, 'downloadDocument'])->name('document.download');
+        Route::get('/document/{documentId}/view', [MonalisaBpsController::class, 'viewDocument'])->name('document.view');
 
         // Notifications
         Route::get('/notifications', [MonalisaNotificationController::class, 'index'])->name('notifications.index');

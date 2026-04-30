@@ -220,6 +220,23 @@ class BpsController extends Controller
     }
 
     /**
+     * View document inline in browser.
+     */
+    public function viewDocument($documentId)
+    {
+        $document = MonalisaDocument::findOrFail($documentId);
+
+        if (!Storage::disk('local')->exists($document->file_path)) {
+            abort(404, 'File not found.');
+        }
+
+        return response()->file(
+            storage_path('app/' . $document->file_path),
+            ['Content-Disposition' => 'inline; filename="' . $document->original_filename . '"']
+        );
+    }
+
+    /**
      * Calculate scores from assessments.
      */
     private function calculateScores($assessments, $domains, $type = 'kominfo')
