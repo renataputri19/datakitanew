@@ -53,10 +53,16 @@ class FortifyServiceProvider extends ServiceProvider
             return view('auth.reset-password', ['request' => $request]);
         });
 
+        // Login: 5 attempts per 15 minutes per email+IP combo.
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
-            return Limit::perMinute(5)->by($throttleKey);
+            return Limit::perMinutes(15, 5)->by($throttleKey);
+        });
+
+        // Registration: 5 accounts per hour per IP.
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perHour(5)->by($request->ip());
         });
 
         RateLimiter::for('two-factor', function (Request $request) {

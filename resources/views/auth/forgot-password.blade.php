@@ -38,10 +38,10 @@
                     </div>
                 </div>
 
-                <form method="POST" action="{{ route('password.email') }}" class="mb-4">
+                <form id="resendForm" method="POST" action="{{ route('password.email') }}" class="mb-4">
                     @csrf
                     <input type="hidden" name="email" value="{{ old('email') }}">
-                    <button type="submit"
+                    <button id="resendBtn" type="submit"
                         class="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-medium py-2.5 px-4 rounded-md transition-colors duration-200 text-sm">
                         Kirim Ulang Email
                     </button>
@@ -77,7 +77,7 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('password.email') }}">
+                <form id="initialForm" method="POST" action="{{ route('password.email') }}">
                     @csrf
 
                     <div class="mb-5">
@@ -106,4 +106,76 @@
 
     </div>
 </div>
+
+<script>
+(function () {
+    const COOLDOWN_SECONDS = 300; // 5 minutes — matches config/auth.php throttle
+    const LS_KEY = 'datakita_reset_sent_at';
+
+    // Save timestamp whenever either form is submitted
+    document.querySelectorAll('#initialForm, #resendForm').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            localStorage.setItem(LS_KEY, Date.now().toString());
+        });
+    });
+
+    // Countdown logic — only runs on the success state (resendBtn exists)
+    var btn = document.getElementById('resendBtn');
+    if (!btn) return;
+
+    var timer = null;
+
+    function remaining() {
+        var sentAt = parseInt(localStorage.getItem(LS_KEY) || '0', 10);
+        if (!sentAt) return 0;
+        return Math.max(0, COOLDOWN_SECONDS - Math.floor((Date.now() - sentAt) / 1000));
+    }
+
+    function fmt(secs) {
+        var m = Math.floor(secs / 60);
+        var s = secs % 60;
+        return m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    function lock(secs) {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+        btn.textContent = 'Kirim ulang dalam ' + fmt(secs);
+    }
+
+    function unlock() {
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.cursor = '';
+        btn.textContent = 'Kirim Ulang Email';
+    }
+
+    function tick() {
+        var secs = remaining();
+        if (secs > 0) {
+            lock(secs);
+        } else {
+            clearInterval(timer);
+            unlock();
+            localStorage.removeItem(LS_KEY);
+        }
+    }
+
+    var secs = remaining();
+    if (secs > 0) {
+        // Page just loaded after a send — start the countdown immediately
+        lock(secs);
+        timer = setInterval(tick, 1000);
+    } else {
+        // First time on success page with no prior send recorded — save now
+        // (covers the case where the page loaded fresh after a successful POST)
+        if (!localStorage.getItem(LS_KEY)) {
+            localStorage.setItem(LS_KEY, Date.now().toString());
+            lock(COOLDOWN_SECONDS);
+            timer = setInterval(tick, 1000);
+        }
+    }
+})();
+</script>
 @endsection
