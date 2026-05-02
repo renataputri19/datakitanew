@@ -45,27 +45,6 @@
 .dark .total-row{background:#14532d;color:#86efac;}
 .modal-percent{font-size:.75rem;color:#6b7280;margin-top:.5rem;}
 .dark .modal-percent{color:#9ca3af;}
-.ub-hint-btn{display:inline-flex;align-items:center;gap:.35rem;margin-top:.85rem;font-size:.75rem;font-weight:600;color:#3b82f6;background:none;border:none;cursor:pointer;padding:.3rem .6rem;border-radius:.5rem;transition:background .15s;}
-.ub-hint-btn:hover{background:#eff6ff;}
-.dark .ub-hint-btn{color:#93c5fd;}
-.dark .ub-hint-btn:hover{background:#1e3a5f;}
-.ub-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center;padding:1rem;}
-.ub-modal-box{background:#fff;border-radius:1rem;box-shadow:0 8px 32px rgba(0,0,0,.18);max-width:500px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;animation:ubModalIn .18s ease;}
-.dark .ub-modal-box{background:#1f2937;border:1px solid #374151;}
-@keyframes ubModalIn{from{opacity:0;transform:translateY(-12px) scale(.97);}to{opacity:1;transform:none;}}
-.ub-modal-header{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.25rem .75rem;border-bottom:1px solid #e5e7eb;}
-.dark .ub-modal-header{border-color:#374151;}
-.ub-modal-title{font-size:.875rem;font-weight:700;color:#111827;}
-.dark .ub-modal-title{color:#f9fafb;}
-.ub-modal-close{background:none;border:none;cursor:pointer;color:#6b7280;font-size:1.25rem;line-height:1;padding:.2rem .45rem;border-radius:.375rem;transition:background .15s;}
-.ub-modal-close:hover{background:#f3f4f6;color:#111827;}
-.dark .ub-modal-close:hover{background:#374151;color:#f9fafb;}
-.ub-modal-body{padding:1rem 1.25rem 1.25rem;overflow-y:auto;font-size:.8125rem;color:#4b5563;line-height:1.65;}
-.dark .ub-modal-body{color:#d1d5db;}
-.ub-modal-body p{margin-bottom:.6rem;}
-.ub-modal-body p:last-child{margin-bottom:0;}
-.ub-modal-body strong{color:#111827;}
-.dark .ub-modal-body strong{color:#f9fafb;}
 </style>
 @endpush
 
@@ -164,10 +143,16 @@
       <span id="totalPengeluaran">Rp 0</span>
     </div>
   </div>
-  <button type="button" class="ub-hint-btn" data-open-modal="modal-petunjuk-pengeluaran">
-    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-    Lihat Petunjuk Pengisian
-  </button>
+  <details class="mt-4">
+    <summary class="text-xs text-blue-600 dark:text-blue-400 cursor-pointer font-semibold">Petunjuk pengisian pengeluaran ▼</summary>
+    <div class="mt-2 text-xs text-gray-600 dark:text-gray-400 space-y-1 pl-3 border-l-2 border-blue-200">
+      <p><strong>a. Upah dan gaji:</strong> Termasuk komisi, tips, bonus, cuti. Tidak termasuk upah/gaji yang dikapitalisasi.</p>
+      <p><strong>b. Biaya produksi:</strong> Nilai barang dan jasa sebagai bahan baku. Tidak termasuk aset tetap atau perubahan persediaan.</p>
+      <p><strong>c. Pembelian barang terjual:</strong> Khusus usaha perdagangan — nilai pembelian barang perdagangan yang terjual.</p>
+      <p><strong>d. Biaya operasional:</strong> Listrik, bahan bakar, air, pemeliharaan, angkutan, sewa operasi, lisensi software &lt;1 tahun.</p>
+      <p><strong>e. Biaya nonoperasional:</strong> Bunga, pajak, administrasi, hukum, donasi, restrukturisasi, biaya lain-lain.</p>
+    </div>
+  </details>
 </div>
 
 {{-- Q23: Nilai Produksi --}}
@@ -201,10 +186,13 @@
       </div>
     </div>
   </div>
-  <button type="button" class="ub-hint-btn" data-open-modal="modal-petunjuk-pendapatan">
-    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-    Lihat Petunjuk Pengisian
-  </button>
+  <details class="mt-4">
+    <summary class="text-xs text-blue-600 dark:text-blue-400 cursor-pointer font-semibold">Petunjuk pengisian pendapatan ▼</summary>
+    <div class="mt-2 text-xs text-gray-600 dark:text-gray-400 space-y-1 pl-3 border-l-2 border-blue-200">
+      <p><strong>a. Nilai produksi:</strong> Termasuk barang yang dijual (diproduksi sendiri/tidak), ekspor (FOB), pendapatan jasa perbaikan, kontrak/subkontrak, royalti, sewa operasi. Tidak termasuk penjualan aset.</p>
+      <p><strong>b. Pendapatan lainnya:</strong> Sewa/royalti sumber daya alam, pendapatan bunga, dividen, subsidi pemerintah, donasi.</p>
+    </div>
+  </details>
 </div>
 
 {{-- Q24: Aset --}}
@@ -296,37 +284,6 @@
 </div>
 </div>
 
-{{-- Petunjuk Modal: Pengeluaran (Q22) --}}
-<div id="modal-petunjuk-pengeluaran" class="ub-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mpe-title" style="display:none;">
-  <div class="ub-modal-box">
-    <div class="ub-modal-header">
-      <span id="mpe-title" class="ub-modal-title">Petunjuk Pengisian — Rincian Pengeluaran</span>
-      <button type="button" class="ub-modal-close" data-close-modal aria-label="Tutup">&#215;</button>
-    </div>
-    <div class="ub-modal-body">
-      <p><strong>a. Upah dan gaji:</strong> Termasuk komisi, tips, bonus, cuti. Tidak termasuk upah/gaji yang dikapitalisasi.</p>
-      <p><strong>b. Biaya produksi:</strong> Nilai barang dan jasa sebagai bahan baku. Tidak termasuk aset tetap atau perubahan persediaan.</p>
-      <p><strong>c. Pembelian barang terjual:</strong> Khusus usaha perdagangan — nilai pembelian barang perdagangan yang terjual.</p>
-      <p><strong>d. Biaya operasional:</strong> Listrik, bahan bakar, air, pemeliharaan, angkutan, sewa operasi, lisensi software &lt;1 tahun.</p>
-      <p><strong>e. Biaya nonoperasional:</strong> Bunga, pajak, administrasi, hukum, donasi, restrukturisasi, biaya lain-lain.</p>
-    </div>
-  </div>
-</div>
-
-{{-- Petunjuk Modal: Pendapatan (Q23) --}}
-<div id="modal-petunjuk-pendapatan" class="ub-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mpp-title" style="display:none;">
-  <div class="ub-modal-box">
-    <div class="ub-modal-header">
-      <span id="mpp-title" class="ub-modal-title">Petunjuk Pengisian — Nilai Produksi/Pendapatan</span>
-      <button type="button" class="ub-modal-close" data-close-modal aria-label="Tutup">&#215;</button>
-    </div>
-    <div class="ub-modal-body">
-      <p><strong>a. Nilai produksi:</strong> Termasuk barang yang dijual (diproduksi sendiri/tidak), ekspor (FOB), pendapatan jasa perbaikan, kontrak/subkontrak, royalti, sewa operasi. Tidak termasuk penjualan aset.</p>
-      <p><strong>b. Pendapatan lainnya:</strong> Sewa/royalti sumber daya alam, pendapatan bunga, dividen, subsidi pemerintah, donasi.</p>
-    </div>
-  </div>
-</div>
-
 @push('scripts')
 <script>
 (function(){
@@ -397,20 +354,6 @@
   updateModal();
 
 })();
-
-  // Info modal open/close
-  (function(){
-    function openModal(id){var el=document.getElementById(id);if(el){el.style.display='flex';document.body.style.overflow='hidden';}}
-    function closeAll(){document.querySelectorAll('.ub-modal-overlay').forEach(function(m){m.style.display='none';});document.body.style.overflow='';}
-    document.addEventListener('click',function(e){
-      var btn=e.target.closest('[data-open-modal]');
-      if(btn){openModal(btn.dataset.openModal);return;}
-      var close=e.target.closest('[data-close-modal]');
-      if(close){var o=close.closest('.ub-modal-overlay');if(o){o.style.display='none';document.body.style.overflow='';}return;}
-      if(e.target.classList&&e.target.classList.contains('ub-modal-overlay')){e.target.style.display='none';document.body.style.overflow='';}
-    });
-    document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAll();});
-  })();
 </script>
 <script>
 window.surveyRoutes = {
