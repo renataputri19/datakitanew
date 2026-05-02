@@ -24,6 +24,8 @@ class DatabaseSeeder extends Seeder
             MonalisaStructureSeeder::class,
             // Users (BPS + Kominfo sample users)
             UserSeeder::class,
+            // Mitra user for SIBSTR results access
+            MitraUserSeeder::class,
             // NewsSeeder::class,
             // VideoSeeder::class,
             // AcademicInstitutionSeeder::class,

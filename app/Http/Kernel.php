@@ -68,6 +68,7 @@ class Kernel extends HttpKernel
         'is_bps' => \App\Http\Middleware\IsBpsUser::class,
         'is_kominfo' => \App\Http\Middleware\IsKominfoUser::class,
         'is_superadmin' => \App\Http\Middleware\IsSuperadmin::class,
+        'is_mitra' => \App\Http\Middleware\IsMitraUser::class,
         'precognitive' => \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,

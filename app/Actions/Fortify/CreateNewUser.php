@@ -96,6 +96,7 @@ class CreateNewUser implements CreatesNewUsers
             'is_bps' => false,
             'is_admin' => false,
             'is_superadmin' => false,
+            'is_mitra' => false,
         ]);
     }
 }

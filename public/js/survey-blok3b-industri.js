@@ -477,8 +477,9 @@ class SurveyBlok3bIndustriManager {
             }
 
             if (isEmpty) {
-                this.showFieldError(el, 'Field ini wajib diisi');
-                addError(el.name || el.id, getLabel(el));
+                const fieldLabel = getLabel(el) || 'Field ini';
+                this.showFieldError(el, `${fieldLabel} wajib diisi`);
+                addError(el.name || el.id, fieldLabel);
             } else {
                 this.clearFieldError(el);
             }
@@ -511,8 +512,9 @@ class SurveyBlok3bIndustriManager {
             }
 
             if (isEmpty) {
-                this.showFieldError(field, 'Field ini wajib diisi');
-                addError(fieldName, getLabel(field));
+                const fieldLabel = getLabel(field) || 'Field ini';
+                this.showFieldError(field, `${fieldLabel} wajib diisi`);
+                addError(fieldName, fieldLabel);
             } else {
                 this.clearFieldError(field);
             }

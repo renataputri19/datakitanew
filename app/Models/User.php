@@ -27,6 +27,7 @@ class User extends Authenticatable
         'is_kominfo_user',
         'is_admin',
         'is_superadmin',
+        'is_mitra',
     ];
 
     /**
@@ -51,6 +52,7 @@ class User extends Authenticatable
         'is_kominfo_user' => 'boolean',
         'is_admin' => 'boolean',
         'is_superadmin' => 'boolean',
+        'is_mitra' => 'boolean',
     ];
 
     /**

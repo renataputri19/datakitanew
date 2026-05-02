@@ -240,6 +240,16 @@ class SurveyManager {
         // Add error class to field
         field.classList.add('field-error');
 
+        // Prefer a named [data-field] placeholder already in the DOM
+        if (field.name && this.form) {
+            const placeholder = this.form.querySelector(`[data-field="${field.name}"]`);
+            if (placeholder) {
+                placeholder.textContent = message;
+                placeholder.classList.add('field-error-message');
+                return;
+            }
+        }
+
         // Create error message element
         const errorElement = document.createElement('div');
         errorElement.className = 'field-error-message';
@@ -269,6 +279,15 @@ class SurveyManager {
         // Remove error class
         field.classList.remove('field-error');
 
+        // Clear any [data-field] placeholder associated with this field
+        if (field.name && this.form) {
+            const placeholder = this.form.querySelector(`[data-field="${field.name}"]`);
+            if (placeholder) {
+                placeholder.textContent = '';
+                placeholder.classList.remove('field-error-message');
+            }
+        }
+
         // Remove error message, preferring `.form-errors` container when present
         const formRow = field.closest && field.closest('.form-row');
         const errorContainer = formRow ? formRow.querySelector('.form-errors') : null;
@@ -279,7 +298,7 @@ class SurveyManager {
         }
 
         const errorElement = field.parentNode ? field.parentNode.querySelector('.field-error-message') : null;
-        if (errorElement) {
+        if (errorElement && !errorElement.hasAttribute('data-field')) {
             errorElement.remove();
         }
     }
@@ -526,6 +545,17 @@ class SurveyManager {
                     field.classList.add('field-valid');
                 }
 
+                // Notify sidebar of blok completion status and field value (UB survey)
+                if (data.blok_completed !== undefined) {
+                    document.dispatchEvent(new CustomEvent('ub:autosave', {
+                        detail: {
+                            blok_completed: data.blok_completed,
+                            field: fieldName,
+                            value: fieldValue,
+                        }
+                    }));
+                }
+
                 console.log('Auto-save successful:', data);
             } else {
                 throw new Error(data.message || 'Auto-save failed');
@@ -599,7 +629,7 @@ class SurveyManager {
             const formData = new FormData(this.form);
             // Preserve nested array names by submitting FormData directly
             // Append completion flag explicitly as string for backend parsing
-            formData.append('is_completed', isCompleted ? 'true' : 'false');
+            formData.append('is_completed', isCompleted ? '1' : '0');
 
             const statusMessage = isCompleted ? 'Menyimpan dan menyelesaikan...' : 'Menyimpan draft...';
             this.showStatus(statusMessage, 'info', true);
@@ -638,7 +668,10 @@ class SurveyManager {
                     // Handle conditional navigation based on server response
                     let nextUrl = null;
 
-                    if (result.next_block) {
+                    // Highest priority: server-provided absolute redirect URL
+                    if (result.redirect) {
+                        nextUrl = result.redirect;
+                    } else if (result.next_block) {
                         // Server provided specific next block
                         if (result.next_block === 'blok3a' && window.surveyRoutes?.blok3a) {
                             nextUrl = window.surveyRoutes.blok3a;
@@ -702,6 +735,34 @@ class SurveyManager {
                     this.scrollToFirstError();
                     this.showStatus('Terdapat kesalahan pada form. Mohon periksa kembali.', 'error');
                     return;
+                } else if (result.redirect) {
+                    // Cross-block validation failure: server asks us to redirect to a different block
+                    this.showStatus(result.message || 'Terdapat bagian survei yang belum dilengkapi.', 'error');
+                    if (typeof window.showCrossBlockModal === 'function') {
+                        // Page-specific modal handler (e.g. blok3 defines this for a popup UX)
+                        window.showCrossBlockModal(result);
+                    } else {
+                        // Fallback: inline banner + auto-redirect
+                        const crossBlockEl = document.getElementById('crossBlockErr');
+                        if (crossBlockEl) {
+                            const msgEl = document.getElementById('crossBlockErrMsg');
+                            if (msgEl) msgEl.textContent = result.message || '';
+                            crossBlockEl.classList.remove('hidden');
+                            crossBlockEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            let sec = 3;
+                            const countdown = document.getElementById('crossBlockCountdown');
+                            if (countdown) {
+                                countdown.textContent = sec;
+                                const iv = setInterval(() => {
+                                    sec--;
+                                    countdown.textContent = sec;
+                                    if (sec <= 0) clearInterval(iv);
+                                }, 1000);
+                            }
+                        }
+                        setTimeout(() => { window.location.href = result.redirect; }, 3000);
+                    }
+                    return;
                 } else {
                     throw new Error(result.message || 'Save failed');
                 }
@@ -722,6 +783,8 @@ class SurveyManager {
      */
     showSubmissionGuidance(message, details = null) {
         if (!this.form) return;
+        // Allow callers to disable this panel (e.g. UB views prefer inline-only errors)
+        if (this.options.showGuidanceNearSubmit === false) return;
 
         // Prefer the complete/save button container
         const submitBtn = this.form.querySelector('#save-complete') || this.form.querySelector('button[type="submit"]');
@@ -800,7 +863,15 @@ class SurveyManager {
         const errorFields = this.form.querySelectorAll('.field-error');
         errorFields.forEach(field => this.clearFieldError(field));
         const errorMsgs = this.form.querySelectorAll('.field-error-message');
-        errorMsgs.forEach(msg => msg.remove());
+        errorMsgs.forEach(msg => {
+            if (msg.hasAttribute('data-field')) {
+                // It's a static placeholder — clear text, remove class, but keep in DOM
+                msg.textContent = '';
+                msg.classList.remove('field-error-message');
+            } else {
+                msg.remove();
+            }
+        });
 
         Object.keys(errors).forEach((fieldKey) => {
             const messages = Array.isArray(errors[fieldKey]) ? errors[fieldKey] : [errors[fieldKey]];
@@ -840,8 +911,23 @@ class SurveyManager {
     showRadioGroupError(groupName, message) {
         if (!this.form || !groupName) return;
 
+        // Prefer a named [data-field] placeholder already in the DOM
+        const placeholder = this.form.querySelector(`[data-field="${groupName}"]`);
+        if (placeholder) {
+            placeholder.textContent = message;
+            placeholder.classList.add('field-error-message');
+            // Also highlight the radio group container
+            const firstRadio = this.form.querySelector(`input[type="radio"][name="${groupName}"]`);
+            const container = firstRadio && (firstRadio.closest('.radio-group') || firstRadio.closest('.ub-radio-group'));
+            if (container) container.classList.add('radio-group-has-error');
+            return;
+        }
+
         const firstRadio = this.form.querySelector(`input[type="radio"][name="${groupName}"]`);
-        const radioGroupContainer = firstRadio ? firstRadio.closest('.radio-group') : null;
+        // Support both .radio-group (SIBSTR) and .ub-radio-group (UB) containers
+        const radioGroupContainer = firstRadio
+            ? (firstRadio.closest('.radio-group') || firstRadio.closest('.ub-radio-group'))
+            : null;
         if (radioGroupContainer && radioGroupContainer.parentNode) {
             // Remove existing group error near this container
             const existing = radioGroupContainer.parentNode.querySelector('.radio-group-error');
@@ -863,11 +949,23 @@ class SurveyManager {
      */
     clearRadioGroupError(groupName) {
         if (!this.form || !groupName) return;
+        // Clear [data-field] placeholder
+        const placeholder = this.form.querySelector(`[data-field="${groupName}"]`);
+        if (placeholder) {
+            placeholder.textContent = '';
+            placeholder.classList.remove('field-error-message');
+        }
         const firstRadio = this.form.querySelector(`input[type="radio"][name="${groupName}"]`);
-        const radioGroupContainer = firstRadio ? firstRadio.closest('.radio-group') : null;
-        if (radioGroupContainer && radioGroupContainer.parentNode) {
-            const existing = radioGroupContainer.parentNode.querySelector('.radio-group-error');
-            if (existing) existing.remove();
+        // Support both .radio-group (SIBSTR) and .ub-radio-group (UB) containers
+        const radioGroupContainer = firstRadio
+            ? (firstRadio.closest('.radio-group') || firstRadio.closest('.ub-radio-group'))
+            : null;
+        if (radioGroupContainer) {
+            radioGroupContainer.classList.remove('radio-group-has-error');
+            if (radioGroupContainer.parentNode) {
+                const existing = radioGroupContainer.parentNode.querySelector('.radio-group-error');
+                if (existing) existing.remove();
+            }
         }
         // Also clear individual radio field-error classes
         const radios = this.form.querySelectorAll(`input[type="radio"][name="${groupName}"]`);
@@ -1016,7 +1114,8 @@ document.addEventListener('DOMContentLoaded', function () {
         window.surveyManager = new SurveyManager({
             autoSaveUrl,
             saveAllUrl,
-            statusUrl
+            statusUrl,
+            showGuidanceNearSubmit: window.surveyRoutes?.showGuidanceNearSubmit !== false
         });
     }
 });

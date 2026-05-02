@@ -65,7 +65,7 @@ class SurveyBlok1Manager {
     validateField(field) {
         const value = (field.value || '').trim();
         if (field.required && value === '') {
-            this.showFieldError(field, 'Field ini wajib diisi');
+            this.showFieldError(field, `${this._getFieldLabel(field)} wajib diisi`);
             return false;
         }
         this.clearFieldError(field);
@@ -76,11 +76,37 @@ class SurveyBlok1Manager {
         const radios = this.form.querySelectorAll(`input[name="${groupName}"]`);
         const isSelected = Array.from(radios).some(r => r.checked);
         if (!isSelected) {
-            this.showRadioGroupError(groupName, 'Field ini wajib dipilih');
+            const label = this._getFieldLabel(radios[0]);
+            this.showRadioGroupError(groupName, `${label} wajib dipilih`);
             return false;
         }
         this.clearRadioGroupError(groupName);
         return true;
+    }
+
+    // ── Label extraction helper ───────────────────────────────────────────────
+
+    _getFieldLabel(el) {
+        if (!el) return 'Field ini';
+        const subrow = el.closest('.form-subrow');
+        if (subrow) {
+            const sublabel = subrow.querySelector('.form-sublabel');
+            if (sublabel) {
+                let text = sublabel.textContent.trim();
+                if (text.length > 60) text = text.substring(0, 60).trimEnd() + '…';
+                return text;
+            }
+        }
+        const row = el.closest('.form-row');
+        if (!row) return 'Field ini';
+        const formLabel = row.querySelector('.form-label');
+        if (!formLabel) return 'Field ini';
+        const titleSpans = formLabel.querySelectorAll('span:not(.question-number)');
+        let title = titleSpans.length > 0
+            ? titleSpans[0].textContent.trim()
+            : formLabel.textContent.trim().replace(/^\d+[\.\s]+/, '');
+        if (title.length > 60) title = title.substring(0, 60).trimEnd() + '…';
+        return title || 'Field ini';
     }
 
     // ── Error display / clear ─────────────────────────────────────────────────

@@ -15,6 +15,8 @@ use App\Http\Controllers\BPS\DashboardController as BPSDashboardController;
 use App\Http\Controllers\BPS\UserController as BPSUserController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\SibstrEditController;
+use App\Http\Controllers\SurveyUbController;
+use App\Http\Controllers\SurveyUbEditController;
 use App\Http\Controllers\TemporarySurveyController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\FormController;
@@ -185,8 +187,57 @@ Route::middleware(['auth'])->group(function () {
     // Survey Routes (SIBSTR) - Protected (requires authentication)
     Route::prefix('survei')->name('survey.')->group(function () {
 
+        // ── UB SURVEY (SE2026-L.UB) ──
+        Route::get('/ub',                      [SurveyUbController::class, 'entry'])->name('ub.entry');
+        Route::post('/ub/start-edit',          [SurveyUbController::class, 'startEdit'])->name('ub.start-edit');
+        Route::get('/ub/blok1a',               [SurveyUbController::class, 'blok1a'])->name('ub.blok1a');
+        Route::post('/ub/blok1a/autosave',     [SurveyUbController::class, 'autoSaveBlok1a'])->name('ub.blok1a.autosave');
+        Route::get('/ub/blok1a/status',        [SurveyUbController::class, 'getStatusBlok1a'])->name('ub.blok1a.status');
+        Route::post('/ub/blok1a/save',         [SurveyUbController::class, 'saveBlok1a'])->name('ub.blok1a.save');
+        Route::get('/ub/blok1b',               [SurveyUbController::class, 'blok1b'])->name('ub.blok1b');
+        Route::post('/ub/blok1b/autosave',     [SurveyUbController::class, 'autoSaveBlok1b'])->name('ub.blok1b.autosave');
+        Route::get('/ub/blok1b/status',        [SurveyUbController::class, 'getStatusBlok1b'])->name('ub.blok1b.status');
+        Route::post('/ub/blok1b/save',         [SurveyUbController::class, 'saveBlok1b'])->name('ub.blok1b.save');
+        Route::get('/ub/blok1c',               [SurveyUbController::class, 'blok1c'])->name('ub.blok1c');
+        Route::post('/ub/blok1c/autosave',     [SurveyUbController::class, 'autoSaveBlok1c'])->name('ub.blok1c.autosave');
+        Route::get('/ub/blok1c/status',        [SurveyUbController::class, 'getStatusBlok1c'])->name('ub.blok1c.status');
+        Route::post('/ub/blok1c/save',         [SurveyUbController::class, 'saveBlok1c'])->name('ub.blok1c.save');
+        Route::get('/ub/blok1d',               [SurveyUbController::class, 'blok1d'])->name('ub.blok1d');
+        Route::post('/ub/blok1d/autosave',     [SurveyUbController::class, 'autoSaveBlok1d'])->name('ub.blok1d.autosave');
+        Route::get('/ub/blok1d/status',        [SurveyUbController::class, 'getStatusBlok1d'])->name('ub.blok1d.status');
+        Route::post('/ub/blok1d/save',         [SurveyUbController::class, 'saveBlok1d'])->name('ub.blok1d.save');
+        Route::get('/ub/blok2',                [SurveyUbController::class, 'blok2'])->name('ub.blok2');
+        Route::post('/ub/blok2/autosave',      [SurveyUbController::class, 'autoSaveBlok2'])->name('ub.blok2.autosave');
+        Route::get('/ub/blok2/status',         [SurveyUbController::class, 'getStatusBlok2'])->name('ub.blok2.status');
+        Route::post('/ub/blok2/save',          [SurveyUbController::class, 'saveBlok2'])->name('ub.blok2.save');
+        Route::get('/ub/blok3',                [SurveyUbController::class, 'blok3'])->name('ub.blok3');
+        Route::post('/ub/blok3/autosave',      [SurveyUbController::class, 'autoSaveBlok3'])->name('ub.blok3.autosave');
+        Route::get('/ub/blok3/status',         [SurveyUbController::class, 'getStatusBlok3'])->name('ub.blok3.status');
+        Route::post('/ub/blok3/finish',        [SurveyUbController::class, 'finish'])->name('ub.blok3.finish');
+        Route::get('/ub/pdf',                  [SurveyUbController::class, 'downloadPdf'])->name('ub.pdf.download');
+
+        // ── UB EDIT (completed surveys) ──
+        Route::get('/ub/edit/blok1a',          [SurveyUbEditController::class, 'blok1a'])->name('ub.edit.blok1a');
+        Route::post('/ub/edit/blok1a/save',    [SurveyUbEditController::class, 'saveBlok1a'])->name('ub.edit.blok1a.save');
+        Route::get('/ub/edit/blok1b',          [SurveyUbEditController::class, 'blok1b'])->name('ub.edit.blok1b');
+        Route::post('/ub/edit/blok1b/save',    [SurveyUbEditController::class, 'saveBlok1b'])->name('ub.edit.blok1b.save');
+        Route::get('/ub/edit/blok1c',          [SurveyUbEditController::class, 'blok1c'])->name('ub.edit.blok1c');
+        Route::post('/ub/edit/blok1c/save',    [SurveyUbEditController::class, 'saveBlok1c'])->name('ub.edit.blok1c.save');
+        Route::get('/ub/edit/blok1d',          [SurveyUbEditController::class, 'blok1d'])->name('ub.edit.blok1d');
+        Route::post('/ub/edit/blok1d/save',    [SurveyUbEditController::class, 'saveBlok1d'])->name('ub.edit.blok1d.save');
+        Route::get('/ub/edit/blok2',           [SurveyUbEditController::class, 'blok2'])->name('ub.edit.blok2');
+        Route::post('/ub/edit/blok2/save',     [SurveyUbEditController::class, 'saveBlok2'])->name('ub.edit.blok2.save');
+        Route::get('/ub/edit/blok3',           [SurveyUbEditController::class, 'blok3'])->name('ub.edit.blok3');
+        Route::post('/ub/edit/blok3/finish',   [SurveyUbEditController::class, 'finish'])->name('ub.edit.blok3.finish');
+
         // ── SIBSTR LANDING PAGE (no period params) ──
         Route::get('/sibstr', [SurveyController::class, 'sibstrEntry'])->name('sibstr.entry');
+
+        // ── MITRA: read-only detail & PDF download (no bps access required) ──
+        Route::middleware(['is_mitra'])->group(function () {
+            Route::get('/mitra/sibstr/{id}',          [SurveyController::class, 'mitraSibstrShow'])->name('mitra.sibstr.show');
+            Route::get('/mitra/sibstr/{id}/download', [SurveyController::class, 'mitraSibstrDownload'])->name('mitra.sibstr.download');
+        });
 
         // ── SIBSTR SURVEY FORMS — Annual: /sibstr/{year}/tahunan/blok{n}
         //                        — Quarterly: /sibstr/{year}/{1-4}/blok{n}  ──

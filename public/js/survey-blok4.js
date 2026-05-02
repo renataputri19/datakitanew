@@ -48,11 +48,25 @@ class SurveyBlok4Manager {
     validateField(field) {
         const value = (field.value || '').trim();
         if (field.required && value === '') {
-            this.showFieldError(field, 'Field ini wajib diisi');
+            this.showFieldError(field, `${this._getFieldLabel(field)} wajib diisi`);
             return false;
         }
         this.clearFieldError(field);
         return true;
+    }
+
+    _getFieldLabel(el) {
+        if (!el) return 'Field ini';
+        const row = el.closest('.form-row');
+        if (!row) return 'Field ini';
+        const formLabel = row.querySelector('.form-label');
+        if (!formLabel) return 'Field ini';
+        const titleSpans = formLabel.querySelectorAll('span:not(.question-number)');
+        let title = titleSpans.length > 0
+            ? titleSpans[0].textContent.trim()
+            : formLabel.textContent.trim().replace(/^\d+[\.\s]+/, '');
+        if (title.length > 60) title = title.substring(0, 60).trimEnd() + '…';
+        return title || 'Field ini';
     }
 
     // ── Error display / clear ─────────────────────────────────────────────────

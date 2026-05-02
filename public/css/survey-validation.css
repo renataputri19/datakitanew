@@ -194,6 +194,30 @@
     border-color: #dc2626 !important;
 }
 
+/* UB form radio group error — mirrors .ub-input.error (red border, light red bg) */
+.ub-radio-group.ub-radio-error {
+    border: 1.5px solid #ef4444;
+    border-radius: .625rem;
+    padding: .4rem .6rem;
+    background-color: #fef2f2;
+}
+
+.dark .ub-radio-group.ub-radio-error {
+    background-color: #450a0a;
+    border-color: #dc2626;
+}
+
+/* Red outline for the Q9b amber group box when cross-field validation fails */
+.q9b-group-has-error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.dark .q9b-group-has-error {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+}
+
 /* Radio button error styling - Removed for cleaner error display */
 /* .radio-input.field-error {
     box-shadow: 0 0 0 2px #ef4444 !important;
