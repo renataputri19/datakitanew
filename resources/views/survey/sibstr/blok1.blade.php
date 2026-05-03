@@ -228,10 +228,10 @@
                     @enderror
                 </div>
 
-                <!-- Question 107 -->
+                <!-- Question 109 -->
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">107.</span>
+                        <span class="question-number">109.</span>
                         <span>NIB (Nomor Induk Berusaha):</span>
                     </label>
                     <input type="text" name="nib" id="nib" value="{{ $surveyResponse->nib ?? '' }}"
@@ -246,10 +246,10 @@
                     <div id="nib-error" class="error-message" style="display: none;"></div>
                 </div>
 
-                <!-- Question 108 -->
+                <!-- Question 110 -->
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">108.</span>
+                        <span class="question-number">110.</span>
                         <span>Jenis Kawasan:</span>
                     </label>
                     <div class="radio-group">
@@ -283,10 +283,10 @@
                     @enderror
                 </div>
 
-                <!-- Question 109 -->
+                <!-- Question 111 -->
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">109.</span>
+                        <span class="question-number">111.</span>
                         <span>Nama Kawasan:</span>
                     </label>
                     <input type="text" name="nama_kawasan" id="nama_kawasan" value="{{ $surveyResponse->nama_kawasan ?? '' }}"
@@ -322,10 +322,10 @@
                 Diketahui oleh yang bertanggung jawab di perusahaan
             </p>
             <div class="form-grid">
-                <!-- Question 110 -->
+                <!-- Question 113 -->
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">110.</span>
+                        <span class="question-number">113.</span>
                         <span>Nama:</span>
                     </label>
                     <input type="text" name="legalisasi_nama" id="legalisasi_nama" value="{{ $surveyResponse->legalisasi_nama ?? '' }}"
@@ -333,10 +333,10 @@
                            placeholder="Masukkan nama penanggung jawab">
                 </div>
 
-                <!-- Question 111 -->
+                <!-- Question 114 -->
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">111.</span>
+                        <span class="question-number">114.</span>
                         <span>Jabatan:</span>
                     </label>
                     <input type="text" name="legalisasi_jabatan" id="legalisasi_jabatan" value="{{ $surveyResponse->legalisasi_jabatan ?? '' }}"
@@ -344,10 +344,10 @@
                            placeholder="Masukkan jabatan">
                 </div>
 
-                <!-- Question 113 -->
+                <!-- Question 115 -->
                 <div class="form-row">
                     <label class="form-label required">
-                        <span class="question-number">113.</span>
+                        <span class="question-number">115.</span>
                         <span>Jenis Kelamin:</span>
                     </label>
                     <div class="radio-group">
@@ -369,10 +369,10 @@
                     @enderror
                 </div>
 
-                <!-- Question 115 -->
+                <!-- Question 116 -->
                 <div class="form-row">
                     <label class="form-label">
-                        <span class="question-number">115.</span>
+                        <span class="question-number">116.</span>
                         <span>NIK:</span>
                     </label>
                     <input type="text" name="legalisasi_nik" id="legalisasi_nik" value="{{ $surveyResponse->legalisasi_nik ?? '' }}"

@@ -361,16 +361,104 @@
             </div>
         </div>
 
-        <div class="mt-6">
-            <a href="{{ route('monalisa.bps.domain', $assessment->indikator->aspek->domain_id) }}" 
+        <div class="mt-6 flex flex-col md:flex-row gap-3">
+            <a href="{{ route('monalisa.bps.domain', $assessment->indikator->aspek->domain_id) }}"
                class="monalisa-btn monalisa-btn-secondary">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
                 Kembali ke Domain
             </a>
+            <button type="button" onclick="confirmCancelVerification()"
+                    class="monalisa-btn monalisa-btn-danger">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Batalkan Verifikasi
+            </button>
+        </div>
+
+        <!-- Hidden form for cancel verification -->
+        <form id="cancelVerifyForm" action="{{ route('monalisa.bps.assessment.cancel-verify', $assessment->id) }}" method="POST" class="hidden">
+            @csrf
+        </form>
+
+        <!-- Confirmation Modal -->
+        <div id="cancelVerifyModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/50">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Batalkan Verifikasi?</h3>
+                </div>
+                <p class="text-gray-600 dark:text-gray-400 mb-2">
+                    Assessment akan dikembalikan ke status <strong>submitted</strong> dan semua data verifikasi BPS (level, komentar) akan dihapus.
+                </p>
+                <p class="text-gray-600 dark:text-gray-400 mb-6">
+                    Anda dapat melakukan verifikasi ulang atau menolak assessment setelah ini.
+                </p>
+                <div class="flex gap-3 justify-end">
+                    <button type="button" onclick="closeCancelModal()"
+                            class="monalisa-btn monalisa-btn-secondary">
+                        Batal
+                    </button>
+                    <button type="button" onclick="submitCancelVerification()"
+                            class="monalisa-btn monalisa-btn-danger">
+                        Ya, Batalkan Verifikasi
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
+
+    <script>
+        function confirmCancelVerification() {
+            const modal = document.getElementById('cancelVerifyModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        function closeCancelModal() {
+            const modal = document.getElementById('cancelVerifyModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+        function submitCancelVerification() {
+            const form = document.getElementById('cancelVerifyForm');
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Memproses...';
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({}),
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    alert(data.message || 'Terjadi kesalahan.');
+                    btn.disabled = false;
+                    btn.textContent = 'Ya, Batalkan Verifikasi';
+                    closeCancelModal();
+                }
+            })
+            .catch(() => {
+                alert('Terjadi kesalahan jaringan.');
+                btn.disabled = false;
+                btn.textContent = 'Ya, Batalkan Verifikasi';
+                closeCancelModal();
+            });
+        }
+    </script>
     @endif
 @endsection
 

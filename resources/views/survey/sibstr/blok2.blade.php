@@ -666,7 +666,7 @@
                         </div>
                         <div class="radio-option">
                             <input type="radio" name="penggunaan_internet" id="penggunaan_internet_tidak" value="tidak" class="radio-input" required {{ old('penggunaan_internet', $surveyResponse->penggunaan_internet ?? '') == 'tidak' ? 'checked' : '' }}>
-                            <label for="penggunaan_internet_tidak" class="radio-label">Tidak <span class="text-sm text-gray-500">(Lanjut ke Pertanyaan 215)</span></label>
+                            <label for="penggunaan_internet_tidak" class="radio-label">Tidak <span class="text-sm text-gray-500">(Lanjut ke Pertanyaan 213)</span></label>
                         </div>
                     </div>
                     @error('penggunaan_internet')
@@ -674,10 +674,10 @@
                     @enderror
                 </div>
 
-                <!-- 214a: Tujuan penggunaan internet (shown only if 214=Ya) -->
+                <!-- 212a: Tujuan penggunaan internet (shown only if 212=Ya) -->
                 <div class="form-row" id="tujuan_penggunaan_internet_row">
                     <label class="form-label">
-                        <span class="question-number">214a.</span>
+                        <span class="question-number">212a.</span>
                         <span>Tujuan penggunaan internet:</span>
                     </label>
                     <div class="form-subgrid">
@@ -762,10 +762,10 @@
                     </div>
                 </div>
 
-                <!-- 214b: Teknologi digital -->
+                <!-- 212b: Teknologi digital -->
                 <div class="form-row" id="teknologi_digital_row">
                     <label class="form-label">
-                        <span class="question-number">214b.</span>
+                        <span class="question-number">212b.</span>
                         <span>Apakah perusahaan memanfaatkan teknologi digital (AI, IoT, big data, printer 3D, blockchain, cloud)?</span>
                     </label>
                     <div class="radio-group">

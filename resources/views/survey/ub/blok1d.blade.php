@@ -45,6 +45,18 @@
 .dark .total-row{background:#14532d;color:#86efac;}
 .modal-percent{font-size:.75rem;color:#6b7280;margin-top:.5rem;}
 .dark .modal-percent{color:#9ca3af;}
+.ptab{border-color:transparent;color:#6b7280;}
+.ptab:hover{color:#374151;background:#f9fafb;}
+.dark .ptab{color:#9ca3af;}
+.dark .ptab:hover{color:#e5e7eb;background:rgba(55,65,81,.4);}
+.ptab-active{border-color:#3b82f6 !important;color:#1d4ed8 !important;background:#eff6ff !important;}
+.dark .ptab-active{color:#93c5fd !important;background:rgba(30,58,95,.5) !important;}
+.ptab2{border-color:transparent;color:#6b7280;}
+.ptab2:hover{color:#374151;background:#f9fafb;}
+.dark .ptab2{color:#9ca3af;}
+.dark .ptab2:hover{color:#e5e7eb;background:rgba(55,65,81,.4);}
+.ptab2-active{border-color:#3b82f6 !important;color:#1d4ed8 !important;background:#eff6ff !important;}
+.dark .ptab2-active{color:#93c5fd !important;background:rgba(30,58,95,.5) !important;}
 </style>
 @endpush
 
@@ -143,16 +155,128 @@
       <span id="totalPengeluaran">Rp 0</span>
     </div>
   </div>
-  <details class="mt-4">
-    <summary class="text-xs text-blue-600 dark:text-blue-400 cursor-pointer font-semibold">Petunjuk pengisian pengeluaran ▼</summary>
-    <div class="mt-2 text-xs text-gray-600 dark:text-gray-400 space-y-1 pl-3 border-l-2 border-blue-200">
-      <p><strong>a. Upah dan gaji:</strong> Termasuk komisi, tips, bonus, cuti. Tidak termasuk upah/gaji yang dikapitalisasi.</p>
-      <p><strong>b. Biaya produksi:</strong> Nilai barang dan jasa sebagai bahan baku. Tidak termasuk aset tetap atau perubahan persediaan.</p>
-      <p><strong>c. Pembelian barang terjual:</strong> Khusus usaha perdagangan — nilai pembelian barang perdagangan yang terjual.</p>
-      <p><strong>d. Biaya operasional:</strong> Listrik, bahan bakar, air, pemeliharaan, angkutan, sewa operasi, lisensi software &lt;1 tahun.</p>
-      <p><strong>e. Biaya nonoperasional:</strong> Bunga, pajak, administrasi, hukum, donasi, restrukturisasi, biaya lain-lain.</p>
+  {{-- Petunjuk tabbed panel --}}
+  <div class="mt-4" id="petunjukWrap">
+    <button type="button" id="petunjukToggle"
+      class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+      <svg id="petunjukChevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span id="petunjukToggleLabel">Lihat petunjuk pengisian pengeluaran</span>
+    </button>
+
+    <div id="petunjukPanel" class="hidden mt-3 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/30 overflow-hidden">
+
+      {{-- Tab row --}}
+      <div class="flex overflow-x-auto border-b border-blue-100 dark:border-blue-900/60 bg-white/70 dark:bg-gray-800/50" id="petunjukTabs">
+        <button type="button" data-tab="a" class="ptab ptab-active shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">a. Upah &amp; Gaji</button>
+        <button type="button" data-tab="b" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">b. Biaya Produksi</button>
+        <button type="button" data-tab="c" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">c. Barang Terjual</button>
+        <button type="button" data-tab="d" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">d. Operasional</button>
+        <button type="button" data-tab="e" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">e. Nonoperasional</button>
+      </div>
+
+      {{-- Tab panels --}}
+      <div class="p-4 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+
+        <div data-panel="a" class="ppanel">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">a. Total upah dan gaji, serta jaminan sosial pegawai</p>
+          <div class="space-y-3">
+            <div>
+              <p class="font-semibold text-green-700 dark:text-green-400 mb-1">✓ Termasuk:</p>
+              <ul class="list-disc list-inside space-y-0.5 pl-1">
+                <li>Upah dan gaji pegawai/karyawan yang telah dikeluarkan ringkasan pembayarannya <em>(group certificate)</em></li>
+                <li>Komisi dan tips untuk pegawai/karyawan</li>
+                <li>Bonus</li>
+                <li>Pembayaran cuti tahunan dan jenis cuti lainnya</li>
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-red-600 dark:text-red-400 mb-1">✗ Tidak Termasuk:</p>
+              <ul class="list-disc list-inside space-y-0.5 pl-1">
+                <li>Upah dan gaji yang dikapitalisasi</li>
+                <li>Pembayaran untuk konsultan dan kontraktor yang berusaha sendiri (bukan karyawan perusahaan), yang dibayarkan dengan komisi</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div data-panel="b" class="ppanel hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">b. Biaya produksi (pemakaian bahan baku dan penolong)</p>
+          <div class="space-y-3">
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2.5">
+              <p class="font-semibold text-amber-700 dark:text-amber-300 mb-1">Catatan:</p>
+              <p class="mb-1">Mencakup seluruh nilai barang dan jasa yang digunakan sebagai bahan baku dalam proses produksi, tidak termasuk aset tetap.</p>
+              <p class="mb-1">Pada usaha pertanian, ongkos/biaya yang dicatat adalah biaya dari barang/jasa yang benar-benar <strong>DIBELI/DIBAYARKAN</strong> dan <strong>TELAH DIGUNAKAN</strong> (tidak termasuk yang disimpan, diberikan ke pihak lain, dsb) untuk usaha tanaman pangan, hortikultura, perkebunan, peternakan, kehutanan, dan perikanan selama periode tahun 2025.</p>
+              <p>Biaya produksi meliputi: benih, bibit, pupuk, pestisida, vaksin, vitamin, obat-obatan, pakan, umpan, wadah, tali, es, garam, konsumsi awak kapal, dll.</p>
+            </div>
+            <div>
+              <p class="font-semibold text-green-700 dark:text-green-400 mb-1">✓ Termasuk:</p>
+              <ul class="list-disc list-inside pl-1">
+                <li>Pembelian bahan yang digunakan dalam proses produksi dan pengemasan</li>
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-red-600 dark:text-red-400 mb-1">✗ Tidak Termasuk:</p>
+              <ul class="list-disc list-inside space-y-0.5 pl-1">
+                <li>Pembelian barang yang dikapitalisasi</li>
+                <li>Perubahan persediaan</li>
+                <li>Pembelian barang jadi untuk dijual kembali</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div data-panel="c" class="ppanel hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">c. Biaya pembelian barang yang terjual</p>
+          <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2.5 mb-2">
+            <p class="font-semibold text-amber-700 dark:text-amber-300 mb-1">Catatan:</p>
+            <p>Mencakup seluruh nilai pembelian barang perdagangan yang terjual.</p>
+            <p class="mt-1 text-gray-600 dark:text-gray-400"><em>Contoh: nilai pembelian beras yang terjual, nilai pembelian tepung yang terjual, dsb.</em></p>
+          </div>
+          <p class="text-gray-500 dark:text-gray-400 italic">Khusus untuk usaha perdagangan.</p>
+        </div>
+
+        <div data-panel="d" class="ppanel hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">d. Biaya operasional (air, listrik, gas, internet, pulsa, pemeliharaan, biaya angkutan)</p>
+          <div class="space-y-3">
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2.5">
+              <p class="font-semibold text-amber-700 dark:text-amber-300 mb-1">Catatan:</p>
+              <p>Mencakup biaya-biaya yang tidak secara langsung dalam proses produksi seperti air, listrik, gas, pemeliharaan, serta biaya angkutan.</p>
+            </div>
+            <div>
+              <p class="font-semibold text-green-700 dark:text-green-400 mb-1">✓ Termasuk:</p>
+              <ul class="list-disc list-inside space-y-0.5 pl-1">
+                <li>Pengeluaran listrik, bahan bakar dan air</li>
+                <li>Pembelian bahan perkantoran umum</li>
+                <li>Pembelian komponen dan bahan bakar untuk kendaraan bermotor</li>
+                <li>Pembayaran ke pihak lain untuk kargo, delivery, dan jasa angkutan</li>
+                <li>Pembayaran sewa operasi (dengan atau tanpa operator)</li>
+                <li>Biaya lisensi software komputer yang berumur kurang dari satu tahun (termasuk biaya instalasi oleh provider eksternal)</li>
+                <li>Biaya bank selain bunga</li>
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-red-600 dark:text-red-400 mb-1">✗ Tidak Termasuk:</p>
+              <ul class="list-disc list-inside pl-1">
+                <li>Pemeliharaan besar</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div data-panel="e" class="ppanel hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">e. Biaya nonoperasional</p>
+          <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2.5">
+            <p class="font-semibold text-amber-700 dark:text-amber-300 mb-1">Catatan:</p>
+            <p>Mencakup biaya bunga, biaya pajak, biaya administrasi, biaya hukum, biaya donasi, biaya restrukturisasi, biaya kerugian di awal, dan biaya lain-lain yang tidak terkait dengan kegiatan operasional.</p>
+            <p class="mt-1 text-gray-500 dark:text-gray-400"><em>Seperti: biaya perjalanan yang tidak terkait dengan bisnis.</em></p>
+          </div>
+        </div>
+
+      </div>
     </div>
-  </details>
+  </div>
 </div>
 
 {{-- Q23: Nilai Produksi --}}
@@ -186,13 +310,87 @@
       </div>
     </div>
   </div>
-  <details class="mt-4">
-    <summary class="text-xs text-blue-600 dark:text-blue-400 cursor-pointer font-semibold">Petunjuk pengisian pendapatan ▼</summary>
-    <div class="mt-2 text-xs text-gray-600 dark:text-gray-400 space-y-1 pl-3 border-l-2 border-blue-200">
-      <p><strong>a. Nilai produksi:</strong> Termasuk barang yang dijual (diproduksi sendiri/tidak), ekspor (FOB), pendapatan jasa perbaikan, kontrak/subkontrak, royalti, sewa operasi. Tidak termasuk penjualan aset.</p>
-      <p><strong>b. Pendapatan lainnya:</strong> Sewa/royalti sumber daya alam, pendapatan bunga, dividen, subsidi pemerintah, donasi.</p>
+  {{-- Petunjuk Q23 tabbed panel --}}
+  <div class="mt-4" id="petunjukPendapatanWrap">
+    <button type="button" id="petunjukPendapatanToggle"
+      class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+      <svg id="petunjukPendapatanChevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span id="petunjukPendapatanLabel">Lihat petunjuk pengisian pendapatan</span>
+    </button>
+
+    <div id="petunjukPendapatanPanel" class="hidden mt-3 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/30 overflow-hidden">
+
+      {{-- Tab row --}}
+      <div class="flex overflow-x-auto border-b border-blue-100 dark:border-blue-900/60 bg-white/70 dark:bg-gray-800/50">
+        <button type="button" data-ptab2="a" class="ptab2 ptab2-active shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">a. Nilai Produksi/Penjualan</button>
+        <button type="button" data-ptab2="b" class="ptab2 shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">b. Pendapatan Lainnya</button>
+      </div>
+
+      {{-- Tab panels --}}
+      <div class="p-4 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+
+        <div data-ppanel2="a" class="ppanel2">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">a. Nilai produksi/penjualan/pendapatan barang dan jasa</p>
+          <div class="space-y-3">
+            <div>
+              <p class="font-semibold text-green-700 dark:text-green-400 mb-1">✓ Termasuk:</p>
+              <ul class="list-disc list-inside space-y-0.5 pl-1">
+                <li>Barang yang dijual baik yang diproduksi sendiri maupun tidak</li>
+                <li>Penjualan ekspor <em>(FOB — Free On Board)</em></li>
+                <li>Penjualan atau transfer ke rekan bisnis/organisasi atau cabang di luar negeri</li>
+                <li>Pendapatan yang diperoleh dari pengangkutan barang yang tidak dijual perusahaan</li>
+                <li>Pendapatan jasa perbaikan dan layanan</li>
+                <li>Pendapatan dari kontrak, subkontrak, dan komisi</li>
+                <li>Pendapatan manajemen dari perusahaan/organisasi terkait maupun tidak</li>
+                <li>Pendapatan dari jasa pemasangan</li>
+                <li>Pendapatan dari jasa berlangganan dan keanggotaan</li>
+                <li>Pendapatan dari jasa iklan</li>
+                <li>Pendapatan royalti (hak cipta, hak paten, waralaba, dll)</li>
+                <li>Pendapatan dari sewa operasi</li>
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-red-600 dark:text-red-400 mb-1">✗ Tidak Termasuk:</p>
+              <ul class="list-disc list-inside space-y-0.5 pl-1">
+                <li>Penjualan aset</li>
+                <li>Royalti dari penggunaan lahan di bawah pengaturan sewa mineral</li>
+              </ul>
+            </div>
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2.5">
+              <p class="font-semibold text-amber-700 dark:text-amber-300 mb-1">Catatan (usaha pertanian):</p>
+              <p class="mb-1">Nilai produksi yang dicatat yaitu nilai produksi yang dipanen, dikonsumsi sendiri (termasuk yang digunakan untuk bibit), diolah sendiri, dijual, disimpan, digunakan sebagai upah/gaji pekerja, diberikan kepada pihak lain, hilang, pertambahan bobot ternak, serta nilai pembesaran tanaman kehutanan selama periode tahun 2025 sesuai dengan jenis dan satuan produksi pada masing-masing subsektor yang diusahakan.</p>
+              <p>Nilai produksi yang dicakup termasuk nilai produksi ikutan yang dijual.</p>
+            </div>
+          </div>
+        </div>
+
+        <div data-ppanel2="b" class="ppanel2 hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">b. Pendapatan lainnya yang dihasilkan</p>
+          <div class="space-y-3">
+            <div>
+              <p class="font-semibold text-green-700 dark:text-green-400 mb-1">✓ Termasuk:</p>
+              <ul class="list-disc list-inside space-y-0.5 pl-1">
+                <li>Sewa/royalti sumber daya alam</li>
+                <li>Pendapatan bunga</li>
+                <li>Pendapatan dividen</li>
+                <li>Pendanaan dari Pemerintah (subsidi, skema magang dan pelatihan)</li>
+                <li>Donasi</li>
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-red-600 dark:text-red-400 mb-1">✗ Tidak Termasuk:</p>
+              <ul class="list-disc list-inside pl-1">
+                <li>Pendanaan yang disediakan khusus untuk barang modal tertentu</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
-  </details>
+  </div>
 </div>
 
 {{-- Q24: Aset --}}
@@ -339,6 +537,54 @@
   }
   document.querySelectorAll('.aset-input').forEach(el => el.addEventListener('input', updateAset));
   updateAset();
+
+  // Petunjuk tabbed panel
+  (function(){
+    const toggle = document.getElementById('petunjukToggle');
+    const panel  = document.getElementById('petunjukPanel');
+    const chevron= document.getElementById('petunjukChevron');
+    const label  = document.getElementById('petunjukToggleLabel');
+    if(!toggle) return;
+    toggle.addEventListener('click', function(){
+      const open = !panel.classList.contains('hidden');
+      panel.classList.toggle('hidden', open);
+      chevron.style.transform = open ? '' : 'rotate(90deg)';
+      label.textContent = open ? 'Lihat petunjuk pengisian pengeluaran' : 'Sembunyikan petunjuk pengisian';
+    });
+    document.querySelectorAll('.ptab').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        const t = this.dataset.tab;
+        document.querySelectorAll('.ptab').forEach(b => b.classList.remove('ptab-active'));
+        this.classList.add('ptab-active');
+        document.querySelectorAll('.ppanel').forEach(p => p.classList.add('hidden'));
+        document.querySelector('[data-panel="' + t + '"]').classList.remove('hidden');
+      });
+    });
+  })();
+
+  // Petunjuk Q23 tabbed panel
+  (function(){
+    const toggle = document.getElementById('petunjukPendapatanToggle');
+    const panel  = document.getElementById('petunjukPendapatanPanel');
+    const chevron= document.getElementById('petunjukPendapatanChevron');
+    const label  = document.getElementById('petunjukPendapatanLabel');
+    if(!toggle) return;
+    toggle.addEventListener('click', function(){
+      const open = !panel.classList.contains('hidden');
+      panel.classList.toggle('hidden', open);
+      chevron.style.transform = open ? '' : 'rotate(90deg)';
+      label.textContent = open ? 'Lihat petunjuk pengisian pendapatan' : 'Sembunyikan petunjuk pengisian';
+    });
+    document.querySelectorAll('.ptab2').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        const t = this.dataset.ptab2;
+        document.querySelectorAll('.ptab2').forEach(b => b.classList.remove('ptab2-active'));
+        this.classList.add('ptab2-active');
+        document.querySelectorAll('.ppanel2').forEach(p => p.classList.add('hidden'));
+        document.querySelector('[data-ppanel2="' + t + '"]').classList.remove('hidden');
+      });
+    });
+  })();
 
   // Modal total
   function updateModal(){

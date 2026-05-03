@@ -37,18 +37,6 @@
 </div>
 @endif
 
-{{-- Info Banner --}}
-<div class="mt-6 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 rounded-2xl px-6 py-4 text-sm text-blue-800 dark:text-blue-300">
-  <div class="flex items-start gap-3">
-    <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-    </svg>
-    <div>
-      <p class="font-semibold mb-1">Tentang Survei UB SE2026</p>
-      <p>Sensus Ekonomi 2026 bertujuan untuk menyediakan data dasar yang terpercaya untuk seluruh kegiatan ekonomi. Kerahasiaan data dijamin oleh UU No. 16 Tahun 1997 Pasal 21. Untuk bantuan: <strong>halose2026@bps.go.id</strong></p>
-    </div>
-  </div>
-</div>
 
 @php
   $blocks = [
@@ -86,29 +74,71 @@
       Unduh PDF
     </a>
   </div>
-  @else
-  <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ $completedCount }} dari {{ $totalBlocks }} bagian selesai</p>
   @endif
 </div>
 
-{{-- Block Status (read-only progress indicators) --}}
-<div class="mt-4 grid grid-cols-3 sm:grid-cols-6 gap-2">
-  @foreach($blocks as $blk)
-  <div class="flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border
-              {{ $blk['done'] ? 'border-green-200 bg-green-50 dark:border-green-700/50 dark:bg-green-950/20' : 'border-gray-100 bg-white dark:border-gray-700 dark:bg-gray-800' }}">
-    @if($blk['done'])
-    <div class="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-      <svg class="w-3.5 h-3.5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+{{-- Pendahuluan --}}
+<div class="mt-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+  {{-- Header --}}
+  <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-base font-bold text-white">Pendahuluan</h2>
+        <p class="text-blue-100 text-xs mt-0.5">Formulir SE2026-L.UB</p>
+      </div>
     </div>
-    @else
-    <div class="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-      <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500">{{ $loop->index + 1 }}</span>
-    </div>
-    @endif
-    <p class="text-[10px] font-bold text-center {{ $blk['done'] ? 'text-green-700 dark:text-green-300' : 'text-gray-500 dark:text-gray-400' }}">{{ $blk['label'] }}</p>
-    <p class="text-[9px] text-center leading-tight {{ $blk['done'] ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-600' }}">{{ $blk['done'] ? 'Selesai' : 'Belum' }}</p>
   </div>
-  @endforeach
+  {{-- Body --}}
+  <div class="px-6 py-5 space-y-4">
+    <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+      Selamat datang dan terima kasih atas partisipasi Bapak/Ibu dalam <strong>Sensus Ekonomi 2026</strong>.
+      Keikutsertaan Bapak/Ibu sangat berarti bagi keberhasilan pendataan ekonomi nasional.
+    </p>
+    <div class="flex items-start gap-3 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-800">
+      <div class="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <svg class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <p class="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
+        Data yang Bapak/Ibu berikan akan digunakan sebagai <strong>dasar perencanaan pembangunan ekonomi</strong>
+        dan kebijakan pemerintah yang akurat dan terpercaya untuk seluruh kegiatan ekonomi di Indonesia.
+      </p>
+    </div>
+    <div class="flex items-start gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-100 dark:border-green-800">
+      <div class="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <svg class="w-3.5 h-3.5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+      </div>
+      <p class="text-xs text-green-800 dark:text-green-300 leading-relaxed">
+        <strong>Kerahasiaan data terjamin.</strong> Seluruh informasi yang Bapak/Ibu berikan
+        dilindungi oleh <strong>UU No. 16 Tahun 1997 tentang Statistik, Pasal 21</strong> dan hanya digunakan untuk keperluan statistik.
+      </p>
+    </div>
+    <div>
+      <p class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Petunjuk Pengisian:</p>
+      <ul class="space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
+        <li class="flex items-start gap-2">
+          <svg class="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          Klik tombol <strong>"Mulai Survei"</strong> untuk memulai, atau <strong>"Lanjutkan Survei"</strong> jika pengisian pernah dihentikan.
+        </li>
+        <li class="flex items-start gap-2">
+          <svg class="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          Pengisian dapat dihentikan kapan saja dan dilanjutkan kembali — data yang telah diisi akan tersimpan otomatis.
+        </li>
+        <li class="flex items-start gap-2">
+          <svg class="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          Untuk bantuan, hubungi: <strong>halose2026@bps.go.id</strong>
+        </li>
+      </ul>
+    </div>
+  </div>
 </div>
 
 {{-- Completed Banner with PDF Download --}}
@@ -149,12 +179,15 @@
   $nextBlock = collect($blocks)->first(fn($b) => !$b['done']);
 @endphp
 @if($nextBlock)
-<div class="mt-6 text-center">
+<div class="mt-6">
   <a href="{{ route($nextBlock['route']) }}"
-     class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md transition">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-    {{ $completedCount === 0 ? 'Mulai Survei' : ('Lanjutkan: ' . $nextBlock['label'] . ' — ' . $nextBlock['sub']) }}
+     class="flex items-center justify-center gap-3 w-full px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-base font-semibold shadow-lg transition-all duration-200 group">
+    <svg class="w-5 h-5 group-hover:translate-x-0.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    {{ $completedCount === 0 ? 'Mulai Survei' : 'Lanjutkan Survei' }}
   </a>
+  @if($completedCount > 0)
+  <p class="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">Melanjutkan dari {{ $nextBlock['label'] }} — {{ $nextBlock['sub'] }}</p>
+  @endif
 </div>
 @endif
 @endif

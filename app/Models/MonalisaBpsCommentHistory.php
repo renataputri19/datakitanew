@@ -51,6 +51,7 @@ class MonalisaBpsCommentHistory extends Model
             'verified' => 'Diverifikasi',
             'rejected' => 'Ditolak',
             'score_updated' => 'Skor Diperbarui',
+            'verification_cancelled' => 'Verifikasi Dibatalkan',
             default => ucfirst($this->action_type),
         };
     }
@@ -64,6 +65,7 @@ class MonalisaBpsCommentHistory extends Model
             'verified' => 'monalisa-badge-verified',
             'rejected' => 'monalisa-badge-rejected',
             'score_updated' => 'monalisa-badge-submitted',
+            'verification_cancelled' => 'monalisa-badge-draft',
             default => 'monalisa-badge-draft',
         };
     }

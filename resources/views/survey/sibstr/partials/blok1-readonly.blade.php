@@ -87,20 +87,20 @@
                            class="form-control" readonly disabled>
                 </div>
 
-                <!-- Question 107 (NIB) -->
+                <!-- Question 109 -->
                 <div class="form-row">
                     <label class="form-label">
-                        <span class="question-number">107.</span>
+                        <span class="question-number">109.</span>
                         <span>NIB (Nomor Induk Berusaha):</span>
                     </label>
                     <input type="text" name="nib" value="{{ $surveyResponse->nib ?? '' }}"
                            class="form-control" readonly disabled>
                 </div>
 
-                <!-- Question 108 (Jenis Kawasan) -->
+                <!-- Question 110 -->
                 <div class="form-row">
                     <label class="form-label">
-                        <span class="question-number">108.</span>
+                        <span class="question-number">110.</span>
                         <span>Jenis Kawasan:</span>
                     </label>
                     <div class="radio-group">
@@ -131,10 +131,10 @@
                     </div>
                 </div>
 
-                <!-- Question 109 -->
+                <!-- Question 111 -->
                 <div class="form-row">
                     <label class="form-label">
-                        <span class="question-number">109.</span>
+                        <span class="question-number">111.</span>
                         <span>Nama Kawasan:</span>
                     </label>
                     <input type="text" name="nama_kawasan" value="{{ $surveyResponse->nama_kawasan ?? '' }}"
@@ -159,30 +159,30 @@
                 <h3 class="section-title">LEGALISASI PERUSAHAAN</h3>
             </div>
             <div class="form-grid">
-                <!-- Question 110 -->
+                <!-- Question 113 -->
                 <div class="form-row">
                     <label class="form-label">
-                        <span class="question-number">110.</span>
+                        <span class="question-number">113.</span>
                         <span>Nama:</span>
                     </label>
                     <input type="text" name="legalisasi_nama" value="{{ $surveyResponse->legalisasi_nama ?? '' }}"
                            class="form-control" readonly disabled>
                 </div>
 
-                <!-- Question 111 -->
+                <!-- Question 114 -->
                 <div class="form-row">
                     <label class="form-label">
-                        <span class="question-number">111.</span>
+                        <span class="question-number">114.</span>
                         <span>Jabatan:</span>
                     </label>
                     <input type="text" name="legalisasi_jabatan" value="{{ $surveyResponse->legalisasi_jabatan ?? '' }}"
                            class="form-control" readonly disabled>
                 </div>
 
-                <!-- Question 113 -->
+                <!-- Question 115 -->
                 <div class="form-row">
                     <label class="form-label">
-                        <span class="question-number">113.</span>
+                        <span class="question-number">115.</span>
                         <span>Jenis Kelamin:</span>
                     </label>
                     <div class="radio-group">
@@ -201,10 +201,10 @@
                     </div>
                 </div>
 
-                <!-- Question 115 -->
+                <!-- Question 116 -->
                 <div class="form-row">
                     <label class="form-label">
-                        <span class="question-number">115.</span>
+                        <span class="question-number">116.</span>
                         <span>NIK:</span>
                     </label>
                     <input type="text" name="legalisasi_nik" value="{{ $surveyResponse->legalisasi_nik ?? '' }}"

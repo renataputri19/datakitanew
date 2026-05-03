@@ -175,6 +175,45 @@ class BpsController extends Controller
     }
 
     /**
+     * Cancel a verified assessment, returning it to submitted status for re-review.
+     */
+    public function cancelVerification(Request $request, $assessmentId)
+    {
+        $assessment = MonalisaAssessment::with('indikator')->findOrFail($assessmentId);
+
+        if ($assessment->status !== 'verified') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Assessment tidak dalam status terverifikasi.',
+            ], 422);
+        }
+
+        $assessment->update([
+            'bps_maturity_level' => null,
+            'bps_audit_comment' => null,
+            'bps_verified_at' => null,
+            'bps_user_id' => null,
+            'status' => 'submitted',
+        ]);
+
+        MonalisaBpsCommentHistory::create([
+            'assessment_id' => $assessment->id,
+            'bps_user_id' => auth()->id(),
+            'comment' => 'Verifikasi dibatalkan oleh ' . auth()->user()->name . '. Assessment dikembalikan ke status submitted untuk ditinjau ulang.',
+            'action_type' => 'verification_cancelled',
+            'bps_maturity_level' => null,
+        ]);
+
+        $message = 'Verifikasi berhasil dibatalkan. Assessment dikembalikan ke status submitted.';
+        session()->flash('success', $message);
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'redirect' => route('monalisa.bps.assessment.show', $assessment->id),
+        ]);
+    }
+
+    /**
      * Add comment to document.
      */
     public function addDocumentComment(Request $request, $documentId)

@@ -126,6 +126,7 @@ Route::prefix('monalisa')->name('monalisa.')->group(function () {
         Route::get('/assessment/{assessmentId}', [MonalisaBpsController::class, 'showAssessment'])->name('assessment.show');
         Route::post('/assessment/{assessmentId}/verify', [MonalisaBpsController::class, 'verifyAssessment'])->name('assessment.verify');
         Route::post('/assessment/{assessmentId}/reject', [MonalisaBpsController::class, 'rejectAssessment'])->name('assessment.reject');
+        Route::post('/assessment/{assessmentId}/cancel-verify', [MonalisaBpsController::class, 'cancelVerification'])->name('assessment.cancel-verify');
         Route::post('/document/{documentId}/comment', [MonalisaBpsController::class, 'addDocumentComment'])->name('document.comment');
         Route::get('/document/{documentId}/download', [MonalisaBpsController::class, 'downloadDocument'])->name('document.download');
         Route::get('/document/{documentId}/view', [MonalisaBpsController::class, 'viewDocument'])->name('document.view');
