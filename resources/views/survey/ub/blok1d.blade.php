@@ -91,7 +91,29 @@
 {{-- Q20: Tenaga Kerja --}}
 <div class="ub-card">
   <p class="ub-section-title">20. Jumlah Pekerja</p>
-  <p class="ub-hint mb-3">1. Isikan pekerja per 31 Desember 2025, atau 2. Jika tidak tersedia, isikan rata-rata pekerja per bulan di tahun 2025.</p>
+  {{-- Petunjuk Q20 --}}
+  <div class="mb-3" id="petunjuk20Wrap">
+    <button type="button" id="petunjuk20Toggle"
+      class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+      <svg id="petunjuk20Chevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span id="petunjuk20Label">Lihat petunjuk pengisian pekerja</span>
+    </button>
+    <div id="petunjuk20Panel" class="hidden mt-2 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/30 p-4 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+      <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Cara pengisian jumlah pekerja:</p>
+      <div class="space-y-2">
+        <div class="flex gap-2.5">
+          <span class="shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
+          <p><strong>Isikan pekerja per 31 Desember 2025</strong> — jumlah pekerja aktif pada tanggal tersebut.</p>
+        </div>
+        <div class="flex gap-2.5">
+          <span class="shrink-0 w-5 h-5 rounded-full bg-gray-400 dark:bg-gray-600 text-white text-xs font-bold flex items-center justify-center">2</span>
+          <p>Jika data per 31 Desember 2025 <strong>tidak tersedia</strong>, isikan <strong>rata-rata pekerja per bulan</strong> selama tahun 2025.</p>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="ub-grid-3">
     <div>
       <label class="ub-label">a. Laki-laki <span class="ub-required">*</span></label>
@@ -537,6 +559,21 @@
   }
   document.querySelectorAll('.aset-input').forEach(el => el.addEventListener('input', updateAset));
   updateAset();
+
+  // Petunjuk Q20 simple toggle
+  (function(){
+    const toggle = document.getElementById('petunjuk20Toggle');
+    const panel  = document.getElementById('petunjuk20Panel');
+    const chevron= document.getElementById('petunjuk20Chevron');
+    const label  = document.getElementById('petunjuk20Label');
+    if (!toggle) return;
+    toggle.addEventListener('click', function() {
+      const open = !panel.classList.contains('hidden');
+      panel.classList.toggle('hidden', open);
+      chevron.style.transform = open ? '' : 'rotate(90deg)';
+      label.textContent = open ? 'Lihat petunjuk pengisian pekerja' : 'Sembunyikan petunjuk';
+    });
+  })();
 
   // Petunjuk tabbed panel
   (function(){

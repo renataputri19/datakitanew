@@ -1,7 +1,6 @@
 /**
  * Survey UB Blok I-C Manager
- * Validates the four required radio fields: bermitra_kdkmp, terlibat_mbg,
- * ekspor_impor_barang, ekspor_impor_jasa.
+ * Validates required radio fields and conditional/always-required number fields.
  * Mirrors the pattern established in survey-ub-blok1b.js.
  */
 class SurveyUbBlok1cManager {
@@ -34,6 +33,17 @@ class SurveyUbBlok1cManager {
                     radio.addEventListener('change', () => this.clearFieldError(name));
                 });
             });
+
+        // Clear number-field errors on input
+        [
+            'jumlah_produk_halal_bpjph',
+            'jumlah_produk_belum_halal_bpjph',
+            'jumlah_produk_izin_edar_bpom',
+            'jumlah_produk_tanpa_izin_edar_bpom',
+        ].forEach(name => {
+            const el = this.form.querySelector(`input[name="${name}"]`);
+            if (el) el.addEventListener('input', () => this.clearFieldError(name));
+        });
     }
 
     // ── Label extraction ──────────────────────────────────────────────────────
@@ -73,6 +83,8 @@ class SurveyUbBlok1cManager {
         if (radioInput) {
             radioInput.closest('.ub-radio-group')?.classList.add('ub-radio-error');
         }
+        const numInput = this.form.querySelector(`input[type="number"][name="${fieldName}"]`);
+        if (numInput) numInput.classList.add('error');
     }
 
     clearFieldError(fieldName) {
@@ -82,6 +94,8 @@ class SurveyUbBlok1cManager {
         if (radioInput) {
             radioInput.closest('.ub-radio-group')?.classList.remove('ub-radio-error');
         }
+        const numInput = this.form.querySelector(`input[type="number"][name="${fieldName}"]`);
+        if (numInput) numInput.classList.remove('error');
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -104,10 +118,46 @@ class SurveyUbBlok1cManager {
             return true;
         };
 
+        const checkNumber = (name, label) => {
+            const input = this.form.querySelector(`input[name="${name}"]`);
+            if (!input) return true;
+            const val = input.value.trim();
+            if (val === '' || isNaN(parseInt(val, 10)) || parseInt(val, 10) < 0) {
+                this.showFieldError(name, `${label} wajib diisi (minimal 0)`);
+                return false;
+            }
+            this.clearFieldError(name);
+            return true;
+        };
+
         if (!checkRadio('bermitra_kdkmp'))      isValid = false;
         if (!checkRadio('terlibat_mbg'))        isValid = false;
         if (!checkRadio('ekspor_impor_barang')) isValid = false;
         if (!checkRadio('ekspor_impor_jasa'))   isValid = false;
+
+        // Rincian 15 — Sertifikat Halal
+        const halalVal = this.getRadioValue('sertifikat_halal');
+        if (halalVal === '1') {
+            if (!checkNumber('jumlah_produk_halal_bpjph', 'Jumlah produk halal BPJPH')) isValid = false;
+        } else {
+            this.clearFieldError('jumlah_produk_halal_bpjph');
+        }
+        if (halalVal) {
+            // 15c is always required once 15a is answered
+            if (!checkNumber('jumlah_produk_belum_halal_bpjph', 'Jumlah produk belum halal BPJPH')) isValid = false;
+        }
+
+        // Rincian 16 — Izin Edar
+        const izinVal = this.getRadioValue('izin_edar');
+        if (izinVal === '1') {
+            if (!checkNumber('jumlah_produk_izin_edar_bpom', 'Jumlah produk izin edar BPOM')) isValid = false;
+        } else {
+            this.clearFieldError('jumlah_produk_izin_edar_bpom');
+        }
+        if (izinVal) {
+            // 16c is always required once 16a is answered
+            if (!checkNumber('jumlah_produk_tanpa_izin_edar_bpom', 'Jumlah produk tanpa izin edar BPOM')) isValid = false;
+        }
 
         return isValid;
     }

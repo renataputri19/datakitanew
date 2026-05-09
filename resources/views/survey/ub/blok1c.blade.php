@@ -38,6 +38,12 @@
 .conditional-section{display:none;}
 .kbli-note{background:#fef9c3;border:1px solid #fde68a;border-radius:.625rem;padding:.75rem 1rem;font-size:.78rem;color:#854d0e;margin-bottom:1rem;}
 .dark .kbli-note{background:#451a03;border-color:#92400e;color:#fde68a;}
+.ptab{border-color:transparent;color:#6b7280;}
+.ptab:hover{color:#374151;background:#f9fafb;}
+.dark .ptab{color:#9ca3af;}
+.dark .ptab:hover{color:#e5e7eb;background:rgba(55,65,81,.4);}
+.ptab-active{border-color:#3b82f6 !important;color:#1d4ed8 !important;background:#eff6ff !important;}
+.dark .ptab-active{color:#93c5fd !important;background:rgba(30,58,95,.5) !important;}
 </style>
 @endpush
 
@@ -84,23 +90,21 @@
       <label class="ub-radio-label"><input type="radio" name="sertifikat_halal" value="3" id="halal_tidak" {{ old('sertifikat_halal',$response->sertifikat_halal)==3?'checked':'' }}> 3. Tidak</label>
     </div>
   </div>
-  <div id="sec_halal_bpjph" class="conditional-section">
-    <div class="ub-grid-2">
-      <div>
-        <label class="ub-label">b. Jumlah varian produk yang sudah bersertifikat halal BPJPH</label>
-        <div class="flex items-center gap-2">
-          <input name="jumlah_produk_halal_bpjph" type="number" min="0" class="ub-input" style="max-width:120px;" value="{{ old('jumlah_produk_halal_bpjph',$response->jumlah_produk_halal_bpjph) }}" placeholder="0">
-          <span class="text-sm text-gray-500">varian</span>
-        </div>
-      </div>
-      <div>
-        <label class="ub-label">c. Jumlah varian produk yang belum bersertifikat halal BPJPH</label>
-        <div class="flex items-center gap-2">
-          <input name="jumlah_produk_belum_halal_bpjph" type="number" min="0" class="ub-input" style="max-width:120px;" value="{{ old('jumlah_produk_belum_halal_bpjph',$response->jumlah_produk_belum_halal_bpjph) }}" placeholder="0">
-          <span class="text-sm text-gray-500">varian</span>
-        </div>
-      </div>
+  <div id="sec_halal_bpjph" class="conditional-section mb-3">
+    <label class="ub-label">b. Jumlah varian produk yang sudah bersertifikat halal BPJPH <span class="ub-required">*</span></label>
+    <div class="flex items-center gap-2">
+      <input name="jumlah_produk_halal_bpjph" type="number" min="0" class="ub-input" style="max-width:120px;" value="{{ old('jumlah_produk_halal_bpjph',$response->jumlah_produk_halal_bpjph) }}" placeholder="0">
+      <span class="text-sm text-gray-500">varian</span>
     </div>
+    <div class="ub-err-msg" data-field="jumlah_produk_halal_bpjph"></div>
+  </div>
+  <div>
+    <label class="ub-label">c. Jumlah varian produk yang belum bersertifikat halal BPJPH <span class="ub-required">*</span></label>
+    <div class="flex items-center gap-2">
+      <input name="jumlah_produk_belum_halal_bpjph" type="number" min="0" class="ub-input" style="max-width:120px;" value="{{ old('jumlah_produk_belum_halal_bpjph',$response->jumlah_produk_belum_halal_bpjph) }}" placeholder="0">
+      <span class="text-sm text-gray-500">varian</span>
+    </div>
+    <div class="ub-err-msg" data-field="jumlah_produk_belum_halal_bpjph"></div>
   </div>
 </div>
 
@@ -119,23 +123,21 @@
       <label class="ub-radio-label"><input type="radio" name="izin_edar" value="3" id="izin_tidak" {{ old('izin_edar',$response->izin_edar)==3?'checked':'' }}> 3. Tidak</label>
     </div>
   </div>
-  <div id="sec_izin_edar_bpom" class="conditional-section">
-    <div class="ub-grid-2">
-      <div>
-        <label class="ub-label">b. Jumlah varian produk dengan izin edar BPOM</label>
-        <div class="flex items-center gap-2">
-          <input name="jumlah_produk_izin_edar_bpom" type="number" min="0" class="ub-input" style="max-width:120px;" value="{{ old('jumlah_produk_izin_edar_bpom',$response->jumlah_produk_izin_edar_bpom) }}" placeholder="0">
-          <span class="text-sm text-gray-500">varian</span>
-        </div>
-      </div>
-      <div>
-        <label class="ub-label">c. Jumlah varian produk tanpa izin edar BPOM</label>
-        <div class="flex items-center gap-2">
-          <input name="jumlah_produk_tanpa_izin_edar_bpom" type="number" min="0" class="ub-input" style="max-width:120px;" value="{{ old('jumlah_produk_tanpa_izin_edar_bpom',$response->jumlah_produk_tanpa_izin_edar_bpom) }}" placeholder="0">
-          <span class="text-sm text-gray-500">varian</span>
-        </div>
-      </div>
+  <div id="sec_izin_edar_bpom" class="conditional-section mb-3">
+    <label class="ub-label">b. Jumlah varian produk dengan izin edar BPOM <span class="ub-required">*</span></label>
+    <div class="flex items-center gap-2">
+      <input name="jumlah_produk_izin_edar_bpom" type="number" min="0" class="ub-input" style="max-width:120px;" value="{{ old('jumlah_produk_izin_edar_bpom',$response->jumlah_produk_izin_edar_bpom) }}" placeholder="0">
+      <span class="text-sm text-gray-500">varian</span>
     </div>
+    <div class="ub-err-msg" data-field="jumlah_produk_izin_edar_bpom"></div>
+  </div>
+  <div>
+    <label class="ub-label">c. Jumlah varian produk tanpa izin edar BPOM <span class="ub-required">*</span></label>
+    <div class="flex items-center gap-2">
+      <input name="jumlah_produk_tanpa_izin_edar_bpom" type="number" min="0" class="ub-input" style="max-width:120px;" value="{{ old('jumlah_produk_tanpa_izin_edar_bpom',$response->jumlah_produk_tanpa_izin_edar_bpom) }}" placeholder="0">
+      <span class="text-sm text-gray-500">varian</span>
+    </div>
+    <div class="ub-err-msg" data-field="jumlah_produk_tanpa_izin_edar_bpom"></div>
   </div>
 </div>
 
@@ -167,7 +169,79 @@
 {{-- Q19: Ekspor/Impor --}}
 <div class="ub-card">
   <p class="ub-section-title">19. Penjualan/Pembelian kepada Bukan Penduduk Indonesia (1 Mei 2024 s.d. 31 Agustus 2026)</p>
-  <p class="ub-hint mb-3">Bukan penduduk adalah orang atau badan yang pusat kegiatan ekonominya berada di luar Indonesia.<br>Contoh: Ekspor barang (pengrajin perak mengirimkan aksesori ke luar negeri); Impor barang (toko elektronik mengimpor smartphone dari Tiongkok); Ekspor jasa (konsultan memberikan jasa pelatihan online ke perusahaan luar negeri); Impor jasa (berlangganan Canva, Microsoft 365, Google Cloud, Adobe, ChatGPT, dll.)</p>
+  {{-- Petunjuk Q19 tabbed panel --}}
+  <div class="mb-4" id="petunjuk19Wrap">
+    <button type="button" id="petunjuk19Toggle"
+      class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+      <svg id="petunjuk19Chevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span id="petunjuk19Label">Lihat petunjuk &amp; contoh transaksi</span>
+    </button>
+    <div id="petunjuk19Panel" class="hidden mt-3 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/30 overflow-hidden">
+      <div class="flex overflow-x-auto border-b border-blue-100 dark:border-blue-900/60 bg-white/70 dark:bg-gray-800/50">
+        <button type="button" data-tab="q1" class="ptab ptab-active shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Definisi Bukan Penduduk</button>
+        <button type="button" data-tab="q2" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">19a. Contoh Barang</button>
+        <button type="button" data-tab="q3" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">19b. Contoh Jasa</button>
+      </div>
+      <div class="p-4 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+
+        <div data-panel="q1">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Siapa yang dimaksud Bukan Penduduk Indonesia?</p>
+          <p class="mb-3">Bukan penduduk adalah orang atau badan yang <strong>pusat kegiatan ekonominya berada di luar Indonesia</strong>.</p>
+          <div class="space-y-2">
+            <div>
+              <p class="font-semibold text-gray-600 dark:text-gray-400 mb-1">Contoh orang:</p>
+              <ul class="list-disc list-inside pl-1 space-y-0.5">
+                <li>Turis/wisatawan mancanegara yang berwisata kurang dari 1 tahun</li>
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-600 dark:text-gray-400 mb-1">Contoh badan:</p>
+              <ul class="list-disc list-inside pl-1 space-y-0.5">
+                <li>Usaha/perusahaan yang <strong>tidak</strong> terdaftar badan usahanya di Indonesia</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div data-panel="q2" class="hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-3">19a. Contoh Penjualan/Pembelian Barang</p>
+          <div class="space-y-3">
+            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-2.5">
+              <p class="font-semibold text-green-700 dark:text-green-400 mb-1">↗ Ekspor Barang</p>
+              <p>Pengrajin perak di Bali mengirimkan aksesori dan perhiasan ke pembeli di luar negeri.</p>
+            </div>
+            <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-2.5">
+              <p class="font-semibold text-orange-700 dark:text-orange-400 mb-1">↙ Impor Barang</p>
+              <p>Toko elektronik Indonesia mengimpor smartphone dari Tiongkok untuk dijual kembali.</p>
+            </div>
+          </div>
+        </div>
+
+        <div data-panel="q3" class="hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-3">19b. Contoh Penjualan/Pembelian Jasa</p>
+          <div class="space-y-3">
+            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-2.5">
+              <p class="font-semibold text-green-700 dark:text-green-400 mb-1">↗ Ekspor Jasa</p>
+              <ul class="list-disc list-inside space-y-0.5 pl-1">
+                <li>Konsultan Indonesia memberikan jasa pelatihan secara online ke perusahaan luar negeri</li>
+                <li>Hotel di Indonesia melayani tamu wisatawan mancanegara</li>
+              </ul>
+            </div>
+            <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-2.5">
+              <p class="font-semibold text-orange-700 dark:text-orange-400 mb-1">↙ Impor Jasa</p>
+              <ul class="list-disc list-inside space-y-0.5 pl-1">
+                <li>Usaha/perusahaan Indonesia berlangganan layanan digital berbayar dari perusahaan luar negeri <em>(Canva, Microsoft 365, Google Cloud, Adobe, ChatGPT, dll.)</em></li>
+                <li>Perusahaan Indonesia menggunakan jasa konsultan asing</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
   <div class="mb-4">
     <label class="ub-label">a. Barang <span class="ub-required">*</span></label>
     <div class="ub-radio-group">
@@ -210,6 +284,31 @@ window.surveyRoutes = {
     showGuidanceNearSubmit: false
 };
 (function(){
+  // Tabbed petunjuk panels
+  function initPetunjukPanel(toggleId, panelId, chevronId, labelId, openText, closeText) {
+    const toggle = document.getElementById(toggleId);
+    const panel  = document.getElementById(panelId);
+    const chevron= document.getElementById(chevronId);
+    const label  = document.getElementById(labelId);
+    if (!toggle) return;
+    toggle.addEventListener('click', function() {
+      const open = !panel.classList.contains('hidden');
+      panel.classList.toggle('hidden', open);
+      chevron.style.transform = open ? '' : 'rotate(90deg)';
+      label.textContent = open ? openText : closeText;
+    });
+    panel.querySelectorAll('[data-tab]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const t = this.dataset.tab;
+        panel.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('ptab-active'));
+        this.classList.add('ptab-active');
+        panel.querySelectorAll('[data-panel]').forEach(p => p.classList.add('hidden'));
+        panel.querySelector('[data-panel="' + t + '"]').classList.remove('hidden');
+      });
+    });
+  }
+  initPetunjukPanel('petunjuk19Toggle', 'petunjuk19Panel', 'petunjuk19Chevron', 'petunjuk19Label', 'Lihat petunjuk & contoh transaksi', 'Sembunyikan petunjuk');
+
   function toggleHalal(){
     const v = document.querySelector('input[name="sertifikat_halal"]:checked')?.value;
     document.getElementById('sec_halal_bpjph').style.display = v == '1' ? 'block' : 'none';

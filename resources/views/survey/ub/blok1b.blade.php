@@ -42,6 +42,12 @@
 .dark .ub-check-label{border-color:#4b5563;color:#d1d5db;}
 .dark .ub-check-label:has(input:checked){border-color:#3b82f6;background:#1e3a5f;color:#93c5fd;}
 .conditional-section{display:none;}
+.ptab{border-color:transparent;color:#6b7280;}
+.ptab:hover{color:#374151;background:#f9fafb;}
+.dark .ptab{color:#9ca3af;}
+.dark .ptab:hover{color:#e5e7eb;background:rgba(55,65,81,.4);}
+.ptab-active{border-color:#3b82f6 !important;color:#1d4ed8 !important;background:#eff6ff !important;}
+.dark .ptab-active{color:#93c5fd !important;background:rgba(30,58,95,.5) !important;}
 </style>
 @endpush
 
@@ -81,7 +87,88 @@
   <div class="mb-4">
     <label class="ub-label">a. Apa kegiatan utama perusahaan ini? Tuliskan selengkapnya. <span class="ub-required">*</span></label>
     <textarea name="kegiatan_utama" class="ub-input" rows="3" placeholder="Tuliskan selengkapnya…">{{ old('kegiatan_utama',$response->kegiatan_utama) }}</textarea>
-    <p class="ub-hint">Contoh: membudidayakan tanaman padi; membuat sosis dari ikan; menyewakan kos bulanan; menyewakan kamar hotel; membuat desain interior rumah; pengembangan aplikasi video gim; meracik jamu di kedai; dll.</p>
+    {{-- Petunjuk 9a --}}
+    <div class="mt-3" id="petunjuk9aWrap">
+      <button type="button" id="petunjuk9aToggle"
+        class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+        <svg id="petunjuk9aChevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span id="petunjuk9aLabel">Lihat contoh kegiatan utama</span>
+      </button>
+      <div id="petunjuk9aPanel" class="hidden mt-3 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/30 overflow-hidden">
+        <div class="flex overflow-x-auto border-b border-blue-100 dark:border-blue-900/60 bg-white/70 dark:bg-gray-800/50">
+          <button type="button" data-tab="a1" class="ptab ptab-active shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Pertanian &amp; Perikanan</button>
+          <button type="button" data-tab="a2" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Industri &amp; Pengolahan</button>
+          <button type="button" data-tab="a3" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Perdagangan &amp; Transportasi</button>
+          <button type="button" data-tab="a4" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Akomodasi &amp; Jasa</button>
+          <button type="button" data-tab="a5" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Kreatif &amp; Teknologi</button>
+        </div>
+        <div class="p-4 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+
+          <div data-panel="a1">
+            <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Pertanian, Peternakan &amp; Perikanan</p>
+            <ul class="list-disc list-inside space-y-0.5 pl-1">
+              <li>membudidayakan tanaman padi</li>
+              <li>membudidayakan cabai</li>
+              <li>membudidayakan tanaman tembakau</li>
+              <li>membudidayakan udang di air payau</li>
+              <li>membibitkan ayam ras</li>
+              <li>menangkap ikan konsumsi di sungai</li>
+              <li>memungut madu di hutan</li>
+            </ul>
+          </div>
+
+          <div data-panel="a2" class="hidden">
+            <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Industri &amp; Pengolahan</p>
+            <ul class="list-disc list-inside space-y-0.5 pl-1">
+              <li>menggiling daging ikan menjadi sosis dan dijual di rumah/online</li>
+              <li>membuat kebab di rumah dan dititipkan di warung</li>
+              <li>membuat sosis dari ikan, disajikan dengan pembakaran, dijual di depan rumah/online</li>
+              <li>membuat kebab berdasarkan pesanan langsung di gerobak depan alfamart</li>
+            </ul>
+          </div>
+
+          <div data-panel="a3" class="hidden">
+            <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Perdagangan &amp; Transportasi</p>
+            <ul class="list-disc list-inside space-y-0.5 pl-1">
+              <li>menjual mobil bekas di showroom</li>
+              <li>menjual kaset video game yang dibeli dari pihak lain di marketplace</li>
+              <li>angkutan bus antarkota antarprovinsi</li>
+              <li>membuat kunci duplikat di pinggir jalan</li>
+            </ul>
+          </div>
+
+          <div data-panel="a4" class="hidden">
+            <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Akomodasi, Properti &amp; Jasa</p>
+            <ul class="list-disc list-inside space-y-0.5 pl-1">
+              <li>menyewakan kos bulanan</li>
+              <li>menyewakan kamar hotel bintang 5</li>
+              <li>jasa borongan/konstruksi rumah</li>
+              <li>membuat rumah kemudian dipasarkan sendiri</li>
+              <li>menyewakan rumah dengan periode tahunan</li>
+              <li>sekolah menengah pertama negeri</li>
+              <li>rumah sakit pemerintah</li>
+              <li>penyediaan telekomunikasi internet tanpa kabel</li>
+              <li>meracik jamu secara langsung untuk siap konsumsi di sebuah kedai</li>
+            </ul>
+          </div>
+
+          <div data-panel="a5" class="hidden">
+            <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Ekonomi Kreatif &amp; Teknologi</p>
+            <ul class="list-disc list-inside space-y-0.5 pl-1">
+              <li>menjual perangkat lunak video gim yang dikembangkan sendiri</li>
+              <li>membuat desain kemasan botol minuman</li>
+              <li>membuat seni lukisan yang dipajang untuk dijual</li>
+              <li>menulis cerpen</li>
+              <li>membuat desain interior rumah</li>
+              <li>pengembangan aplikasi video gim</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
     <div class="ub-err-msg" data-field="kegiatan_utama"></div>
   </div>
 
@@ -147,7 +234,30 @@
   <div id="sec_9d" class="conditional-section mb-4">
     <label class="ub-label">d. Apa input yang digunakan? <span class="ub-required">*</span></label>
     <textarea name="input_produksi" class="ub-input" rows="2" placeholder="Tuliskan input bahan baku yang digunakan">{{ old('input_produksi',$response->input_produksi) }}</textarea>
-    <p class="ub-hint">Contoh: daging ikan, tepung; bambu; jagung pipil; kaca; kain; kulit sapi; kayu bulat</p>
+    <div class="mt-2" id="petunjuk9dWrap">
+      <button type="button" id="petunjuk9dToggle"
+        class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+        <svg id="petunjuk9dChevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span id="petunjuk9dLabel">Lihat contoh input</span>
+      </button>
+      <div id="petunjuk9dPanel" class="hidden mt-2 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/30 p-3 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+        <p class="font-semibold text-blue-700 dark:text-blue-300 mb-1.5">Contoh bahan baku/input:</p>
+        <ul class="list-disc list-inside space-y-0.5 pl-1">
+          <li>daging ikan, tepung</li>
+          <li>daging kebab, kulit kebab, sayuran</li>
+          <li>bambu</li>
+          <li>jagung pipil</li>
+          <li>kaca</li>
+          <li>kain</li>
+          <li>kulit sapi</li>
+          <li>kayu bulat</li>
+          <li>rotan</li>
+          <li>kunci polos</li>
+        </ul>
+      </div>
+    </div>
     <div class="ub-err-msg" data-field="input_produksi"></div>
   </div>
 
@@ -155,7 +265,26 @@
   <div id="sec_9e" class="conditional-section mb-4">
     <label class="ub-label">e. Bagaimana proses mengubah input tersebut menjadi produk output (beserta alatnya)? <span class="ub-required">*</span></label>
     <textarea name="proses_produksi" class="ub-input" rows="2" placeholder="Tuliskan proses produksi">{{ old('proses_produksi',$response->proses_produksi) }}</textarea>
-    <p class="ub-hint">Contoh: menggiling daging ikan menjadi sosis; penggaraman; pengasapan; pemindangan; pembekuan</p>
+    <div class="mt-2" id="petunjuk9eWrap">
+      <button type="button" id="petunjuk9eToggle"
+        class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+        <svg id="petunjuk9eChevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span id="petunjuk9eLabel">Lihat contoh proses produksi</span>
+      </button>
+      <div id="petunjuk9ePanel" class="hidden mt-2 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/30 p-3 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+        <p class="font-semibold text-blue-700 dark:text-blue-300 mb-1.5">Contoh proses produksi:</p>
+        <ul class="list-disc list-inside space-y-0.5 pl-1">
+          <li>menggiling daging ikan menjadi sosis</li>
+          <li>membuat kebab di rumah, dikemas, kemudian dititipkan di warung</li>
+          <li>penggaraman</li>
+          <li>pengasapan</li>
+          <li>pemindangan</li>
+          <li>pembekuan</li>
+        </ul>
+      </div>
+    </div>
     <div class="ub-err-msg" data-field="proses_produksi"></div>
   </div>
 
@@ -163,7 +292,103 @@
   <div class="mb-4">
     <label class="ub-label">f. Apa produk utama yang dihasilkan? Tuliskan selengkapnya. <span class="ub-required">*</span></label>
     <textarea name="produk_utama" class="ub-input" rows="2" placeholder="Tuliskan produk/jasa utama">{{ old('produk_utama',$response->produk_utama) }}</textarea>
-    <p class="ub-hint">Contoh: padi; tembakau; sosis; kebab; jasa renovasi rumah; jasa perdagangan mobil bekas; jasa sewa kos; jasa pengembangan perangkat lunak; rendang, gudeg; desain arsitektur</p>
+    {{-- Petunjuk 9f --}}
+    <div class="mt-3" id="petunjuk9fWrap">
+      <button type="button" id="petunjuk9fToggle"
+        class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+        <svg id="petunjuk9fChevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span id="petunjuk9fLabel">Lihat contoh produk utama</span>
+      </button>
+      <div id="petunjuk9fPanel" class="hidden mt-3 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/30 overflow-hidden">
+        <div class="flex overflow-x-auto border-b border-blue-100 dark:border-blue-900/60 bg-white/70 dark:bg-gray-800/50">
+          <button type="button" data-tab="p1" class="ptab ptab-active shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Pertanian &amp; Perikanan</button>
+          <button type="button" data-tab="p2" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Industri Pengolahan</button>
+          <button type="button" data-tab="p3" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Perdagangan &amp; Transportasi</button>
+          <button type="button" data-tab="p4" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Akomodasi &amp; Jasa</button>
+          <button type="button" data-tab="p5" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Kreatif &amp; Teknologi</button>
+        </div>
+        <div class="p-4 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+
+          <div data-panel="p1">
+            <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Pertanian, Peternakan &amp; Perikanan</p>
+            <ul class="list-disc list-inside space-y-0.5 pl-1">
+              <li>padi</li>
+              <li>tembakau</li>
+              <li>udang</li>
+              <li>ayam ras</li>
+              <li>ikan segar konsumsi</li>
+              <li>madu hutan</li>
+            </ul>
+          </div>
+
+          <div data-panel="p2" class="hidden">
+            <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Industri Pengolahan</p>
+            <ul class="list-disc list-inside space-y-0.5 pl-1">
+              <li>sosis</li>
+              <li>kebab yang sudah dikemas</li>
+              <li>sosis ikan yang dibakar</li>
+              <li>rendang</li>
+              <li>gudeg</li>
+            </ul>
+          </div>
+
+          <div data-panel="p3" class="hidden">
+            <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Perdagangan &amp; Transportasi</p>
+            <ul class="list-disc list-inside space-y-0.5 pl-1">
+              <li>jasa perdagangan mobil bekas</li>
+              <li>jasa perdagangan kaset video gim</li>
+              <li>jasa angkutan bus antarkota antarprovinsi</li>
+              <li>jasa pembuatan kunci duplikat</li>
+            </ul>
+          </div>
+
+          <div data-panel="p4" class="hidden">
+            <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Akomodasi, Properti &amp; Jasa</p>
+            <ul class="list-disc list-inside space-y-0.5 pl-1">
+              <li>jasa sewa kos bulanan</li>
+              <li>jasa penyediaan akomodasi hotel bintang 5</li>
+              <li>jasa penyajian kebab</li>
+              <li>jasa renovasi/membuat rumah</li>
+              <li>jasa penjualan rumah yang dibangun sendiri</li>
+              <li>jasa penyediaan rumah dengan periode tahunan</li>
+              <li>jasa pendidikan sekolah menengah pertama negeri</li>
+              <li>jasa kesehatan oleh rumah sakit pemerintah</li>
+            </ul>
+          </div>
+
+          <div data-panel="p5" class="hidden">
+            <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Ekonomi Kreatif &amp; Teknologi</p>
+            <div class="space-y-2">
+              <div>
+                <p class="font-semibold text-gray-600 dark:text-gray-400 mb-0.5">Karya seni &amp; sastra:</p>
+                <ul class="list-disc list-inside space-y-0.5 pl-1">
+                  <li>lukisan, patung, kerajinan</li>
+                  <li>musik, tari, foto, film</li>
+                  <li>ilustrasi, animasi, board game</li>
+                  <li>puisi, cerpen, novel, naskah drama</li>
+                  <li>gamelan, angklung</li>
+                </ul>
+              </div>
+              <div>
+                <p class="font-semibold text-gray-600 dark:text-gray-400 mb-0.5">Desain &amp; teknologi:</p>
+                <ul class="list-disc list-inside space-y-0.5 pl-1">
+                  <li>desain arsitektur, desain produk, desain interior</li>
+                  <li>desain komunikasi visual, desain fesyen</li>
+                  <li>pembuatan perangkat lunak (software)</li>
+                  <li>aplikasi digital, aplikasi gim, perangkat elektronik</li>
+                  <li>inovasi berbasis kecerdasan buatan</li>
+                  <li>jasa pengembangan perangkat lunak video gim</li>
+                  <li>jasa telekomunikasi internet tanpa kabel</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
     <div class="ub-err-msg" data-field="produk_utama"></div>
   </div>
 
@@ -298,7 +523,7 @@
   <p class="ub-section-title">13. Ramah Lingkungan</p>
   <div class="mb-4">
     <label class="ub-label">a. Apakah perusahaan ini memproduksi barang/jasa yang ramah lingkungan? <span class="ub-required">*</span></label>
-    <p class="ub-hint mb-2">Contoh: Produk efisiensi energi (lampu atau mesin hemat listrik); Energi terbarukan (panel surya, turbin angin, biogas); Kendaraan ramah lingkungan; Produk berbahan daur ulang; Jasa pengelolaan dan pembersihan limbah dan sampah.</p>
+    <p class="ub-hint mb-2">Lihat contoh pada petunjuk di bawah — tab <strong>13a</strong>.</p>
     <div class="ub-radio-group">
       <label class="ub-radio-label"><input type="radio" name="produk_ramah_lingkungan" value="1" {{ old('produk_ramah_lingkungan',$response->produk_ramah_lingkungan)==1?'checked':'' }}> 1. Ya, seluruhnya</label>
       <label class="ub-radio-label"><input type="radio" name="produk_ramah_lingkungan" value="2" {{ old('produk_ramah_lingkungan',$response->produk_ramah_lingkungan)==2?'checked':'' }}> 2. Ya, sebagian</label>
@@ -308,12 +533,55 @@
   </div>
   <div>
     <label class="ub-label">b. Apakah perusahaan ini menggunakan input untuk tujuan perlindungan lingkungan dan/atau pembelian barang dan jasa yang ramah lingkungan? <span class="ub-required">*</span></label>
-    <p class="ub-hint mb-2">Contoh: Pengeluaran untuk pengelolaan dan pembersihan limbah, pengendalian polusi udara, perbaikan tanah/air tanah, pengurangan kebisingan, pelestarian alam, audit/penilaian lingkungan.</p>
+    <p class="ub-hint mb-2">Lihat contoh pada petunjuk di bawah — tab <strong>13b</strong>.</p>
     <div class="ub-radio-group">
       <label class="ub-radio-label"><input type="radio" name="uses_input_lingkungan" value="1" {{ old('uses_input_lingkungan',$response->uses_input_lingkungan)==1?'checked':'' }}> 1. Ya</label>
       <label class="ub-radio-label"><input type="radio" name="uses_input_lingkungan" value="2" {{ old('uses_input_lingkungan',$response->uses_input_lingkungan)==2?'checked':'' }}> 2. Tidak</label>
     </div>
     <div class="ub-err-msg" data-field="uses_input_lingkungan"></div>
+  </div>
+
+  {{-- Petunjuk Q13 tabbed panel --}}
+  <div class="mt-4" id="petunjuk13Wrap">
+    <button type="button" id="petunjuk13Toggle"
+      class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+      <svg id="petunjuk13Chevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span id="petunjuk13Label">Lihat petunjuk pengisian ramah lingkungan</span>
+    </button>
+    <div id="petunjuk13Panel" class="hidden mt-3 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/30 overflow-hidden">
+      <div class="flex overflow-x-auto border-b border-blue-100 dark:border-blue-900/60 bg-white/70 dark:bg-gray-800/50">
+        <button type="button" data-tab="l1" class="ptab ptab-active shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">13a. Produk Ramah Lingkungan</button>
+        <button type="button" data-tab="l2" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">13b. Input Perlindungan Lingkungan</button>
+      </div>
+      <div class="p-4 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+
+        <div data-panel="l1">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">13a. Contoh produk/jasa yang ramah lingkungan:</p>
+          <ul class="list-disc list-inside space-y-1 pl-1">
+            <li><strong>Produk efisiensi energi</strong> — lampu atau mesin hemat listrik</li>
+            <li><strong>Energi terbarukan</strong> — panel surya, turbin angin, biogas</li>
+            <li><strong>Kendaraan ramah lingkungan</strong> — kendaraan listrik/hybrid</li>
+            <li><strong>Produk berbahan daur ulang</strong> — kertas/plastik daur ulang, kemasan ramah lingkungan</li>
+            <li><strong>Jasa pengelolaan limbah dan sampah</strong> — pengolahan sampah/air limbah, daur ulang</li>
+          </ul>
+        </div>
+
+        <div data-panel="l2" class="hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">13b. Contoh input/pengeluaran perlindungan lingkungan:</p>
+          <ul class="list-disc list-inside space-y-1 pl-1">
+            <li>Pengelolaan dan pembersihan limbah dan sampah</li>
+            <li>Pengendalian polusi udara</li>
+            <li>Perbaikan tanah/air tanah</li>
+            <li>Pengurangan kebisingan</li>
+            <li>Pelestarian alam/keanekaragaman hayati</li>
+            <li>Audit/penilaian lingkungan</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
   </div>
 </div>
 
@@ -321,7 +589,86 @@
 <div class="ub-card" id="card_q14">
   <p class="ub-section-title">14. Produk Karya Seni, Sastra, Desain, Teknologi, atau Warisan Budaya</p>
   <label class="ub-label">Apakah perusahaan ini menggunakan produk karya seni, sastra, desain, teknologi atau warisan budaya, baik diproduksi sendiri maupun oleh pihak lain? <span class="ub-required">*</span></label>
-  <p class="ub-hint mb-2">Contoh seni: lukisan, patung, kerajinan, musik, tari, foto, film, ilustrasi, animasi, board game, dll.<br>Contoh sastra: puisi, cerpen, novel, naskah drama, dll.<br>Contoh desain: arsitektur, desain produk, desain interior, desain komunikasi visual, desain fesyen, dll.<br>Contoh teknologi: perangkat lunak (software), aplikasi digital, aplikasi gim, perangkat elektronik, dll.<br>Contoh warisan budaya: makanan tradisional, peralatan tradisional, obat tradisional, dll.</p>
+  {{-- Petunjuk Q14 tabbed panel --}}
+  <div class="mt-3 mb-3" id="petunjuk14Wrap">
+    <button type="button" id="petunjuk14Toggle"
+      class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
+      <svg id="petunjuk14Chevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+      </svg>
+      <span id="petunjuk14Label">Lihat contoh produk per kategori</span>
+    </button>
+    <div id="petunjuk14Panel" class="hidden mt-3 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/30 overflow-hidden">
+      <div class="flex overflow-x-auto border-b border-blue-100 dark:border-blue-900/60 bg-white/70 dark:bg-gray-800/50">
+        <button type="button" data-tab="k1" class="ptab ptab-active shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Karya Seni</button>
+        <button type="button" data-tab="k2" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Sastra</button>
+        <button type="button" data-tab="k3" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Desain</button>
+        <button type="button" data-tab="k4" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Teknologi</button>
+        <button type="button" data-tab="k5" class="ptab shrink-0 px-3.5 py-2 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors">Warisan Budaya</button>
+      </div>
+      <div class="p-4 text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+
+        <div data-panel="k1">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Produk Karya Seni</p>
+          <ul class="list-disc list-inside space-y-0.5 pl-1">
+            <li>Lukisan, patung, kerajinan tangan</li>
+            <li>Musik, tari, pertunjukan</li>
+            <li>Foto, film, videografi</li>
+            <li>Ilustrasi, animasi</li>
+            <li>Board game, permainan kreatif</li>
+            <li>Dan produk karya seni lainnya</li>
+          </ul>
+        </div>
+
+        <div data-panel="k2" class="hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Produk Sastra</p>
+          <ul class="list-disc list-inside space-y-0.5 pl-1">
+            <li>Puisi</li>
+            <li>Cerpen (cerita pendek)</li>
+            <li>Novel</li>
+            <li>Naskah drama</li>
+            <li>Dan karya tulis sastra lainnya</li>
+          </ul>
+        </div>
+
+        <div data-panel="k3" class="hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Produk Desain</p>
+          <ul class="list-disc list-inside space-y-0.5 pl-1">
+            <li>Desain arsitektur</li>
+            <li>Desain produk</li>
+            <li>Desain interior</li>
+            <li>Desain komunikasi visual</li>
+            <li>Desain fesyen</li>
+            <li>Dan karya desain lainnya</li>
+          </ul>
+        </div>
+
+        <div data-panel="k4" class="hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Produk Teknologi</p>
+          <ul class="list-disc list-inside space-y-0.5 pl-1">
+            <li>Perangkat lunak (software)</li>
+            <li>Aplikasi digital</li>
+            <li>Aplikasi gim</li>
+            <li>Perangkat elektronik</li>
+            <li>Inovasi berbasis kecerdasan buatan (AI)</li>
+            <li>Dan produk teknologi lainnya</li>
+          </ul>
+        </div>
+
+        <div data-panel="k5" class="hidden">
+          <p class="font-bold text-blue-700 dark:text-blue-300 mb-2">Produk Warisan Budaya</p>
+          <ul class="list-disc list-inside space-y-0.5 pl-1">
+            <li>Makanan tradisional (rendang, gudeg, dll.)</li>
+            <li>Peralatan tradisional (gamelan, angklung, dll.)</li>
+            <li>Obat tradisional/jamu</li>
+            <li>Pakaian/kain tradisional (batik, tenun, songket, dll.)</li>
+            <li>Dan produk warisan budaya lainnya</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
   <div class="ub-radio-group">
     <label class="ub-radio-label"><input type="radio" name="uses_karya_seni" value="1" {{ old('uses_karya_seni',$response->uses_karya_seni)==1?'checked':'' }}> 1. Ya</label>
     <label class="ub-radio-label"><input type="radio" name="uses_karya_seni" value="2" {{ old('uses_karya_seni',$response->uses_karya_seni)==2?'checked':'' }}> 2. Tidak</label>
@@ -403,6 +750,36 @@ window.surveyRoutes = {
   }
   document.querySelectorAll('.jaringan-radio').forEach(el => el.addEventListener('change', toggleJaringan));
   toggleJaringan();
+
+  // ── Tabbed petunjuk panels ─────────────────────────────────────────────────
+  function initPetunjukPanel(toggleId, panelId, chevronId, labelId, openText, closeText) {
+    const toggle = document.getElementById(toggleId);
+    const panel  = document.getElementById(panelId);
+    const chevron= document.getElementById(chevronId);
+    const label  = document.getElementById(labelId);
+    if (!toggle) return;
+    toggle.addEventListener('click', function() {
+      const open = !panel.classList.contains('hidden');
+      panel.classList.toggle('hidden', open);
+      chevron.style.transform = open ? '' : 'rotate(90deg)';
+      label.textContent = open ? openText : closeText;
+    });
+    panel.querySelectorAll('[data-tab]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const t = this.dataset.tab;
+        panel.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('ptab-active'));
+        this.classList.add('ptab-active');
+        panel.querySelectorAll('[data-panel]').forEach(p => p.classList.add('hidden'));
+        panel.querySelector('[data-panel="' + t + '"]').classList.remove('hidden');
+      });
+    });
+  }
+  initPetunjukPanel('petunjuk9aToggle',  'petunjuk9aPanel',  'petunjuk9aChevron',  'petunjuk9aLabel',  'Lihat contoh kegiatan utama',                'Sembunyikan contoh');
+  initPetunjukPanel('petunjuk9dToggle',  'petunjuk9dPanel',  'petunjuk9dChevron',  'petunjuk9dLabel',  'Lihat contoh input',                         'Sembunyikan contoh');
+  initPetunjukPanel('petunjuk9eToggle',  'petunjuk9ePanel',  'petunjuk9eChevron',  'petunjuk9eLabel',  'Lihat contoh proses produksi',               'Sembunyikan contoh');
+  initPetunjukPanel('petunjuk9fToggle',  'petunjuk9fPanel',  'petunjuk9fChevron',  'petunjuk9fLabel',  'Lihat contoh produk utama',                  'Sembunyikan contoh');
+  initPetunjukPanel('petunjuk13Toggle',  'petunjuk13Panel',  'petunjuk13Chevron',  'petunjuk13Label',  'Lihat petunjuk pengisian ramah lingkungan',   'Sembunyikan petunjuk');
+  initPetunjukPanel('petunjuk14Toggle',  'petunjuk14Panel',  'petunjuk14Chevron',  'petunjuk14Label',  'Lihat contoh produk per kategori',            'Sembunyikan contoh');
 
   // ── Q12 internet ───────────────────────────────────────────────────────────
   const inetYa = document.getElementById('inet_ya');

@@ -270,13 +270,21 @@
         @php $halalMap = [1=>'Ya, oleh BPJPH',2=>'Ya, bukan BPJPH',3=>'Tidak']; @endphp
         <div class="label">15a. Sertifikat Halal</div>
         <div class="value">{{ $halalMap[$response->sertifikat_halal] ?? '—' }}
-          @if($response->sertifikat_halal == 1) ({{ $response->jumlah_produk_halal_bpjph ?? 0 }} varian halal / {{ $response->jumlah_produk_belum_halal_bpjph ?? 0 }} belum) @endif</div>
+          @if($response->sertifikat_halal == 1)
+            ({{ $response->jumlah_produk_halal_bpjph ?? 0 }} halal / {{ $response->jumlah_produk_belum_halal_bpjph ?? 0 }} belum)
+          @elseif($response->sertifikat_halal)
+            ({{ $response->jumlah_produk_belum_halal_bpjph ?? 0 }} belum)
+          @endif</div>
       </div>
       <div class="col">
         @php $izinMap = [1=>'Ya, oleh BPOM',2=>'Ya, bukan BPOM',3=>'Tidak']; @endphp
         <div class="label">16a. Izin Edar</div>
         <div class="value">{{ $izinMap[$response->izin_edar] ?? '—' }}
-          @if($response->izin_edar == 1) ({{ $response->jumlah_produk_izin_edar_bpom ?? 0 }} izin / {{ $response->jumlah_produk_tanpa_izin_edar_bpom ?? 0 }} belum) @endif</div>
+          @if($response->izin_edar == 1)
+            ({{ $response->jumlah_produk_izin_edar_bpom ?? 0 }} izin / {{ $response->jumlah_produk_tanpa_izin_edar_bpom ?? 0 }} belum)
+          @elseif($response->izin_edar)
+            ({{ $response->jumlah_produk_tanpa_izin_edar_bpom ?? 0 }} belum)
+          @endif</div>
       </div>
     </div>
     <div class="row">

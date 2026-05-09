@@ -105,13 +105,13 @@
   <div class="mb-4">
     <label class="ub-label">a. Nama Perusahaan <span class="ub-required">*</span></label>
     <input name="nama_perusahaan" class="ub-input" value="{{ old('nama_perusahaan', $response->nama_perusahaan) }}" placeholder="Nama lengkap beserta status badan usaha. Contoh: KAWAN BARU, PT TBK">
-    <p class="ub-hint">Tuliskan nama perusahaan dengan lengkap, beserta status badan usaha.</p>
+    <p class="ub-hint">Tuliskan nama perusahaan dengan lengkap, beserta status badan usaha. Contoh: KAWAN BARU, PT TBK</p>
     <div class="ub-err-msg" data-field="nama_perusahaan"></div>
   </div>
   <div class="mb-4">
     <label class="ub-label">b. Nama Komersial Perusahaan <span class="ub-required">*</span></label>
     <input name="nama_komersial" class="ub-input" value="{{ old('nama_komersial', $response->nama_komersial) }}" placeholder="Jika tidak ada, tuliskan nama perusahaan">
-    <p class="ub-hint">Jika tidak memiliki nama komersial, isikan nama perusahaan.</p>
+    <p class="ub-hint">Jika tidak memiliki nama komersial, maka tuliskan nama perusahaan.</p>
     <div class="ub-err-msg" data-field="nama_komersial"></div>
   </div>
   <div class="mb-4">
@@ -148,7 +148,7 @@
       <div>
         <label class="ub-label text-xs">Homepage/Website</label>
         <input name="homepage" class="ub-input" value="{{ old('homepage', $response->homepage) }}" placeholder="www.contoh.com">
-        <p class="ub-hint">Diawali dengan www. Contoh: www.bps.go.id</p>
+        <p class="ub-hint">Alamat website diawali dengan www. Contoh: www.bps.go.id</p>
       </div>
     </div>
   </div>
