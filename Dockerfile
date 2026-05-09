@@ -31,7 +31,12 @@ RUN composer install \
         --no-autoloader \
         --prefer-dist \
         --no-interaction \
-        --no-progress
+        --no-progress \
+        --ignore-platform-reqs
+# --ignore-platform-reqs: the composer:2.7 image lacks ext-gd, ext-intl etc.
+# that maatwebsite/excel + phpoffice/phpspreadsheet require. The runtime
+# stage (php:8.2-fpm-alpine below) DOES install all required extensions,
+# so we only need composer here to resolve and download packages.
 
 
 # ---------- Stage 3: Production runtime ----------
