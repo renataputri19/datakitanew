@@ -5,7 +5,10 @@ FROM node:20-alpine AS frontend
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm ci --no-audit --no-fund
+# Use npm install (not npm ci) because package-lock.json may have been
+# generated on a different OS (e.g. Windows) and won't list the Linux
+# Rollup native binary that Vite needs. See npm/cli#4828.
+RUN npm install --no-audit --no-fund
 
 COPY resources ./resources
 COPY public ./public

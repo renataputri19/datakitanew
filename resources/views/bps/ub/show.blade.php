@@ -93,6 +93,7 @@ $sertHalalMap = [1=>'Ya, oleh BPJPH', 2=>'Ya, bukan oleh BPJPH', 3=>'Tidak'];
 $izinEdarMap  = [1=>'Ya, oleh BPOM', 2=>'Ya, bukan oleh BPOM', 3=>'Tidak'];
 $mbgMap = [1=>'Ya, sebagai SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)',2=>'Ya, sebagai supplier',3=>'Ya, sebagai penerima manfaat MBG (Sekolah, Puskesmas, Posyandu)',4=>'Ya, peran lainnya',5=>'Tidak terlibat MBG'];
 $prlMap = [1=>'Ya, seluruh produk', 2=>'Ya, sebagian produk', 3=>'Tidak'];
+$rangeAsetMap = [1=>'s.d. Rp 500 juta',2=>'Lebih dari Rp 500 juta s.d. Rp 1 miliar',3=>'Lebih dari Rp 1 miliar s.d. Rp 5 miliar',4=>'Lebih dari Rp 5 miliar s.d. Rp 10 miliar',5=>'Lebih dari Rp 10 miliar'];
 $koperasiJenisMap = [1=>'Open Loop (dapat melayani nonanggota)', 2=>'Close Loop (hanya melayani anggota)'];
 
 $rp = fn($v) => ($v !== null && $v !== '') ? 'Rp '.number_format((float)$v, 0, ',', '.') : '<span class="ub-field-empty">Belum diisi</span>';
@@ -532,21 +533,21 @@ $_totalCount     = count($navItems);
             ════════════════════════════════════════ --}}
             <div id="panel-1d" class="ub-block-panel">
                 <div class="ub-section-card">
-                    <p class="ub-section-title">20–21. Tenaga Kerja & Tahun Beroperasi</p>
+                    <p class="ub-section-title">20. Jumlah Pekerja</p>
                     <div class="ub-field-row">
-                        <span class="ub-field-label">Pekerja Laki-laki (a)</span>
+                        <span class="ub-field-label">Laki-laki (a)</span>
                         <span class="ub-field-value">
                             @if($response->pekerja_laki !== null) {{ $response->pekerja_laki }} orang @else <span class="ub-field-empty">Belum diisi</span> @endif
                         </span>
                     </div>
                     <div class="ub-field-row">
-                        <span class="ub-field-label">Pekerja Perempuan (b)</span>
+                        <span class="ub-field-label">Perempuan (b)</span>
                         <span class="ub-field-value">
                             @if($response->pekerja_perempuan !== null) {{ $response->pekerja_perempuan }} orang @else <span class="ub-field-empty">Belum diisi</span> @endif
                         </span>
                     </div>
                     <div class="ub-field-row">
-                        <span class="ub-field-label">Total Pekerja (c)</span>
+                        <span class="ub-field-label font-bold">Total (a+b) (c)</span>
                         <span class="ub-field-value font-bold">
                             @php $total = ($response->pekerja_laki ?? 0) + ($response->pekerja_perempuan ?? 0); @endphp
                             @if($response->pekerja_laki !== null || $response->pekerja_perempuan !== null)
@@ -554,8 +555,11 @@ $_totalCount     = count($navItems);
                             @else <span class="ub-field-empty">Belum diisi</span> @endif
                         </span>
                     </div>
+                </div>
+                <div class="ub-section-card">
+                    <p class="ub-section-title">21. Tahun Mulai Beroperasi</p>
                     <div class="ub-field-row">
-                        <span class="ub-field-label">Tahun Mulai Beroperasi (21)</span>
+                        <span class="ub-field-label">Tahun berapa perusahaan ini mulai beroperasi secara komersial?</span>
                         <span class="ub-field-value">
                             @if($response->tahun_beroperasi) {{ $response->tahun_beroperasi }} @else <span class="ub-field-empty">Belum diisi</span> @endif
                         </span>
@@ -566,10 +570,10 @@ $_totalCount     = count($navItems);
                     <table class="ub-currency-table">
                         @php
                         $expendRows = [
-                            'a' => ['label' => 'a. Upah & Gaji, jaminan sosial', 'field' => 'pengeluaran_upah_gaji'],
-                            'b' => ['label' => 'b. Biaya produksi (bahan baku & penolong)', 'field' => 'pengeluaran_biaya_produksi'],
-                            'c' => ['label' => 'c. Pembelian barang yang terjual', 'field' => 'pengeluaran_pembelian_barang'],
-                            'd' => ['label' => 'd. Biaya operasional', 'field' => 'pengeluaran_operasional'],
+                            'a' => ['label' => 'a. Total upah dan gaji, serta jaminan sosial pegawai', 'field' => 'pengeluaran_upah_gaji'],
+                            'b' => ['label' => 'b. Biaya produksi (pemakaian bahan baku dan penolong)', 'field' => 'pengeluaran_biaya_produksi'],
+                            'c' => ['label' => 'c. Biaya pembelian barang yang terjual (Khusus usaha perdagangan)', 'field' => 'pengeluaran_pembelian_barang'],
+                            'd' => ['label' => 'd. Biaya operasional (air, listrik, gas, internet, pulsa, pemeliharaan, biaya angkutan)', 'field' => 'pengeluaran_operasional'],
                             'e' => ['label' => 'e. Biaya nonoperasional', 'field' => 'pengeluaran_nonoperasional'],
                         ];
                         $totalPengeluaran = 0;
@@ -588,56 +592,74 @@ $_totalCount     = count($navItems);
                         </tr>
                         @endforeach
                         <tr class="border-t-2 border-gray-300 dark:border-gray-600">
-                            <td class="font-bold">f. Total Pengeluaran</td>
+                            <td class="font-bold">f. Total pengeluaran (a+b+c+d+e)</td>
                             <td class="rp font-bold text-blue-700 dark:text-blue-300">Rp {{ number_format($totalPengeluaran, 0, ',', '.') }}</td>
                         </tr>
                     </table>
                 </div>
                 <div class="ub-section-card">
-                    <p class="ub-section-title">23. Nilai Produksi / Pendapatan</p>
+                    <p class="ub-section-title">23. Rincian Nilai Produksi/Penjualan/Pendapatan Tahun 2025</p>
                     <div class="ub-field-row">
-                        <span class="ub-field-label">Nilai produksi/pendapatan usaha</span>
+                        <span class="ub-field-label">Nilai produksi/penjualan/pendapatan barang dan jasa (a)</span>
                         <span class="ub-field-value">{!! $rp($response->nilai_produksi_barang_jasa) !!}</span>
                     </div>
                     <div class="ub-field-row">
-                        <span class="ub-field-label">Pendapatan lainnya</span>
+                        <span class="ub-field-label">Pendapatan lainnya yang dihasilkan (b)</span>
                         <span class="ub-field-value">{!! $rp($response->pendapatan_lainnya) !!}</span>
                     </div>
+                    @php $totalPendapatan = (float)($response->nilai_produksi_barang_jasa ?? 0) + (float)($response->pendapatan_lainnya ?? 0); @endphp
                     <div class="ub-field-row">
-                        <span class="ub-field-label">% Pendapatan dari online</span>
+                        <span class="ub-field-label font-bold">Total nilai produksi/penjualan/pendapatan (a+b) (c)</span>
+                        <span class="ub-field-value font-bold text-blue-700 dark:text-blue-300">Rp {{ number_format($totalPendapatan, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="ub-field-row">
+                        <span class="ub-field-label">Persentase pendapatan dari usaha online (d)</span>
                         <span class="ub-field-value">
                             @if($response->persen_pendapatan_online !== null) {{ $response->persen_pendapatan_online }}% @else <span class="ub-field-empty">Belum diisi</span> @endif
                         </span>
                     </div>
                 </div>
                 <div class="ub-section-card">
-                    <p class="ub-section-title">24. Aset</p>
+                    <p class="ub-section-title">24. Nilai Aset pada 31 Desember 2025</p>
                     <div class="ub-field-row">
-                        <span class="ub-field-label">Nilai aset tanah & bangunan</span>
+                        <span class="ub-field-label">Nilai aset tanah dan bangunan (a)</span>
                         <span class="ub-field-value">{!! $rp($response->nilai_aset_tanah_bangunan) !!}</span>
                     </div>
                     <div class="ub-field-row">
-                        <span class="ub-field-label">Nilai aset lainnya</span>
+                        <span class="ub-field-label">Nilai aset selain tanah dan bangunan (b)</span>
                         <span class="ub-field-value">{!! $rp($response->nilai_aset_lainnya) !!}</span>
                     </div>
+                    @php $totalAset = (float)($response->nilai_aset_tanah_bangunan ?? 0) + (float)($response->nilai_aset_lainnya ?? 0); @endphp
                     <div class="ub-field-row">
-                        <span class="ub-field-label">Luas tanah (m²)</span>
+                        <span class="ub-field-label font-bold">Nilai total aset (a+b) (c)</span>
+                        <span class="ub-field-value font-bold text-blue-700 dark:text-blue-300">Rp {{ number_format($totalAset, 0, ',', '.') }}</span>
+                    </div>
+                    @if($response->range_total_aset !== null)
+                    <div class="ub-field-row">
+                        <span class="ub-field-label">Rentang nilai total aset (c1)</span>
+                        <span class="ub-field-value">{!! $val($response->range_total_aset, $rangeAsetMap) !!}</span>
+                    </div>
+                    @endif
+                    <div class="ub-field-row">
+                        <span class="ub-field-label">Luas tanah yang dikuasai untuk kegiatan usaha pada 31 Desember 2025 (d)</span>
                         <span class="ub-field-value">
                             @if($response->luas_tanah !== null) {{ $response->luas_tanah }} m² @else <span class="ub-field-empty">Belum diisi</span> @endif
                         </span>
                     </div>
                 </div>
                 <div class="ub-section-card">
-                    <p class="ub-section-title">25. Kepemilikan Modal (%)</p>
+                    <p class="ub-section-title">25. Susunan Kepemilikan Modal pada 31 Desember 2025 (%)</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Total seluruh komponen harus = 100%</p>
                     @php
                     $modalRows = [
-                        'Pribadi/keluarga'                 => $response->modal_pribadi,
-                        'Nirlaba/nonprofit'                => $response->modal_nonprofit,
-                        'Korporasi publik (Tbk)'           => $response->modal_korporasi_publik,
-                        'Korporasi nonpublik'              => $response->modal_korporasi_nonpublik,
-                        'Pemerintah'                       => $response->modal_pemerintah,
-                        'Asing'                            => $response->modal_asing,
+                        'a. Pribadi/Perorangan'                           => $response->modal_pribadi,
+                        'b. Lembaga Nonprofit yang Melayani Rumah Tangga' => $response->modal_nonprofit,
+                        'c. Korporasi Publik'                             => $response->modal_korporasi_publik,
+                        'd. Korporasi Nonpublik'                          => $response->modal_korporasi_nonpublik,
+                        'e. Pemerintah'                                   => $response->modal_pemerintah,
+                        'f. Asing'                                        => $response->modal_asing,
                     ];
+                    $totalModal = array_sum(array_filter(array_values($modalRows), fn($v) => $v !== null));
                     @endphp
                     @foreach($modalRows as $label => $pct)
                     <div class="ub-field-row">
@@ -647,6 +669,10 @@ $_totalCount     = count($navItems);
                         </span>
                     </div>
                     @endforeach
+                    <div class="ub-field-row">
+                        <span class="ub-field-label font-bold">g. Total (a+b+c+d+e+f)</span>
+                        <span class="ub-field-value font-bold {{ $totalModal == 100 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400' }}">{{ $totalModal }}%</span>
+                    </div>
                 </div>
             </div>
 

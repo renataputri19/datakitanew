@@ -504,25 +504,15 @@ class SurveyUbController extends Controller
     public function saveBlok1c(Request $request)
     {
         $v = Validator::make($request->all(), [
-            'sertifikat_halal'                   => 'nullable|integer|between:1,3',
-            'jumlah_produk_halal_bpjph'          => 'required_if:sertifikat_halal,1|nullable|integer|min:0',
-            'jumlah_produk_belum_halal_bpjph'    => 'required|integer|min:0',
-            'izin_edar'                          => 'nullable|integer|between:1,3',
-            'jumlah_produk_izin_edar_bpom'       => 'required_if:izin_edar,1|nullable|integer|min:0',
-            'jumlah_produk_tanpa_izin_edar_bpom' => 'required|integer|min:0',
-            'bermitra_kdkmp'                     => 'required|integer|between:1,2',
-            'terlibat_mbg'                       => 'required|integer|between:1,5',
-            'ekspor_impor_barang'                => 'required|integer|between:1,2',
-            'ekspor_impor_jasa'                  => 'required|integer|between:1,2',
+            'bermitra_kdkmp'      => 'required|integer|between:1,2',
+            'terlibat_mbg'        => 'required|integer|between:1,5',
+            'ekspor_impor_barang' => 'required|integer|between:1,2',
+            'ekspor_impor_jasa'   => 'required|integer|between:1,2',
         ], [
-            'jumlah_produk_halal_bpjph.required_if'       => 'Jumlah produk halal BPJPH wajib diisi jika memilih Ya, oleh BPJPH.',
-            'jumlah_produk_belum_halal_bpjph.required'    => 'Jumlah produk belum bersertifikat halal BPJPH wajib diisi.',
-            'jumlah_produk_izin_edar_bpom.required_if'    => 'Jumlah produk izin edar BPOM wajib diisi jika memilih Ya, oleh BPOM.',
-            'jumlah_produk_tanpa_izin_edar_bpom.required' => 'Jumlah produk tanpa izin edar BPOM wajib diisi.',
-            'bermitra_kdkmp.required'                     => 'Status kemitraan KDKMP wajib dipilih.',
-            'terlibat_mbg.required'                       => 'Keterlibatan program MBG wajib dipilih.',
-            'ekspor_impor_barang.required'                => 'Status ekspor/impor barang wajib dipilih.',
-            'ekspor_impor_jasa.required'                  => 'Status ekspor/impor jasa wajib dipilih.',
+            'bermitra_kdkmp.required'      => 'Status kemitraan KDKMP wajib dipilih.',
+            'terlibat_mbg.required'        => 'Keterlibatan program MBG wajib dipilih.',
+            'ekspor_impor_barang.required' => 'Status ekspor/impor barang wajib dipilih.',
+            'ekspor_impor_jasa.required'   => 'Status ekspor/impor jasa wajib dipilih.',
         ]);
 
         if ($v->fails()) {
@@ -984,17 +974,11 @@ class SurveyUbController extends Controller
                 ->with('error', 'Survei belum diselesaikan. Selesaikan survei terlebih dahulu untuk mengunduh PDF.');
         }
 
-        $completedAt = ($resp->last_saved_at ?? $resp->updated_at)?->format('d F Y, H:i') ?? now()->format('d F Y, H:i');
-
-        $pdf = Pdf::loadView('survey.ub.pdf', [
-            'response'    => $resp,
-            'user'        => Auth::user(),
-            'completedAt' => $completedAt,
-        ])
+        $pdf = Pdf::loadView('survey.ub.pdf', ['response' => $resp, 'user' => Auth::user()])
             ->setPaper('A4', 'portrait')
             ->setOptions(['defaultFont' => 'sans-serif', 'isRemoteEnabled' => false]);
 
-        $filename = 'BuktiPengisian_SE2026-UB_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $resp->nama_perusahaan ?? 'survei') . '.pdf';
+        $filename = 'SE2026-L.UB_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $resp->nama_perusahaan ?? 'survei') . '.pdf';
 
         return $pdf->download($filename);
     }
