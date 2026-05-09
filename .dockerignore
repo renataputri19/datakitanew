@@ -1,0 +1,58 @@
+.git
+.gitignore
+.gitattributes
+
+# Local env files - container reads from Dokploy env config
+.env
+.env.backup
+.env.production
+.env.local
+
+# Local dependencies (rebuilt in image)
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+
+# Editor / OS junk
+.idea
+.vscode
+.fleet
+.gemini
+.claude
+.DS_Store
+Thumbs.db
+
+# Tests / cache
+.phpunit.cache
+.phpunit.result.cache
+tests
+phpunit.xml
+
+# Local logs / dumps
+storage/logs/*.log
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Local docs / scratch files (kept out of image to slim it)
+*.md
+!README.md
+*.pdf
+*.xlsx
+*.txt
+pdf_*.txt
+blok*.txt
+3b_*.txt
+
+# Local helper scripts not needed at runtime
+deploy.bat
+deploy.sh
+fix_storage_link.sh
+create_storage_link.php
+
+# CI / docker meta itself
+Dockerfile
+.dockerignore
+docker-compose*.yml

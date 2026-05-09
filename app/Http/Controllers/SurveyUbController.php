@@ -984,11 +984,17 @@ class SurveyUbController extends Controller
                 ->with('error', 'Survei belum diselesaikan. Selesaikan survei terlebih dahulu untuk mengunduh PDF.');
         }
 
-        $pdf = Pdf::loadView('survey.ub.pdf', ['response' => $resp, 'user' => Auth::user()])
+        $completedAt = ($resp->last_saved_at ?? $resp->updated_at)?->format('d F Y, H:i') ?? now()->format('d F Y, H:i');
+
+        $pdf = Pdf::loadView('survey.ub.pdf', [
+            'response'    => $resp,
+            'user'        => Auth::user(),
+            'completedAt' => $completedAt,
+        ])
             ->setPaper('A4', 'portrait')
             ->setOptions(['defaultFont' => 'sans-serif', 'isRemoteEnabled' => false]);
 
-        $filename = 'SE2026-L.UB_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $resp->nama_perusahaan ?? 'survei') . '.pdf';
+        $filename = 'BuktiPengisian_SE2026-UB_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $resp->nama_perusahaan ?? 'survei') . '.pdf';
 
         return $pdf->download($filename);
     }

@@ -271,7 +271,7 @@
 </div>
 
 {{-- Navigation --}}
-<div class="flex items-center justify-between mt-6 mb-8">
+<div class="flex flex-wrap items-center justify-between gap-4 mt-6 mb-8">
   <a href="{{ route('survey.ub.entry') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
     Kembali ke Dashboard

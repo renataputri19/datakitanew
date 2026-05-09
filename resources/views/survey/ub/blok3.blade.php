@@ -16,7 +16,9 @@
 .ub-input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15);}
 .dark .ub-input{background:#111827;border-color:#4b5563;color:#f9fafb;}
 .ub-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-.ub-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2rem;}
+.ub-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;}
+@media(max-width:1280px) and (min-width:769px){.ub-grid-3{grid-template-columns:1fr 1fr;gap:1rem;}}
+@media(max-width:1280px){.ub-card{padding:1.25rem 1rem;}}
 @media(max-width:768px){.ub-grid-2,.ub-grid-3{grid-template-columns:1fr;}}
 .ub-stepper{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem;}
 .ub-step.done{background:#dcfce7;color:#15803d;border:1.5px solid #bbf7d0;padding:.3rem .85rem;border-radius:999px;font-size:.75rem;font-weight:600;}
@@ -80,101 +82,47 @@
 
 <div class="ub-card">
   <p class="ub-section-title">BLOK III : KETERANGAN PEMBERI JAWABAN</p>
-  <div class="ub-grid-3">
 
 @php
 $readonlyCls = 'ub-input bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none';
 $todayVal    = $today ?? now()->format('Y-m-d');
 @endphp
 
-    {{-- PPL — read-only, filled by BPS --}}
-    <div class="person-col">
-      <p class="person-col-header">PPL (Petugas Pencacah Lapangan)</p>
-      <p class="text-[10px] text-gray-400 dark:text-gray-500 mb-2 italic">Diisi oleh petugas BPS</p>
-      <div class="space-y-3">
-        <div>
-          <label class="ub-label text-gray-400 dark:text-gray-500">1. Nama</label>
-          <input class="{{ $readonlyCls }}" value="{{ $response->ppl_nama ?? '' }}" readonly tabindex="-1" placeholder="—">
-        </div>
-        <div>
-          <label class="ub-label text-gray-400 dark:text-gray-500">2. NIP/NMS</label>
-          <input class="{{ $readonlyCls }}" value="{{ $response->ppl_nip ?? '' }}" readonly tabindex="-1" placeholder="—">
-        </div>
-        <div>
-          <label class="ub-label text-gray-400 dark:text-gray-500">3. Nomor HP/Telepon</label>
-          <input class="{{ $readonlyCls }}" value="{{ $response->ppl_telepon ?? '' }}" readonly tabindex="-1" placeholder="—">
-        </div>
-        <div>
-          <label class="ub-label text-gray-400 dark:text-gray-500">4. E-mail</label>
-          <input class="{{ $readonlyCls }}" value="{{ $response->ppl_email ?? '' }}" readonly tabindex="-1" placeholder="—">
-        </div>
-        <div>
-          <label class="ub-label text-gray-400 dark:text-gray-500">5. Tanggal Pelaksanaan</label>
-          <input name="ppl_tanggal" type="date" class="{{ $readonlyCls }}" value="{{ old('ppl_tanggal', $response->ppl_tanggal?->format('Y-m-d') ?? $todayVal) }}" readonly tabindex="-1">
-        </div>
+  {{-- Hidden PPL fields (submitted but not shown) --}}
+  <input type="hidden" name="ppl_tanggal" value="{{ old('ppl_tanggal', $response->ppl_tanggal?->format('Y-m-d') ?? $todayVal) }}">
+  <input type="hidden" name="pml_tanggal" value="{{ old('pml_tanggal', $response->pml_tanggal?->format('Y-m-d') ?? $todayVal) }}">
+
+  {{-- Responden — name & email auto-filled from profile, NIP & telepon required --}}
+  <div class="person-col max-w-lg">
+    <p class="person-col-header">Responden</p>
+    <div class="space-y-3">
+      <div>
+        <label class="ub-label">1. Nama</label>
+        <input class="{{ $readonlyCls }}" value="{{ old('resp_nama', $response->resp_nama ?? $user->name ?? '') }}" readonly tabindex="-1">
+        <input type="hidden" name="resp_nama" value="{{ old('resp_nama', $response->resp_nama ?? $user->name ?? '') }}">
+      </div>
+      <div>
+        <label class="ub-label">2. NIP/NMS <span class="ub-required">*</span></label>
+        <input name="resp_nip" id="resp_nip" class="ub-input" value="{{ old('resp_nip',$response->resp_nip) }}" placeholder="NIP atau jabatan">
+        <div class="ub-err-msg" data-field="resp_nip"></div>
+      </div>
+      <div>
+        <label class="ub-label">3. Nomor HP/Telepon <span class="ub-required">*</span></label>
+        <input name="resp_telepon" id="resp_telepon" class="ub-input" value="{{ old('resp_telepon',$response->resp_telepon) }}" placeholder="08xx-xxxx-xxxx">
+        <div class="ub-err-msg" data-field="resp_telepon"></div>
+      </div>
+      <div>
+        <label class="ub-label">4. E-mail</label>
+        <input class="{{ $readonlyCls }}" value="{{ old('resp_email', $response->resp_email ?? $user->email ?? '') }}" readonly tabindex="-1">
+        <input type="hidden" name="resp_email" value="{{ old('resp_email', $response->resp_email ?? $user->email ?? '') }}">
+      </div>
+      <div>
+        <label class="ub-label">5. Tanggal Pelaksanaan</label>
+        <input name="resp_tanggal" type="date" class="ub-input" value="{{ old('resp_tanggal', $response->resp_tanggal?->format('Y-m-d') ?? $todayVal) }}">
       </div>
     </div>
-
-    {{-- PML — read-only, filled by BPS --}}
-    <div class="person-col">
-      <p class="person-col-header">PML (Pengawas Mula Lapangan)</p>
-      <p class="text-[10px] text-gray-400 dark:text-gray-500 mb-2 italic">Diisi oleh petugas BPS</p>
-      <div class="space-y-3">
-        <div>
-          <label class="ub-label text-gray-400 dark:text-gray-500">1. Nama</label>
-          <input class="{{ $readonlyCls }}" value="{{ $response->pml_nama ?? '' }}" readonly tabindex="-1" placeholder="—">
-        </div>
-        <div>
-          <label class="ub-label text-gray-400 dark:text-gray-500">2. NIP/NMS</label>
-          <input class="{{ $readonlyCls }}" value="{{ $response->pml_nip ?? '' }}" readonly tabindex="-1" placeholder="—">
-        </div>
-        <div>
-          <label class="ub-label text-gray-400 dark:text-gray-500">3. Nomor HP/Telepon</label>
-          <input class="{{ $readonlyCls }}" value="{{ $response->pml_telepon ?? '' }}" readonly tabindex="-1" placeholder="—">
-        </div>
-        <div>
-          <label class="ub-label text-gray-400 dark:text-gray-500">4. E-mail</label>
-          <input class="{{ $readonlyCls }}" value="{{ $response->pml_email ?? '' }}" readonly tabindex="-1" placeholder="—">
-        </div>
-        <div>
-          <label class="ub-label text-gray-400 dark:text-gray-500">5. Tanggal Pelaksanaan</label>
-          <input name="pml_tanggal" type="date" class="{{ $readonlyCls }}" value="{{ old('pml_tanggal', $response->pml_tanggal?->format('Y-m-d') ?? $todayVal) }}" readonly tabindex="-1">
-        </div>
-      </div>
-    </div>
-
-    {{-- Responden — name & email auto-filled from profile, NIP & telepon required --}}
-    <div class="person-col">
-      <p class="person-col-header">Responden</p>
-      <div class="space-y-3">
-        <div>
-          <label class="ub-label">1. Nama</label>
-          <input class="{{ $readonlyCls }}" value="{{ old('resp_nama', $response->resp_nama ?? $user->name ?? '') }}" readonly tabindex="-1">
-          <input type="hidden" name="resp_nama" value="{{ old('resp_nama', $response->resp_nama ?? $user->name ?? '') }}">
-        </div>
-        <div>
-          <label class="ub-label">2. NIP/NMS <span class="ub-required">*</span></label>
-          <input name="resp_nip" id="resp_nip" class="ub-input" value="{{ old('resp_nip',$response->resp_nip) }}" placeholder="NIP atau jabatan">
-          <div class="ub-err-msg" data-field="resp_nip"></div>
-        </div>
-        <div>
-          <label class="ub-label">3. Nomor HP/Telepon <span class="ub-required">*</span></label>
-          <input name="resp_telepon" id="resp_telepon" class="ub-input" value="{{ old('resp_telepon',$response->resp_telepon) }}" placeholder="08xx-xxxx-xxxx">
-          <div class="ub-err-msg" data-field="resp_telepon"></div>
-        </div>
-        <div>
-          <label class="ub-label">4. E-mail</label>
-          <input class="{{ $readonlyCls }}" value="{{ old('resp_email', $response->resp_email ?? $user->email ?? '') }}" readonly tabindex="-1">
-          <input type="hidden" name="resp_email" value="{{ old('resp_email', $response->resp_email ?? $user->email ?? '') }}">
-        </div>
-        <div>
-          <label class="ub-label">5. Tanggal Pelaksanaan</label>
-          <input name="resp_tanggal" type="date" class="ub-input" value="{{ old('resp_tanggal', $response->resp_tanggal?->format('Y-m-d') ?? $todayVal) }}">
-        </div>
-      </div>
-    </div>
-
   </div>
+
 </div>
 
 {{-- Confirmation box --}}
@@ -195,7 +143,7 @@ $todayVal    = $today ?? now()->format('Y-m-d');
   </div>
 </div>
 
-<div class="flex items-center justify-between mt-2 mb-8">
+<div class="flex flex-wrap items-center justify-between gap-4 mt-2 mb-8">
   <a href="{{ route('survey.ub.blok2') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
     Kembali ke Blok II

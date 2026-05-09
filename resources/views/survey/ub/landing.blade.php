@@ -94,7 +94,7 @@
     </div>
   </div>
   {{-- Body --}}
-  <div class="px-6 py-5 space-y-4">
+  <div class="px-4 py-4 sm:px-6 sm:py-5 space-y-4">
     <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
       Selamat datang dan terima kasih atas partisipasi Bapak/Ibu dalam <strong>Sensus Ekonomi 2026</strong>.
       Keikutsertaan Bapak/Ibu sangat berarti bagi keberhasilan pendataan ekonomi nasional.
@@ -123,18 +123,18 @@
     </div>
     <div>
       <p class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Petunjuk Pengisian:</p>
-      <ul class="space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
+      <ul class="space-y-2 text-xs text-gray-600 dark:text-gray-400">
         <li class="flex items-start gap-2">
           <svg class="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-          Klik tombol <strong>"Mulai Survei"</strong> untuk memulai, atau <strong>"Lanjutkan Survei"</strong> jika pengisian pernah dihentikan.
+          <span class="break-words min-w-0">Klik tombol <strong>"Mulai Survei"</strong> untuk memulai, atau <strong>"Lanjutkan Survei"</strong> jika pengisian pernah dihentikan.</span>
         </li>
         <li class="flex items-start gap-2">
           <svg class="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-          Pengisian dapat dihentikan kapan saja dan dilanjutkan kembali — data yang telah diisi akan tersimpan otomatis.
+          <span class="break-words min-w-0">Pengisian dapat dihentikan kapan saja dan dilanjutkan kembali — data yang telah diisi akan tersimpan otomatis.</span>
         </li>
         <li class="flex items-start gap-2">
           <svg class="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-          Untuk bantuan, hubungi: <strong>halose2026@bps.go.id</strong>
+          <span class="break-words min-w-0 break-all">Untuk bantuan, hubungi: <strong>halose2026@bps.go.id</strong></span>
         </li>
       </ul>
     </div>

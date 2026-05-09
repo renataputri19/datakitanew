@@ -1,0 +1,99 @@
+###
+# Dokploy compose file for the datakita Laravel app.
+#
+# Notes for Dokploy:
+#   - The MySQL database is a SEPARATE Dokploy service. Do NOT define it here.
+#     Connect to it from this app via the Dokploy internal network using the
+#     hostname Dokploy assigns (set DB_HOST as an env var in the Dokploy UI).
+#   - Environment variables are managed in the Dokploy UI (Environment tab),
+#     not committed to the repo. .env is intentionally NOT mounted.
+#   - Traefik (Dokploy's built-in proxy) handles HTTPS + the public domain;
+#     this container only needs to expose port 80 internally.
+###
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: datakita-app:latest
+    restart: unless-stopped
+
+    # Dokploy's Traefik routes traffic to this internal port.
+    expose:
+      - "80"
+
+    environment:
+      # Application
+      APP_NAME: "${APP_NAME:-Datakita}"
+      APP_ENV: "${APP_ENV:-production}"
+      APP_DEBUG: "${APP_DEBUG:-false}"
+      APP_URL: "${APP_URL}"
+      APP_KEY: "${APP_KEY}"
+      APP_VERSION: "${APP_VERSION:-2.1.0}"
+
+      LOG_CHANNEL: "${LOG_CHANNEL:-stderr}"
+      LOG_LEVEL: "${LOG_LEVEL:-warning}"
+
+      # Database (separate Dokploy MySQL service)
+      DB_CONNECTION: "${DB_CONNECTION:-mysql}"
+      DB_HOST: "${DB_HOST}"
+      DB_PORT: "${DB_PORT:-3306}"
+      DB_DATABASE: "${DB_DATABASE}"
+      DB_USERNAME: "${DB_USERNAME}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+
+      # Sessions / cache / queue
+      CACHE_DRIVER: "${CACHE_DRIVER:-file}"
+      SESSION_DRIVER: "${SESSION_DRIVER:-file}"
+      SESSION_LIFETIME: "${SESSION_LIFETIME:-120}"
+      QUEUE_CONNECTION: "${QUEUE_CONNECTION:-sync}"
+      FILESYSTEM_DISK: "${FILESYSTEM_DISK:-local}"
+      BROADCAST_DRIVER: "${BROADCAST_DRIVER:-log}"
+
+      # Mail
+      MAIL_MAILER: "${MAIL_MAILER:-smtp}"
+      MAIL_HOST: "${MAIL_HOST:-}"
+      MAIL_PORT: "${MAIL_PORT:-587}"
+      MAIL_USERNAME: "${MAIL_USERNAME:-}"
+      MAIL_PASSWORD: "${MAIL_PASSWORD:-}"
+      MAIL_ENCRYPTION: "${MAIL_ENCRYPTION:-tls}"
+      MAIL_FROM_ADDRESS: "${MAIL_FROM_ADDRESS:-no-reply@example.com}"
+      MAIL_FROM_NAME: "${MAIL_FROM_NAME:-Datakita}"
+
+      # Dev gate must be FALSE in production.
+      DEV_AUTH_ENABLED: "${DEV_AUTH_ENABLED:-false}"
+
+      # Entrypoint controls — migrations run on every boot by default
+      # (idempotent + --isolated). Flip to "false" only as an emergency
+      # kill-switch when rolling back code without the matching schema.
+      RUN_MIGRATIONS: "${RUN_MIGRATIONS:-true}"
+
+    # NOTE: this volumes: block ONLY applies if you deploy as a Dokploy
+    # Compose service. For Application (Dockerfile) deploys — which is
+    # the default for this repo — configure these volumes in the
+    # Dokploy UI under "Advanced → Volumes" instead.
+    volumes:
+      # Persist user-uploaded files / generated PDFs across rebuilds.
+      - storage_app:/var/www/html/storage/app
+      # Persist Laravel logs (optional — skip if LOG_CHANNEL=stderr).
+      - storage_logs:/var/www/html/storage/logs
+
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+    # Dokploy attaches its own network; declaring it here is optional.
+    # networks:
+    #   - dokploy-network
+
+volumes:
+  storage_app:
+  storage_logs:
+
+# networks:
+#   dokploy-network:
+#     external: true

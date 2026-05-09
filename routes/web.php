@@ -397,6 +397,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/sibstr/{id}', [App\Http\Controllers\BPS\SibstrController::class, 'show'])->name('sibstr.show');
         Route::get('/sibstr/{id}/download', [App\Http\Controllers\BPS\SibstrController::class, 'download'])->name('sibstr.download');
 
+        // UB Survey Data Management (View Only)
+        Route::get('/ub', [App\Http\Controllers\BPS\UbController::class, 'index'])->name('ub.index');
+        Route::get('/ub/{id}', [App\Http\Controllers\BPS\UbController::class, 'show'])->name('ub.show');
+
         // BPS User Profile Route
         Route::get('/user/profile', [BPSUserController::class, 'profile'])->name('user.profile.show');
 

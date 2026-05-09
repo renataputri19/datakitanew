@@ -21,11 +21,11 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             // Monalisa structure (domains/aspects/indikators)
-            MonalisaStructureSeeder::class,
+            // MonalisaStructureSeeder::class,
             // Users (BPS + Kominfo sample users)
-            UserSeeder::class,
+            // UserSeeder::class,
             // Mitra user for SIBSTR results access
-            MitraUserSeeder::class,
+            // MitraUserSeeder::class,
             // NewsSeeder::class,
             // VideoSeeder::class,
             // AcademicInstitutionSeeder::class,
