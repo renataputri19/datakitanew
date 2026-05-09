@@ -4,11 +4,15 @@
 FROM node:20-alpine AS frontend
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-# Use npm install (not npm ci) because package-lock.json may have been
-# generated on a different OS (e.g. Windows) and won't list the Linux
-# Rollup native binary that Vite needs. See npm/cli#4828.
-RUN npm install --no-audit --no-fund
+# Intentionally NOT copying package-lock.json: when it was generated on
+# Windows it carries win32 resolutions for Rollup's optional native deps
+# and npm refuses to install the Linux musl binary on Alpine, breaking
+# `vite build`. We let npm install resolve fresh against the real platform.
+# See npm/cli#4828 and rollup/rollup#5341.
+COPY package.json ./
+RUN npm install --no-audit --no-fund --include=optional \
+    && (npm ls @rollup/rollup-linux-x64-musl >/dev/null 2>&1 \
+        || npm install --no-save --no-audit --no-fund @rollup/rollup-linux-x64-musl)
 
 COPY resources ./resources
 COPY public ./public
