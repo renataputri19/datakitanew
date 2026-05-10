@@ -69,6 +69,12 @@ services:
       # kill-switch when rolling back code without the matching schema.
       RUN_MIGRATIONS: "${RUN_MIGRATIONS:-true}"
 
+      # First-boot seed control. When the target DB has zero tables, the
+      # entrypoint imports docker/seed/datakita_seed.sql before migrations.
+      # Set to "false" to bring up an empty DB and let migrations build the
+      # schema from scratch (e.g. for a clean test environment).
+      SEED_DB: "${SEED_DB:-true}"
+
     # NOTE: this volumes: block ONLY applies if you deploy as a Dokploy
     # Compose service. For Application (Dockerfile) deploys — which is
     # the default for this repo — configure these volumes in the

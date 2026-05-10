@@ -19,7 +19,16 @@ COPY public ./public
 COPY vite.config.js ./
 COPY postcss.config.* tailwind.config.* ./
 
-RUN npm run build
+# Belt-and-suspenders: drop public/hot if the .dockerignore missed it.
+# laravel-vite-plugin treats public/hot as "dev server is running" and
+# generates http://[::1]:5173 URLs that 404 in production.
+RUN rm -f public/hot \
+    && npm run build \
+    && echo "=== build output ===" \
+    && ls -la public/build/ \
+    && ls -la public/build/assets/ \
+    && echo "=== manifest.json ===" \
+    && cat public/build/manifest.json
 
 
 # ---------- Stage 2: Install PHP dependencies ----------
@@ -95,6 +104,10 @@ COPY . /var/www/html
 # Bring in vendor + built frontend assets
 COPY --from=vendor   /app/vendor       /var/www/html/vendor
 COPY --from=frontend /app/public/build /var/www/html/public/build
+
+# Hard-delete public/hot — its presence flips laravel-vite-plugin into
+# dev-server mode and serves http://[::1]:5173 URLs that 404 in prod.
+RUN rm -f /var/www/html/public/hot
 
 # Generate optimized autoloader (composer scripts will run artisan package:discover)
 RUN composer dump-autoload --optimize --classmap-authoritative --no-dev \

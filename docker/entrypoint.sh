@@ -21,6 +21,13 @@ if [ -L public/storage ] || [ -e public/storage ]; then
     rm -rf public/storage
 fi
 
+# Drop public/hot — if present, laravel-vite-plugin emits dev-server URLs
+# (http://[::1]:5173) that don't exist in production and break all assets.
+if [ -e public/hot ]; then
+    echo "[entrypoint] removing public/hot (would force Vite into dev-server mode)"
+    rm -f public/hot
+fi
+
 # 2) Ensure storage dirs exist (volume mounts may start empty)
 mkdir -p \
     storage/app/public \
@@ -47,35 +54,76 @@ fi
 #    --force makes Laravel overwrite if anything sneaks in between.
 php artisan storage:link --no-interaction --force || true
 
-# 6) Wait for the database (separate Dokploy MySQL service).
-#    Track reachability so a missing/wrong DB_HOST doesn't kill boot.
-DB_REACHABLE=false
-if [ -n "${DB_HOST:-}" ]; then
-    echo "[entrypoint] waiting for database at ${DB_HOST}:${DB_PORT:-3306}..."
-    for i in $(seq 1 60); do
-        if mysqladmin ping -h"${DB_HOST}" -P"${DB_PORT:-3306}" -u"${DB_USERNAME:-root}" -p"${DB_PASSWORD:-}" --silent 2>/dev/null; then
-            echo "[entrypoint] database is reachable."
-            DB_REACHABLE=true
-            break
+# 6) First-boot seed: if the target DB has zero tables, import the bundled
+#    SQL dump (schema + data) before running migrations. The dump's own
+#    `migrations` table records every migration that was already applied
+#    when the dump was taken, so the migrate step that follows is a no-op
+#    on a freshly-seeded DB and only runs *newer* migrations on later boots.
+#
+#    We deliberately skip if ANY tables exist — that's the "DB not empty"
+#    contract the operator chose. To re-seed a populated DB, drop it
+#    manually first. SEED_DB=false is an emergency kill-switch.
+SEED_FILE=/var/www/html/docker/seed/datakita_seed.sql
+if [ "${SEED_DB:-true}" = "true" ] && [ -f "$SEED_FILE" ]; then
+    if [ -z "${DB_HOST:-}" ] || [ -z "${DB_DATABASE:-}" ] || [ -z "${DB_USERNAME:-}" ]; then
+        echo "[entrypoint] WARNING: DB_* env not fully set. Skipping seed import."
+    else
+        echo "[entrypoint] checking whether DB '$DB_DATABASE' is empty (will retry up to 6 times)..."
+        TABLE_COUNT=""
+        for attempt in 1 2 3 4 5 6; do
+            TABLE_COUNT=$(MYSQL_PWD="${DB_PASSWORD:-}" mysql \
+                -h "$DB_HOST" -P "${DB_PORT:-3306}" \
+                -u "$DB_USERNAME" \
+                -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_DATABASE'" \
+                2>/dev/null) && break
+            echo "[entrypoint] DB not reachable yet (attempt $attempt); retrying in 10s..."
+            sleep 10
+        done
+        if [ -z "$TABLE_COUNT" ]; then
+            echo "[entrypoint] WARNING: could not query DB after 6 attempts. Skipping seed."
+        elif [ "$TABLE_COUNT" = "0" ]; then
+            echo "[entrypoint] DB is empty — importing $SEED_FILE ($(wc -c <"$SEED_FILE") bytes)..."
+            if MYSQL_PWD="${DB_PASSWORD:-}" mysql \
+                -h "$DB_HOST" -P "${DB_PORT:-3306}" \
+                -u "$DB_USERNAME" \
+                "$DB_DATABASE" < "$SEED_FILE"; then
+                echo "[entrypoint] seed import OK"
+            else
+                echo "[entrypoint] WARNING: seed import failed. Migrations will create the schema from scratch."
+            fi
+        else
+            echo "[entrypoint] DB already has $TABLE_COUNT table(s) — skipping seed import."
         fi
-        sleep 2
-    done
-    if [ "$DB_REACHABLE" = "false" ]; then
-        echo "[entrypoint] WARNING: database unreachable after 120s. Skipping migrations."
-        echo "[entrypoint] Check DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD env vars in Dokploy."
     fi
 else
-    echo "[entrypoint] WARNING: DB_HOST not set. Skipping DB wait and migrations."
+    echo "[entrypoint] SEED_DB disabled or seed file missing — skipping seed import."
 fi
 
 # 7) Run migrations on every boot (idempotent — no-op when up to date).
-#    Skipped if DB is unreachable so the container still boots and can be
-#    debugged via Dokploy shell instead of crash-looping.
-if [ "${RUN_MIGRATIONS:-true}" = "true" ] && [ "$DB_REACHABLE" = "true" ]; then
-    echo "[entrypoint] running migrations..."
-    php artisan migrate --force --isolated --no-interaction || \
-        echo "[entrypoint] WARNING: migrations failed — continuing boot anyway."
-elif [ "${RUN_MIGRATIONS:-true}" != "true" ]; then
+#    We use Laravel's own DB connection (same as runtime) for retries,
+#    not mysqladmin — mysqladmin can fail for auth/plugin reasons even
+#    when PDO works fine, leaving tables uncreated.
+if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+    if [ -z "${DB_HOST:-}" ]; then
+        echo "[entrypoint] WARNING: DB_HOST not set. Skipping migrations."
+    else
+        echo "[entrypoint] running migrations (will retry up to 6 times if DB not ready)..."
+        MIGRATE_OK=false
+        for attempt in 1 2 3 4 5 6; do
+            if php artisan migrate --force --isolated --no-interaction; then
+                MIGRATE_OK=true
+                break
+            fi
+            echo "[entrypoint] migrate attempt $attempt failed; retrying in 10s..."
+            sleep 10
+        done
+        if [ "$MIGRATE_OK" = "false" ]; then
+            echo "[entrypoint] WARNING: all 6 migrate attempts failed."
+            echo "[entrypoint] Container will boot anyway so you can debug via Dokploy shell."
+            echo "[entrypoint] Run: php artisan migrate --force"
+        fi
+    fi
+else
     echo "[entrypoint] RUN_MIGRATIONS=false — skipping migrations."
 fi
 

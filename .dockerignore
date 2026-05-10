@@ -46,6 +46,12 @@ pdf_*.txt
 blok*.txt
 3b_*.txt
 
+# Raw SQL dumps at the project root are scratch — exclude them.
+# The one used as the container's first-boot seed lives under docker/seed/
+# and is allow-listed below.
+*.sql
+!docker/seed/*.sql
+
 # Local helper scripts not needed at runtime
 deploy.bat
 deploy.sh
