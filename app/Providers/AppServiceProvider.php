@@ -24,7 +24,23 @@ class AppServiceProvider extends ServiceProvider
         // when behind a TLS-terminating reverse proxy like Dokploy/Traefik.
         // Without this, Vite emits http:// URLs which the browser blocks
         // as mixed content.
-        if (env('FORCE_HTTPS', false) || $this->app->environment('production')) {
+        //
+        // Trigger on ANY of:
+        //  - APP_URL is https://...           (the deployment is served over TLS)
+        //  - FORCE_HTTPS=true                  (explicit operator override)
+        //  - APP_ENV=production                (legacy default)
+        //  - the current request came in over https (X-Forwarded-Proto via TrustProxies)
+        $appUrl = (string) config('app.url', '');
+        $isHttpsAppUrl = str_starts_with($appUrl, 'https://');
+        $requestIsSecure = $this->app->runningInConsole()
+            ? false
+            : (bool) request()->isSecure();
+
+        if ($isHttpsAppUrl
+            || env('FORCE_HTTPS', false)
+            || $this->app->environment('production')
+            || $requestIsSecure
+        ) {
             URL::forceScheme('https');
         }
     }
