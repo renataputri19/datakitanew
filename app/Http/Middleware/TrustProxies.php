@@ -10,9 +10,14 @@ class TrustProxies extends Middleware
     /**
      * The trusted proxies for this application.
      *
+     * '*' trusts X-Forwarded-* headers from any proxy. Required when running
+     * behind Dokploy/Traefik (or any reverse proxy that terminates HTTPS) so
+     * Laravel detects the original https:// scheme and asset() generates
+     * https:// URLs instead of mixed-content http:// ones.
+     *
      * @var array<int, string>|string|null
      */
-    protected $proxies;
+    protected $proxies = '*';
 
     /**
      * The headers that should be used to detect proxies.
