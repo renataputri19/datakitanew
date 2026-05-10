@@ -6,17 +6,19 @@ cd /var/www/html
 echo "[entrypoint] datakita container starting..."
 
 # 1) Self-heal: a previous failed boot, or a Windows-built image, may have
-#    left storage/app/public or public/storage as a broken / looping symlink.
-#    Laravel expects storage/app/public to be a real directory and
-#    public/storage to be the symlink (created by `artisan storage:link`).
-#    Anything else here breaks mkdir below with "Symbolic link loop".
+#    left storage/app/public or public/storage as a broken / looping symlink
+#    or stale file. Laravel expects storage/app/public to be a real directory
+#    and public/storage to be a symlink created by `artisan storage:link`.
+#    Anything else here breaks mkdir below with "Symbolic link loop" or
+#    causes storage:link to error with "link already exists".
 if [ -L storage/app/public ]; then
     echo "[entrypoint] storage/app/public is a symlink (should be a real dir) — removing"
     rm -f storage/app/public
 fi
-if [ -L public/storage ] && ! [ -e public/storage ]; then
-    echo "[entrypoint] public/storage is a broken symlink — removing"
-    rm -f public/storage
+# Always clear public/storage; storage:link below will recreate it cleanly.
+if [ -L public/storage ] || [ -e public/storage ]; then
+    echo "[entrypoint] clearing pre-existing public/storage (will be recreated by storage:link)"
+    rm -rf public/storage
 fi
 
 # 2) Ensure storage dirs exist (volume mounts may start empty)
@@ -41,34 +43,39 @@ if [ -z "${APP_KEY:-}" ] && ! grep -q '^APP_KEY=base64:' .env 2>/dev/null; then
     php artisan key:generate --show --no-interaction || true
 fi
 
-# 5) Public storage symlink (idempotent)
-if [ ! -L public/storage ]; then
-    php artisan storage:link --no-interaction || true
-fi
+# 5) Public storage symlink — always recreate (we cleared it in step 1).
+#    --force makes Laravel overwrite if anything sneaks in between.
+php artisan storage:link --no-interaction --force || true
 
-# 6) Wait for the database (separate Dokploy MySQL service)
+# 6) Wait for the database (separate Dokploy MySQL service).
+#    Track reachability so a missing/wrong DB_HOST doesn't kill boot.
+DB_REACHABLE=false
 if [ -n "${DB_HOST:-}" ]; then
     echo "[entrypoint] waiting for database at ${DB_HOST}:${DB_PORT:-3306}..."
     for i in $(seq 1 60); do
         if mysqladmin ping -h"${DB_HOST}" -P"${DB_PORT:-3306}" -u"${DB_USERNAME:-root}" -p"${DB_PASSWORD:-}" --silent 2>/dev/null; then
             echo "[entrypoint] database is reachable."
+            DB_REACHABLE=true
             break
         fi
         sleep 2
-        if [ "$i" = "60" ]; then
-            echo "[entrypoint] database did not become ready in 120s; continuing anyway."
-        fi
     done
+    if [ "$DB_REACHABLE" = "false" ]; then
+        echo "[entrypoint] WARNING: database unreachable after 120s. Skipping migrations."
+        echo "[entrypoint] Check DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD env vars in Dokploy."
+    fi
+else
+    echo "[entrypoint] WARNING: DB_HOST not set. Skipping DB wait and migrations."
 fi
 
 # 7) Run migrations on every boot (idempotent — no-op when up to date).
-#    --isolated takes a DB lock so concurrent containers can't race.
-#    Set RUN_MIGRATIONS=false to skip (e.g. emergency code rollback where
-#    you don't want the new schema applied).
-if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+#    Skipped if DB is unreachable so the container still boots and can be
+#    debugged via Dokploy shell instead of crash-looping.
+if [ "${RUN_MIGRATIONS:-true}" = "true" ] && [ "$DB_REACHABLE" = "true" ]; then
     echo "[entrypoint] running migrations..."
-    php artisan migrate --force --isolated --no-interaction
-else
+    php artisan migrate --force --isolated --no-interaction || \
+        echo "[entrypoint] WARNING: migrations failed — continuing boot anyway."
+elif [ "${RUN_MIGRATIONS:-true}" != "true" ]; then
     echo "[entrypoint] RUN_MIGRATIONS=false — skipping migrations."
 fi
 
