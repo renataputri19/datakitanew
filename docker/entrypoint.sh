@@ -5,7 +5,21 @@ cd /var/www/html
 
 echo "[entrypoint] datakita container starting..."
 
-# 1) Ensure storage dirs exist (volume mounts may start empty)
+# 1) Self-heal: a previous failed boot, or a Windows-built image, may have
+#    left storage/app/public or public/storage as a broken / looping symlink.
+#    Laravel expects storage/app/public to be a real directory and
+#    public/storage to be the symlink (created by `artisan storage:link`).
+#    Anything else here breaks mkdir below with "Symbolic link loop".
+if [ -L storage/app/public ]; then
+    echo "[entrypoint] storage/app/public is a symlink (should be a real dir) — removing"
+    rm -f storage/app/public
+fi
+if [ -L public/storage ] && ! [ -e public/storage ]; then
+    echo "[entrypoint] public/storage is a broken symlink — removing"
+    rm -f public/storage
+fi
+
+# 2) Ensure storage dirs exist (volume mounts may start empty)
 mkdir -p \
     storage/app/public \
     storage/framework/cache/data \
@@ -15,11 +29,11 @@ mkdir -p \
     storage/logs \
     bootstrap/cache
 
-# 2) Permissions for runtime-writable paths
+# 3) Permissions for runtime-writable paths
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
-# 3) Generate APP_KEY if missing (only happens when operator forgot to set it).
+# 4) Generate APP_KEY if missing (only happens when operator forgot to set it).
 #    In production you SHOULD set APP_KEY explicitly via Dokploy env vars.
 if [ -z "${APP_KEY:-}" ] && ! grep -q '^APP_KEY=base64:' .env 2>/dev/null; then
     echo "[entrypoint] WARNING: APP_KEY not set. Generating an ephemeral key for this boot."
@@ -27,12 +41,12 @@ if [ -z "${APP_KEY:-}" ] && ! grep -q '^APP_KEY=base64:' .env 2>/dev/null; then
     php artisan key:generate --show --no-interaction || true
 fi
 
-# 4) Public storage symlink (idempotent)
+# 5) Public storage symlink (idempotent)
 if [ ! -L public/storage ]; then
     php artisan storage:link --no-interaction || true
 fi
 
-# 5) Wait for the database (separate Dokploy MySQL service)
+# 6) Wait for the database (separate Dokploy MySQL service)
 if [ -n "${DB_HOST:-}" ]; then
     echo "[entrypoint] waiting for database at ${DB_HOST}:${DB_PORT:-3306}..."
     for i in $(seq 1 60); do
@@ -47,7 +61,7 @@ if [ -n "${DB_HOST:-}" ]; then
     done
 fi
 
-# 6) Run migrations on every boot (idempotent — no-op when up to date).
+# 7) Run migrations on every boot (idempotent — no-op when up to date).
 #    --isolated takes a DB lock so concurrent containers can't race.
 #    Set RUN_MIGRATIONS=false to skip (e.g. emergency code rollback where
 #    you don't want the new schema applied).
@@ -58,13 +72,13 @@ else
     echo "[entrypoint] RUN_MIGRATIONS=false — skipping migrations."
 fi
 
-# 7) Optimize caches for production (non-fatal if a config is missing)
+# 8) Optimize caches for production (non-fatal if a config is missing)
 echo "[entrypoint] caching config / routes / views..."
 php artisan config:cache  || true
 php artisan route:cache   || true
 php artisan view:cache    || true
 php artisan event:cache   || true
 
-# 8) Hand off to whatever CMD was passed (supervisord by default)
+# 9) Hand off to whatever CMD was passed (supervisord by default)
 echo "[entrypoint] handing off to: $*"
 exec "$@"
