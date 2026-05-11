@@ -180,15 +180,12 @@ class AuthController extends Controller
             'institution_address' => [
                 'nullable',
                 'string',
-                'min:10',
                 'max:500'
             ],
             'institution_phone' => [
                 'nullable',
                 'string',
-                'min:10',
-                'max:20',
-                'regex:/^[\d\-\+\(\)\s]+$/'
+                'max:20'
             ],
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
@@ -217,12 +214,9 @@ class AuthController extends Controller
             'institution_name.min' => 'Nama institusi harus minimal 2 karakter.',
             'institution_name.max' => 'Nama institusi tidak boleh lebih dari 255 karakter.',
 
-            'institution_address.min' => 'Alamat institusi harus minimal 10 karakter.',
             'institution_address.max' => 'Alamat institusi tidak boleh lebih dari 500 karakter.',
 
-            'institution_phone.min' => 'Nomor telepon harus minimal 10 karakter.',
             'institution_phone.max' => 'Nomor telepon tidak boleh lebih dari 20 karakter.',
-            'institution_phone.regex' => 'Format nomor telepon tidak valid. Gunakan angka, tanda hubung, tanda kurung, atau spasi.',
         ]);
 
         try {

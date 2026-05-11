@@ -68,6 +68,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSubmitButton() {
         const userType = userTypeSelect.value;
         const isInstitution = userType === 'instansi' || userType === 'akademisi';
+        const showsAddrPhone = userType === 'instansi';
+
+        // Address/phone are optional. Only the max length matters — matches backend.
+        const addrLenOk = institutionAddressInput.value.length <= 500;
+        const phoneLenOk = institutionPhoneInput.value.length <= 20;
 
         const checks = [
             nameInput.value.trim().length >= 2,
@@ -75,6 +80,8 @@ document.addEventListener('DOMContentLoaded', function() {
             userType !== '',
             !isInstitution || institutionTypeSelect.value !== '',
             !isInstitution || institutionNameInput.value.trim().length >= 2,
+            addrLenOk,
+            phoneLenOk,
             passwordInput.value.length >= 8,
             passwordInput.value === passwordConfirmInput.value && passwordConfirmInput.value !== ''
         ];
@@ -187,9 +194,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function validateInstitutionAddress() {
-        const val = institutionAddressInput.value.trim();
-        if (val !== '' && val.length < 10) {
-            showError('institutionAddress', 'Alamat institusi harus minimal 10 karakter');
+        // Optional field — only complain if it's longer than the backend allows.
+        if (institutionAddressInput.value.length > 500) {
+            showError('institutionAddress', 'Alamat tidak boleh lebih dari 500 karakter');
             return false;
         }
         clearValidation('institutionAddress');
@@ -197,13 +204,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function validateInstitutionPhone() {
-        const val = institutionPhoneInput.value.trim();
-        if (val !== '') {
-            const phoneRegex = /^[\+]?[0-9\s\-\(\)]{8,20}$/;
-            if (!phoneRegex.test(val)) {
-                showError('institutionPhone', 'Format nomor telepon tidak valid');
-                return false;
-            }
+        // Optional field — only complain if it's longer than the backend allows.
+        if (institutionPhoneInput.value.length > 20) {
+            showError('institutionPhone', 'Nomor telepon tidak boleh lebih dari 20 karakter');
+            return false;
         }
         clearValidation('institutionPhone');
         return true;
@@ -335,11 +339,11 @@ document.addEventListener('DOMContentLoaded', function() {
     institutionNameInput.addEventListener('input', function() { validateInstitutionName(); updateSubmitButton(); });
     institutionNameInput.addEventListener('blur', function() { validateInstitutionName(); updateSubmitButton(); });
 
-    institutionAddressInput.addEventListener('input', validateInstitutionAddress);
-    institutionAddressInput.addEventListener('blur', validateInstitutionAddress);
+    institutionAddressInput.addEventListener('input', function() { validateInstitutionAddress(); updateSubmitButton(); });
+    institutionAddressInput.addEventListener('blur', function() { validateInstitutionAddress(); updateSubmitButton(); });
 
-    institutionPhoneInput.addEventListener('input', validateInstitutionPhone);
-    institutionPhoneInput.addEventListener('blur', validateInstitutionPhone);
+    institutionPhoneInput.addEventListener('input', function() { validateInstitutionPhone(); updateSubmitButton(); });
+    institutionPhoneInput.addEventListener('blur', function() { validateInstitutionPhone(); updateSubmitButton(); });
 
     passwordInput.addEventListener('input', function() {
         validatePassword();

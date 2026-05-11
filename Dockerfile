@@ -113,6 +113,14 @@ RUN rm -f /var/www/html/public/hot
 RUN composer dump-autoload --optimize --classmap-authoritative --no-dev \
     && php artisan package:discover --ansi || true
 
+# Pre-compile Blade views and event discovery at build time. These don't
+# depend on runtime env vars, so baking them into the image lets the
+# entrypoint skip them — shaving ~5–10s off every cold start. config:cache
+# and route:cache must stay in entrypoint because they read DB_*, APP_URL,
+# etc. from the runtime environment.
+RUN php artisan view:cache  || true \
+    && php artisan event:cache || true
+
 # Storage dirs Laravel expects + permissions
 RUN mkdir -p storage/framework/{cache,sessions,testing,views} \
              storage/logs \

@@ -44,7 +44,7 @@ class CreateNewUser implements CreatesNewUsers
             'institution_type' => ['required_if:user_type,instansi', 'nullable', 'string', 'in:pemerintah,swasta,universitas,sekolah,institut,politeknik,lembaga_penelitian,perusahaan,organisasi,lainnya'],
             'institution_name' => ['required_if:user_type,instansi,akademisi', 'nullable', 'string', 'max:255'],
             'other_institution_name' => ['required_if:institution_name,Lainnya', 'nullable', 'string', 'max:255'],
-            'institution_address' => ['nullable', 'string', 'max:255'],
+            'institution_address' => ['nullable', 'string', 'max:500'],
             'institution_phone' => ['nullable', 'string', 'max:20'],
             'institution_website' => ['nullable', 'string', 'max:255', 'url'],
         ])->validate();

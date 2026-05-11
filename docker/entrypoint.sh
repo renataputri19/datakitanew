@@ -128,11 +128,13 @@ else
 fi
 
 # 8) Optimize caches for production (non-fatal if a config is missing)
-echo "[entrypoint] caching config / routes / views..."
+# view:cache and event:cache were pre-built into the image at build time
+# (see Dockerfile) — they don't depend on env vars, so no need to redo on boot.
+# config:cache and route:cache MUST stay here: they snapshot runtime env vars
+# (DB_*, APP_URL, etc.) that aren't available at image build time.
+echo "[entrypoint] caching config / routes..."
 php artisan config:cache  || true
 php artisan route:cache   || true
-php artisan view:cache    || true
-php artisan event:cache   || true
 
 # 9) Hand off to whatever CMD was passed (supervisord by default)
 echo "[entrypoint] handing off to: $*"
