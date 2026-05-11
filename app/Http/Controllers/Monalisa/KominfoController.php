@@ -149,45 +149,71 @@ class KominfoController extends Controller
             'description' => 'nullable|string|max:500',
         ]);
 
-        $assessment = MonalisaAssessment::findOrFail($assessmentId);
+        try {
+            $assessment = MonalisaAssessment::findOrFail($assessmentId);
 
-        // Check if assessment can be edited (not verified)
-        if (!$assessment->canBeEditedByKominfo()) {
+            // Check if assessment can be edited (not verified)
+            if (!$assessment->canBeEditedByKominfo()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot upload document for verified assessment.',
+                ], 403);
+            }
+
+            $file = $request->file('file');
+            $originalName = $file->getClientOriginalName();
+            $extension = $file->getClientOriginalExtension();
+
+            // Create filename: [indikator_code]_[timestamp]_[original_name]
+            $indikatorCode = $assessment->indikator
+                ? str_replace('.', '_', $assessment->indikator->indikator_code)
+                : 'unknown';
+            $timestamp = now()->format('YmdHis');
+            $filename = $indikatorCode . '_' . $timestamp . '_' . Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '.' . $extension;
+
+            // Store in private storage
+            $path = $file->storeAs('monalisa-documents', $filename, 'local');
+
+            if (!$path) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan file ke server. Periksa konfigurasi storage.',
+                ], 500);
+            }
+
+            // Create document record
+            $document = MonalisaDocument::create([
+                'assessment_id' => $assessment->id,
+                'uploaded_by' => auth()->id(),
+                'original_filename' => $originalName,
+                'stored_filename' => $filename,
+                'file_path' => $path,
+                'file_type' => $extension,
+                'file_size' => $file->getSize(),
+                'description' => $request->description,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Document uploaded successfully',
+                'document' => $document,
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot upload document for verified assessment.',
-            ], 403);
+                'message' => 'Assessment tidak ditemukan.',
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('uploadDocument error: ' . $e->getMessage(), [
+                'assessment_id' => $assessmentId,
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengupload dokumen: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $file = $request->file('file');
-        $originalName = $file->getClientOriginalName();
-        $extension = $file->getClientOriginalExtension();
-
-        // Create filename: [indikator_code]_[timestamp]_[original_name]
-        $indikatorCode = str_replace('.', '_', $assessment->indikator->indikator_code);
-        $timestamp = now()->format('YmdHis');
-        $filename = $indikatorCode . '_' . $timestamp . '_' . Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '.' . $extension;
-
-        // Store in private storage
-        $path = $file->storeAs('monalisa-documents', $filename, 'local');
-
-        // Create document record
-        $document = MonalisaDocument::create([
-            'assessment_id' => $assessment->id,
-            'uploaded_by' => auth()->id(),
-            'original_filename' => $originalName,
-            'stored_filename' => $filename,
-            'file_path' => $path,
-            'file_type' => $extension,
-            'file_size' => $file->getSize(),
-            'description' => $request->description,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Document uploaded successfully',
-            'document' => $document,
-        ]);
     }
 
     /**
@@ -200,48 +226,74 @@ class KominfoController extends Controller
             'description' => 'nullable|string|max:500',
         ]);
 
-        $document = MonalisaDocument::findOrFail($documentId);
+        try {
+            $document = MonalisaDocument::findOrFail($documentId);
 
-        // Check if assessment can be edited (not verified)
-        if (!$document->assessment->canBeEditedByKominfo()) {
+            // Check if assessment can be edited (not verified)
+            if (!$document->assessment->canBeEditedByKominfo()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot replace document for verified assessment.',
+                ], 403);
+            }
+
+            $file = $request->file('file');
+            $originalName = $file->getClientOriginalName();
+            $extension = $file->getClientOriginalExtension();
+
+            // Create filename: [indikator_code]_[timestamp]_[original_name]
+            $indikatorCode = $document->assessment->indikator
+                ? str_replace('.', '_', $document->assessment->indikator->indikator_code)
+                : 'unknown';
+            $timestamp = now()->format('YmdHis');
+            $filename = $indikatorCode . '_' . $timestamp . '_' . Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '.' . $extension;
+
+            // Delete old file from storage
+            if (Storage::disk('local')->exists($document->file_path)) {
+                Storage::disk('local')->delete($document->file_path);
+            }
+
+            // Store new file in private storage
+            $path = $file->storeAs('monalisa-documents', $filename, 'local');
+
+            if (!$path) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan file ke server. Periksa konfigurasi storage.',
+                ], 500);
+            }
+
+            // Update document record
+            $document->update([
+                'original_filename' => $originalName,
+                'stored_filename' => $filename,
+                'file_path' => $path,
+                'file_type' => $extension,
+                'file_size' => $file->getSize(),
+                'description' => $request->description ?? $document->description,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Document replaced successfully',
+                'document' => $document->fresh(),
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot replace document for verified assessment.',
-            ], 403);
+                'message' => 'Dokumen tidak ditemukan.',
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('replaceDocument error: ' . $e->getMessage(), [
+                'document_id' => $documentId,
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengganti dokumen: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $file = $request->file('file');
-        $originalName = $file->getClientOriginalName();
-        $extension = $file->getClientOriginalExtension();
-
-        // Create filename: [indikator_code]_[timestamp]_[original_name]
-        $indikatorCode = str_replace('.', '_', $document->assessment->indikator->indikator_code);
-        $timestamp = now()->format('YmdHis');
-        $filename = $indikatorCode . '_' . $timestamp . '_' . Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '.' . $extension;
-
-        // Delete old file from storage
-        if (Storage::disk('local')->exists($document->file_path)) {
-            Storage::disk('local')->delete($document->file_path);
-        }
-
-        // Store new file in private storage
-        $path = $file->storeAs('monalisa-documents', $filename, 'local');
-
-        // Update document record
-        $document->update([
-            'original_filename' => $originalName,
-            'stored_filename' => $filename,
-            'file_path' => $path,
-            'file_type' => $extension,
-            'file_size' => $file->getSize(),
-            'description' => $request->description ?? $document->description,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Document replaced successfully',
-            'document' => $document->fresh(),
-        ]);
     }
 
     /**
@@ -249,27 +301,44 @@ class KominfoController extends Controller
      */
     public function deleteDocument($documentId)
     {
-        $document = MonalisaDocument::findOrFail($documentId);
+        try {
+            $document = MonalisaDocument::findOrFail($documentId);
 
-        // Check if assessment can be edited (not verified)
-        if (!$document->assessment->canBeEditedByKominfo()) {
+            // Check if assessment can be edited (not verified)
+            if (!$document->assessment->canBeEditedByKominfo()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete document for verified assessment.',
+                ], 403);
+            }
+
+            // Delete file from storage
+            if (Storage::disk('local')->exists($document->file_path)) {
+                Storage::disk('local')->delete($document->file_path);
+            }
+
+            $document->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Document deleted successfully',
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete document for verified assessment.',
-            ], 403);
+                'message' => 'Dokumen tidak ditemukan.',
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('deleteDocument error: ' . $e->getMessage(), [
+                'document_id' => $documentId,
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus dokumen: ' . $e->getMessage(),
+            ], 500);
         }
-
-        // Delete file from storage
-        if (Storage::disk('local')->exists($document->file_path)) {
-            Storage::disk('local')->delete($document->file_path);
-        }
-
-        $document->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Document deleted successfully',
-        ]);
     }
 
     /**

@@ -159,9 +159,9 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           Unduh PDF Formulir SE2026-L.UB
         </a>
-        <form method="POST" action="{{ route('survey.ub.start-edit') }}" onsubmit="return confirm('Anda akan membuka kembali survei untuk diedit ulang secara menyeluruh dari Blok I-A. Data yang telah diisi tetap tersimpan. Lanjutkan?')">
+        <form id="form-start-edit" method="POST" action="{{ route('survey.ub.start-edit') }}">
           @csrf
-          <button type="submit"
+          <button type="button" onclick="document.getElementById('modal-edit-confirm').classList.remove('hidden')"
                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-md transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             Edit Survei
@@ -177,6 +177,7 @@
 @if(!$isCompleted)
 @php
   $nextBlock = collect($blocks)->first(fn($b) => !$b['done']);
+  $allBlocksDone = $completedCount === $totalBlocks;
 @endphp
 @if($nextBlock)
 <div class="mt-6">
@@ -189,7 +190,60 @@
   <p class="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">Melanjutkan dari {{ $nextBlock['label'] }} — {{ $nextBlock['sub'] }}</p>
   @endif
 </div>
+@elseif($allBlocksDone)
+{{-- All blocks marked done but finish form not yet submitted — guide user to Blok III to finalize --}}
+<div class="mt-6 bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 rounded-2xl px-6 py-5">
+  <div class="flex items-start gap-4">
+    <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+      <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+    </div>
+    <div class="flex-1 min-w-0">
+      <h3 class="text-sm font-bold text-amber-800 dark:text-amber-300">Hampir selesai! Satu langkah lagi.</h3>
+      <p class="text-xs text-amber-700 dark:text-amber-400 mt-1">
+        Semua blok sudah terisi. Buka <strong>Blok III</strong> dan klik tombol <strong>"Simpan dan Selesaikan"</strong> untuk menyelesaikan survei dan mengaktifkan unduh PDF.
+      </p>
+      <div class="mt-3">
+        <a href="{{ route('survey.ub.blok3') }}"
+           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-md transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          Selesaikan Survei (Blok III)
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
 @endif
 @endif
+
+{{-- Edit Confirm Modal --}}
+<div id="modal-edit-confirm" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  {{-- Backdrop --}}
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="document.getElementById('modal-edit-confirm').classList.add('hidden')"></div>
+  {{-- Card --}}
+  <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+      </div>
+      <h3 class="text-base font-bold text-gray-900 dark:text-gray-100">Edit Survei?</h3>
+    </div>
+    <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+      Anda akan membuka kembali survei untuk diedit ulang secara menyeluruh dari <strong>Blok I-A</strong>.
+      Data yang telah diisi <strong>tetap tersimpan</strong> dan dapat diubah sesuai kebutuhan.
+    </p>
+    <div class="flex gap-3 justify-end mt-1">
+      <button type="button"
+              onclick="document.getElementById('modal-edit-confirm').classList.add('hidden')"
+              class="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+        Batal
+      </button>
+      <button type="button"
+              onclick="document.getElementById('form-start-edit').submit()"
+              class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold shadow-md transition">
+        Ya, Edit Survei
+      </button>
+    </div>
+  </div>
+</div>
 
 @endsection
