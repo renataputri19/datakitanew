@@ -87,10 +87,23 @@ services:
 
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1/healthz"]
-      interval: 30s
+      interval: 10s
       timeout: 5s
-      retries: 3
-      start_period: 30s
+      retries: 6
+      start_period: 90s
+
+    # Tell Traefik to probe /healthz before adding this container to the pool.
+    # Without this, Traefik routes traffic the moment Docker marks the container
+    # "running" — before entrypoint.sh finishes migrations and nginx starts —
+    # causing the brief 502 on every redeploy.
+    labels:
+      - "traefik.http.services.app.loadbalancer.healthcheck.path=/healthz"
+      - "traefik.http.services.app.loadbalancer.healthcheck.interval=5s"
+      - "traefik.http.services.app.loadbalancer.healthcheck.timeout=3s"
+
+    # Give the old container time to drain in-flight requests before it is
+    # killed (SIGTERM → SIGKILL window).
+    stop_grace_period: 30s
 
     # Dokploy attaches its own network; declaring it here is optional.
     # networks:
