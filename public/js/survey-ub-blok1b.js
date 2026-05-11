@@ -56,13 +56,14 @@ class SurveyUbBlok1bManager {
         // Clear text/textarea errors on input
         [
             'kegiatan_utama', 'produk_utama', 'input_produksi', 'proses_produksi',
-            'kode_kbli', 'kategori_lapangan_usaha',
+            'kode_kbli',
             'jumlah_cabang', 'kp_nama', 'kp_alamat', 'kp_email',
             'kp_negara', 'kp_provinsi', 'kp_kabkota'
         ].forEach(name => {
             const el = this.form.querySelector(`[name="${name}"]`);
             if (el) {
-                el.addEventListener('input', () => {
+                const evtType = el.tagName === 'SELECT' ? 'change' : 'input';
+                el.addEventListener(evtType, () => {
                     el.classList.remove('error');
                     this.clearFieldError(name);
                 });
@@ -259,7 +260,19 @@ class SurveyUbBlok1bManager {
         if (!checkRadio('layanan_makan_minum'))     isValid = false;
         if (!checkText('produk_utama'))             isValid = false;
         if (!checkText('kode_kbli'))               isValid = false;
-        if (!checkText('kategori_lapangan_usaha')) isValid = false;
+        // kategori_lapangan_usaha uses the custom KLU dropdown — validate via hidden select
+        {
+            const kluSel = this.form.querySelector('[name="kategori_lapangan_usaha"]');
+            const kluBtn = document.getElementById('klu-btn');
+            if (!kluSel || !kluSel.value.trim()) {
+                if (kluBtn) kluBtn.classList.add('error');
+                this.showFieldError('kategori_lapangan_usaha', 'Kategori Lapangan Usaha wajib dipilih');
+                isValid = false;
+            } else {
+                if (kluBtn) kluBtn.classList.remove('error');
+                this.clearFieldError('kategori_lapangan_usaha');
+            }
+        }
         if (!checkRadio('jaringan_usaha'))          isValid = false;
 
         // Q12-Q14 not required for unit pembantu/penunjang (code 6) — cards are hidden

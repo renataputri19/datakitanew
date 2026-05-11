@@ -17,6 +17,24 @@
 .ub-input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15);}
 .dark .ub-input{background:#111827;border-color:#4b5563;color:#f9fafb;}
 .ub-input.error{border-color:#ef4444;}
+.klu-wrap{position:relative;width:100%;}
+.klu-btn{display:flex;align-items:center;justify-content:space-between;gap:.5rem;width:100%;text-align:left;border:1px solid #d1d5db;border-radius:.625rem;padding:.5rem .85rem;font-size:.875rem;color:#111827;background:#fff;cursor:pointer;transition:border-color .15s,box-shadow .15s;min-height:2.25rem;}
+.klu-btn:focus,.klu-btn.open{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15);}
+.klu-btn.error{border-color:#ef4444 !important;}
+.dark .klu-btn{background:#111827;border-color:#4b5563;color:#f9fafb;}
+.klu-btn>svg{flex-shrink:0;transition:transform .2s;color:#6b7280;}
+.klu-btn.open>svg{transform:rotate(180deg);}
+.klu-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;box-shadow:0 6px 20px rgba(0,0,0,.1);z-index:200;max-height:232px;overflow-y:auto;padding:.3rem;}
+.dark .klu-list{background:#1f2937;border-color:#374151;}
+.klu-item{display:flex;align-items:center;gap:.55rem;padding:.4rem .65rem;border-radius:.5rem;cursor:pointer;font-size:.8rem;color:#374151;transition:background .1s;}
+.dark .klu-item{color:#d1d5db;}
+.klu-item:hover{background:#f3f4f6;}
+.dark .klu-item:hover{background:#374151;}
+.klu-item.klu-active{background:#eff6ff;color:#1d4ed8;}
+.dark .klu-item.klu-active{background:#1e3a5f;color:#93c5fd;}
+.klu-code{display:inline-flex;align-items:center;justify-content:center;min-width:1.35rem;height:1.35rem;padding:0 .25rem;background:#3b82f6;color:#fff;border-radius:.3rem;font-size:.65rem;font-weight:700;flex-shrink:0;}
+.klu-item.klu-active .klu-code{background:#1d4ed8;}
+.klu-empty{color:#9ca3af;}
 .ub-hint{font-size:.73rem;color:#6b7280;margin-top:.3rem;line-height:1.4;}
 .dark .ub-hint{color:#9ca3af;}
 .ub-radio-group{display:flex;flex-wrap:wrap;gap:.5rem .75rem;}
@@ -402,8 +420,63 @@
     </div>
     <div>
       <label class="ub-label">h. Kategori Lapangan Usaha <span class="ub-required">*</span></label>
-      <input name="kategori_lapangan_usaha" class="ub-input" maxlength="3" value="{{ old('kategori_lapangan_usaha',$response->kategori_lapangan_usaha) }}" placeholder="Contoh: A, B, C …">
-      <p class="ub-hint">Kode huruf kategori KBLI, maks. 3 karakter. Contoh: A (Pertanian), C (Industri), G (Perdagangan).</p>
+      @php
+      $kbliKategori = [
+        'A' => 'Pertanian, Kehutanan, dan Perikanan',
+        'B' => 'Pertambangan dan Penggalian',
+        'C' => 'Industri',
+        'D' => 'Penyediaan Listrik, Gas, Uap/Air Panas, dan Udara Dingin',
+        'E' => 'Penyediaan Air; Pengelolaan Air Limbah, Penanganan Limbah, dan Remediasi',
+        'F' => 'Konstruksi',
+        'G' => 'Perdagangan Besar dan Eceran',
+        'H' => 'Transportasi dan Penyimpanan',
+        'I' => 'Aktivitas Penyediaan Akomodasi dan Makan Minum',
+        'J' => 'Aktivitas Penerbitan, Penyiaran, serta Produksi dan Distribusi Konten',
+        'K' => 'Aktivitas Telekomunikasi, Pemrograman Komputer, Konsultansi, Infrastruktur Komputasi, dan Jasa Informasi Lainnya',
+        'L' => 'Aktivitas Keuangan dan Asuransi',
+        'M' => 'Aktivitas Real Estat',
+        'N' => 'Aktivitas Profesional, Ilmiah, dan Teknis',
+        'O' => 'Aktivitas Administratif dan Penunjang Usaha',
+        'P' => 'Administrasi Pemerintahan dan Pertahanan, Serta Jaminan Sosial Wajib',
+        'Q' => 'Pendidikan',
+        'R' => 'Aktivitas Kesehatan Manusia dan Aktivitas Sosial',
+        'S' => 'Kesenian, Olahraga, dan Rekreasi',
+        'T' => 'Aktivitas Jasa Lainnya',
+        'U' => 'Aktivitas Rumah Tangga sebagai Pemberi Kerja dan Aktivitas Produksi Barang dan Jasa oleh Rumah Tangga untuk Keperluan Sendiri yang Tidak Terdiferensiasi',
+        'V' => 'Aktivitas Badan Internasional dan Badan Ekstra Internasional Lainnya',
+      ];
+      $savedKlu = old('kategori_lapangan_usaha', $response->kategori_lapangan_usaha);
+      @endphp
+      <select name="kategori_lapangan_usaha" id="klu-select" style="display:none;" aria-hidden="true" tabindex="-1">
+        <option value=""></option>
+        @foreach($kbliKategori as $kode => $nama)
+        <option value="{{ $kode }}" {{ $savedKlu==$kode?'selected':'' }}>{{ $kode }}</option>
+        @endforeach
+      </select>
+      <div class="klu-wrap" id="klu-wrap">
+        <button type="button" class="klu-btn" id="klu-btn" aria-haspopup="listbox" aria-expanded="false">
+          <span id="klu-display">
+            @if($savedKlu && isset($kbliKategori[$savedKlu]))
+              <span class="klu-code">{{ $savedKlu }}</span>&nbsp;<span>{{ $kbliKategori[$savedKlu] }}</span>
+            @else
+              <span class="klu-empty">— Pilih Kategori —</span>
+            @endif
+          </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="klu-list" id="klu-list" role="listbox" style="display:none;">
+          <div class="klu-item" data-val="" role="option">
+            <span class="klu-empty">— Pilih Kategori —</span>
+          </div>
+          @foreach($kbliKategori as $kode => $nama)
+          <div class="klu-item{{ $savedKlu==$kode?' klu-active':'' }}" data-val="{{ $kode }}" data-code="{{ $kode }}" data-name="{{ $nama }}" role="option" aria-selected="{{ $savedKlu==$kode?'true':'false' }}">
+            <span class="klu-code">{{ $kode }}</span>
+            <span>{{ $nama }}</span>
+          </div>
+          @endforeach
+        </div>
+      </div>
+      <p class="ub-hint">Pilih kategori KBLI sesuai bidang usaha utama perusahaan.</p>
       <div class="ub-err-msg" data-field="kategori_lapangan_usaha"></div>
     </div>
   </div>
@@ -790,6 +863,38 @@ window.surveyRoutes = {
   inetYa && inetYa.addEventListener('change', toggleInet);
   inetTidak && inetTidak.addEventListener('change', toggleInet);
   toggleInet();
+
+  // ── Custom KLU dropdown ─────────────────────────────────────────────────────
+  (function() {
+    var btn  = document.getElementById('klu-btn');
+    var list = document.getElementById('klu-list');
+    var sel  = document.getElementById('klu-select');
+    var disp = document.getElementById('klu-display');
+    if (!btn) return;
+    function openList()  { list.style.display='block'; btn.classList.add('open'); btn.setAttribute('aria-expanded','true'); }
+    function closeList() { list.style.display='none';  btn.classList.remove('open'); btn.setAttribute('aria-expanded','false'); }
+    btn.addEventListener('click', function(e) { e.stopPropagation(); list.style.display==='none' ? openList() : closeList(); });
+    list.querySelectorAll('.klu-item').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var val  = this.dataset.val  || '';
+        var code = this.dataset.code || '';
+        var name = this.dataset.name || '';
+        sel.value = val;
+        disp.innerHTML = val
+          ? '<span class="klu-code">'+code+'</span>&nbsp;<span>'+name+'</span>'
+          : '<span class="klu-empty">— Pilih Kategori —</span>';
+        list.querySelectorAll('.klu-item').forEach(function(i) { i.classList.remove('klu-active'); i.setAttribute('aria-selected','false'); });
+        this.classList.add('klu-active');
+        this.setAttribute('aria-selected','true');
+        btn.classList.remove('error');
+        var errEl = document.querySelector('.ub-err-msg[data-field="kategori_lapangan_usaha"]');
+        if (errEl) errEl.textContent = '';
+        closeList();
+      });
+    });
+    document.addEventListener('click', function(e) { if (!document.getElementById('klu-wrap').contains(e.target)) closeList(); });
+    document.addEventListener('keydown', function(e) { if (e.key==='Escape') closeList(); });
+  })();
 })();
 </script>
 <script src="{{ asset('js/survey.js') }}"></script>

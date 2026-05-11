@@ -27,6 +27,7 @@
 .dark .ub-radio-label{border-color:#4b5563;color:#d1d5db;}
 .dark .ub-radio-label:has(input:checked){border-color:#3b82f6;background:#1e3a5f;color:#93c5fd;}
 .ub-radio-label input{width:.875rem;height:.875rem;accent-color:#3b82f6;}
+.aset-range-disabled{opacity:.4;filter:grayscale(1);pointer-events:none;transition:opacity .2s,filter .2s;}
 .ub-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
 .ub-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
 @media(max-width:640px){.ub-grid-2,.ub-grid-3{grid-template-columns:1fr;}}
@@ -167,7 +168,7 @@
       <label class="ub-label">{{ $label }} <span class="ub-required">*</span></label>
       <div class="rp-field" style="max-width:340px;">
         <span class="rp-prefix">Rp</span>
-        <input name="{{ $field }}" id="{{ $field }}" type="text" inputmode="decimal" class="ub-input expend-input" value="{{ old($field, $response->$field ? number_format($response->$field, 0, ',', '.') : '') }}" placeholder="0">
+        <input name="{{ $field }}" id="{{ $field }}" type="text" inputmode="decimal" class="ub-input expend-input" value="{{ old($field, $response->$field !== null ? number_format($response->$field, 0, ',', '.') : '') }}" placeholder="0">
       </div>
       <div class="ub-err-msg" data-field="{{ $field }}"></div>
     </div>
@@ -309,7 +310,7 @@
       <label class="ub-label">a. Nilai produksi/penjualan/pendapatan barang dan jasa <span class="ub-required">*</span></label>
       <div class="rp-field" style="max-width:340px;">
         <span class="rp-prefix">Rp</span>
-        <input name="nilai_produksi_barang_jasa" id="nilaiProduksi" type="text" inputmode="decimal" class="ub-input income-input" value="{{ old('nilai_produksi_barang_jasa', $response->nilai_produksi_barang_jasa ? number_format($response->nilai_produksi_barang_jasa, 0, ',', '.') : '') }}" placeholder="0">
+        <input name="nilai_produksi_barang_jasa" id="nilaiProduksi" type="text" inputmode="decimal" class="ub-input income-input" value="{{ old('nilai_produksi_barang_jasa', $response->nilai_produksi_barang_jasa !== null ? number_format($response->nilai_produksi_barang_jasa, 0, ',', '.') : '') }}" placeholder="0">
       </div>
       <div class="ub-err-msg" data-field="nilai_produksi_barang_jasa"></div>
     </div>
@@ -317,7 +318,7 @@
       <label class="ub-label">b. Pendapatan lainnya yang dihasilkan</label>
       <div class="rp-field" style="max-width:340px;">
         <span class="rp-prefix">Rp</span>
-        <input name="pendapatan_lainnya" id="pendapatanLain" type="text" inputmode="decimal" class="ub-input income-input" value="{{ old('pendapatan_lainnya', $response->pendapatan_lainnya ? number_format($response->pendapatan_lainnya, 0, ',', '.') : '') }}" placeholder="0">
+        <input name="pendapatan_lainnya" id="pendapatanLain" type="text" inputmode="decimal" class="ub-input income-input" value="{{ old('pendapatan_lainnya', $response->pendapatan_lainnya !== null ? number_format($response->pendapatan_lainnya, 0, ',', '.') : '') }}" placeholder="0">
       </div>
     </div>
     <div class="total-row flex items-center justify-between" style="max-width:340px;">
@@ -423,7 +424,7 @@
       <label class="ub-label">a. Nilai aset tanah dan bangunan <span class="ub-required">*</span></label>
       <div class="rp-field" style="max-width:340px;">
         <span class="rp-prefix">Rp</span>
-        <input name="nilai_aset_tanah_bangunan" id="asetTanah" type="text" inputmode="decimal" class="ub-input aset-input" value="{{ old('nilai_aset_tanah_bangunan', $response->nilai_aset_tanah_bangunan ? number_format($response->nilai_aset_tanah_bangunan, 0, ',', '.') : '') }}" placeholder="0">
+        <input name="nilai_aset_tanah_bangunan" id="asetTanah" type="text" inputmode="decimal" class="ub-input aset-input" value="{{ old('nilai_aset_tanah_bangunan', $response->nilai_aset_tanah_bangunan !== null ? number_format($response->nilai_aset_tanah_bangunan, 0, ',', '.') : '') }}" placeholder="0">
       </div>
       <div class="ub-err-msg" data-field="nilai_aset_tanah_bangunan"></div>
     </div>
@@ -431,7 +432,7 @@
       <label class="ub-label">b. Nilai aset selain tanah dan bangunan <span class="ub-required">*</span></label>
       <div class="rp-field" style="max-width:340px;">
         <span class="rp-prefix">Rp</span>
-        <input name="nilai_aset_lainnya" id="asetLain" type="text" inputmode="decimal" class="ub-input aset-input" value="{{ old('nilai_aset_lainnya', $response->nilai_aset_lainnya ? number_format($response->nilai_aset_lainnya, 0, ',', '.') : '') }}" placeholder="0">
+        <input name="nilai_aset_lainnya" id="asetLain" type="text" inputmode="decimal" class="ub-input aset-input" value="{{ old('nilai_aset_lainnya', $response->nilai_aset_lainnya !== null ? number_format($response->nilai_aset_lainnya, 0, ',', '.') : '') }}" placeholder="0">
       </div>
       <div class="ub-err-msg" data-field="nilai_aset_lainnya"></div>
     </div>
@@ -439,7 +440,7 @@
       <span>c. Nilai total aset (a+b)</span>
       <span id="totalAset">Rp 0</span>
     </div>
-    <div>
+    <div id="rangeAsetWrap">
       <label class="ub-label">c1. Jika tidak dapat mengisikan nilai nominal, pilih nilai total aset dalam rentang:</label>
       <div class="ub-radio-group mt-1">
         @foreach([1=>'s.d. Rp 500 juta',2=>'Lebih dari Rp 500 juta s.d. Rp 1 miliar',3=>'Lebih dari Rp 1 miliar s.d. Rp 5 miliar',4=>'Lebih dari Rp 5 miliar s.d. Rp 10 miliar',5=>'Lebih dari Rp 10 miliar'] as $val=>$lbl)
@@ -514,12 +515,14 @@
   // Auto-format currency inputs
   function setupCurrencyInput(el){
     el.addEventListener('blur', function(){
-      const n = parseRp(this.value);
-      this.value = n > 0 ? n.toLocaleString('id-ID') : '';
+      const raw = (this.value || '').trim();
+      if (raw === '') return;
+      this.value = parseRp(raw).toLocaleString('id-ID');
     });
     el.addEventListener('focus', function(){
-      const n = parseRp(this.value);
-      this.value = n > 0 ? String(n) : '';
+      const raw = (this.value || '').trim();
+      if (raw === '') return;
+      this.value = String(parseRp(raw));
     });
   }
   document.querySelectorAll('.expend-input,.income-input,.aset-input').forEach(setupCurrencyInput);
@@ -551,11 +554,23 @@
   document.querySelectorAll('.income-input').forEach(el => el.addEventListener('input', updatePendapatan));
   updatePendapatan();
 
-  // Aset total
+  // Aset total + c1 conditional state
+  function updateRangeAsetState(hasNominal){
+    const wrap   = document.getElementById('rangeAsetWrap');
+    const radios = document.querySelectorAll('input[name="range_total_aset"]');
+    if(hasNominal){
+      wrap.classList.add('aset-range-disabled');
+      radios.forEach(function(r){ r.disabled = true; r.checked = false; });
+    } else {
+      wrap.classList.remove('aset-range-disabled');
+      radios.forEach(function(r){ r.disabled = false; });
+    }
+  }
   function updateAset(){
     const a = parseRp(document.getElementById('asetTanah')?.value);
     const b = parseRp(document.getElementById('asetLain')?.value);
     document.getElementById('totalAset').textContent = formatRp(a + b);
+    updateRangeAsetState(a > 0 || b > 0);
   }
   document.querySelectorAll('.aset-input').forEach(el => el.addEventListener('input', updateAset));
   updateAset();

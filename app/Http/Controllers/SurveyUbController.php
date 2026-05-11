@@ -627,9 +627,10 @@ class SurveyUbController extends Controller
             // Q23
             'nilai_produksi_barang_jasa'   => 'required|numeric|min:0',
             'persen_pendapatan_online'     => 'required|numeric|min:0|max:100',
-            // Q24
-            'nilai_aset_tanah_bangunan'    => 'required|numeric|min:0',
-            'nilai_aset_lainnya'           => 'required|numeric|min:0',
+            // Q24 — nominal values are required unless the user chose a range instead
+            'nilai_aset_tanah_bangunan'    => 'required_without:range_total_aset|nullable|numeric|min:0',
+            'nilai_aset_lainnya'           => 'required_without:range_total_aset|nullable|numeric|min:0',
+            'range_total_aset'             => 'nullable|integer|between:1,5',
             'luas_tanah'                   => 'required|numeric|min:0',
             // Q25
             'modal_pribadi'                => 'required|numeric|min:0|max:100',
@@ -650,8 +651,8 @@ class SurveyUbController extends Controller
             'pengeluaran_nonoperasional.required'  => 'Pengeluaran non-operasional wajib diisi (isi 0 jika tidak ada).',
             'nilai_produksi_barang_jasa.required'  => 'Nilai produksi/pendapatan usaha wajib diisi.',
             'persen_pendapatan_online.required'    => 'Persentase pendapatan online wajib diisi (isi 0 jika tidak ada).',
-            'nilai_aset_tanah_bangunan.required'   => 'Nilai aset tanah & bangunan wajib diisi.',
-            'nilai_aset_lainnya.required'          => 'Nilai aset lainnya wajib diisi.',
+            'nilai_aset_tanah_bangunan.required_without' => 'Nilai aset tanah & bangunan wajib diisi (atau pilih rentang nilai aset).',
+            'nilai_aset_lainnya.required_without'          => 'Nilai aset lainnya wajib diisi (atau pilih rentang nilai aset)..',
             'luas_tanah.required'                  => 'Luas tanah wajib diisi.',
             'modal_pribadi.required'               => 'Persentase modal pribadi wajib diisi.',
             'modal_nonprofit.required'             => 'Persentase modal nirlaba wajib diisi.',

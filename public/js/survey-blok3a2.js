@@ -433,8 +433,6 @@ class SurveyBlok3a2Manager {
         const checks = [
             { name: `blok3a2_materials[${ci}][nama_bahan]`,    msg: 'Nama bahan wajib diisi.' },
             { name: `blok3a2_materials[${ci}][satuan_standar]`, msg: 'Satuan standar wajib diisi.' },
-            { name: `blok3a2_materials[${ci}][dn_banyaknya]`,  msg: 'Banyaknya Dalam Negeri wajib diisi.' },
-            { name: `blok3a2_materials[${ci}][dn_nilai]`,       msg: 'Nilai Dalam Negeri wajib diisi.' },
             { name: `blok3a2_materials[${ci}][ln_banyaknya]`,  msg: 'Banyaknya Luar Negeri wajib diisi.' },
             { name: `blok3a2_materials[${ci}][ln_nilai]`,       msg: 'Nilai Luar Negeri wajib diisi.' },
             { name: `blok3a2_materials[${ci}][negara_asal]`,   msg: 'Negara asal wajib diisi.' },
@@ -913,13 +911,13 @@ class SurveyBlok3a2Manager {
         });
         const dnB = card.querySelector(`input[name="blok3a2_materials[${cardIndex}][dn_banyaknya]"]`);
         const dnN = card.querySelector(`input[name="blok3a2_materials[${cardIndex}][dn_nilai]"]`);
-        if (dnB) dnB.value = totalJumlah > 0 ? totalJumlah : '';
-        if (dnN) dnN.value = totalNilai  > 0 ? totalNilai  : '';
+        if (dnB) dnB.value = totalJumlah > 0 ? totalJumlah : '0';
+        if (dnN) dnN.value = totalNilai  > 0 ? totalNilai  : '0';
 
         // Clear validation errors for DN fields on the first card when now non-empty
         if (parseInt(cardIndex) === 0) {
-            if (dnB && dnB.value.trim() !== '') this._clearRequiredError(dnB);
-            if (dnN && dnN.value.trim() !== '') this._clearRequiredError(dnN);
+            if (dnB) this._clearRequiredError(dnB);
+            if (dnN) this._clearRequiredError(dnN);
         }
 
         this._renderPreview();

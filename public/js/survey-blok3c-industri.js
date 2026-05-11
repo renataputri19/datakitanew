@@ -352,6 +352,7 @@
 
             form.querySelectorAll('[required]').forEach(el => {
                 if (el.type === 'hidden') return;
+                if (el.readOnly) return;
                 if (rangeSelected && (el.id === 'q318a_display' || el.id === 'q318b_display')) {
                     el.classList.remove('input-invalid');
                     return;

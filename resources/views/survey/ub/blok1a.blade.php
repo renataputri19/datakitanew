@@ -148,7 +148,7 @@
       <div>
         <label class="ub-label text-xs">Homepage/Website</label>
         <input name="homepage" class="ub-input" value="{{ old('homepage', $response->homepage) }}" placeholder="www.contoh.com">
-        <p class="ub-hint">Alamat website diawali dengan www. Contoh: www.bps.go.id</p>
+        <p class="ub-hint">Alamat website diawali dengan www. Contoh: www.bps.go.id. Jika tidak ada, dapat dikosongkan atau diisi dengan tanda strip (-).</p>
       </div>
     </div>
   </div>

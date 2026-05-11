@@ -64,6 +64,13 @@ class SurveyBlok1Manager {
 
     validateField(field) {
         const value = (field.value || '').trim();
+
+        // Homepage is optional: empty or single dash is always valid
+        if (field.name === 'homepage' && (value === '' || value === '-')) {
+            this.clearFieldError(field);
+            return true;
+        }
+
         if (field.required && value === '') {
             this.showFieldError(field, `${this._getFieldLabel(field)} wajib diisi`);
             return false;

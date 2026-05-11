@@ -98,17 +98,36 @@ class SurveyUbBlok1dManager {
             return true;
         };
 
-        if (!checkText('pekerja_laki'))                  isValid = false;
-        if (!checkText('pekerja_perempuan'))             isValid = false;
-        if (!checkText('tahun_beroperasi'))              isValid = false;
-        if (!checkText('pengeluaran_upah_gaji'))         isValid = false;
-        if (!checkText('pengeluaran_biaya_produksi'))    isValid = false;
-        if (!checkText('pengeluaran_pembelian_barang'))  isValid = false;
-        if (!checkText('pengeluaran_operasional'))       isValid = false;
-        if (!checkText('pengeluaran_nonoperasional'))    isValid = false;
-        if (!checkText('nilai_produksi_barang_jasa'))    isValid = false;
-        if (!checkText('nilai_aset_tanah_bangunan'))     isValid = false;
-        if (!checkText('nilai_aset_lainnya'))            isValid = false;
+        // For currency fields: strip thousands-separator dots, then check non-empty.
+        // This treats '0' as a valid entry and only rejects a truly blank field.
+        const checkCurrency = (name) => {
+            const el = this.form.querySelector(`[name="${name}"]`);
+            const stripped = el ? el.value.replace(/\./g, '').trim() : '';
+            if (stripped === '') {
+                this.showFieldError(name, `${this.getFieldLabel(name)} wajib diisi`);
+                return false;
+            }
+            this.clearFieldError(name);
+            return true;
+        };
+
+        if (!checkText('pekerja_laki'))                      isValid = false;
+        if (!checkText('pekerja_perempuan'))                 isValid = false;
+        if (!checkText('tahun_beroperasi'))                  isValid = false;
+        if (!checkCurrency('pengeluaran_upah_gaji'))         isValid = false;
+        if (!checkCurrency('pengeluaran_biaya_produksi'))    isValid = false;
+        if (!checkCurrency('pengeluaran_pembelian_barang'))  isValid = false;
+        if (!checkCurrency('pengeluaran_operasional'))       isValid = false;
+        if (!checkCurrency('pengeluaran_nonoperasional'))    isValid = false;
+        if (!checkCurrency('nilai_produksi_barang_jasa'))    isValid = false;
+        const rangeAsetChecked = !!this.form.querySelector('input[name="range_total_aset"]:checked');
+        if (!rangeAsetChecked) {
+            if (!checkText('nilai_aset_tanah_bangunan')) isValid = false;
+            if (!checkText('nilai_aset_lainnya'))        isValid = false;
+        } else {
+            this.clearFieldError('nilai_aset_tanah_bangunan');
+            this.clearFieldError('nilai_aset_lainnya');
+        }
         if (!checkText('luas_tanah'))                    isValid = false;
 
         return isValid;

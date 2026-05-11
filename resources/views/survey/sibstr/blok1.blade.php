@@ -202,16 +202,19 @@
 
                 <!-- Question 107 -->
                 <div class="form-row">
-                    <label class="form-label required">
+                    <label class="form-label">
                         <span class="question-number">107.</span>
                         <span>Homepage/Website:</span>
                     </label>
-                    <input type="url" name="homepage" id="homepage" value="{{ $surveyResponse->homepage ?? '' }}"
-                           class="form-control" required
-                           placeholder="Masukkan URL website perusahaan (contoh: https://contoh.com)">
-                    @error('homepage')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
+                    <div>
+                        <input type="text" name="homepage" id="homepage" value="{{ $surveyResponse->homepage ?? '' }}"
+                               class="form-control"
+                               placeholder="www.contoh.com">
+                        @error('homepage')
+                            <div class="error-message">{{ $message }}</div>
+                        @enderror
+                        <small class="form-hint-inline">Alamat website diawali dengan www. Contoh: www.bps.go.id. Jika tidak ada, dapat dikosongkan atau diisi dengan tanda strip (-).</small>
+                    </div>
                 </div>
 
                 <!-- Question 108 -->
