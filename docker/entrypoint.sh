@@ -42,6 +42,17 @@ mkdir -p \
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
+# Nginx client body temp dir — must be writable by www-data.
+# Files larger than client_body_buffer_size (128k) are buffered here.
+# Without this, uploads of PDFs > 128k fail with "Permission denied".
+mkdir -p /var/lib/nginx/tmp/client_body \
+         /var/lib/nginx/tmp/proxy \
+         /var/lib/nginx/tmp/fastcgi \
+         /var/lib/nginx/tmp/uwsgi \
+         /var/lib/nginx/tmp/scgi
+chown -R www-data:www-data /var/lib/nginx/tmp
+chmod -R 700 /var/lib/nginx/tmp
+
 # 4) Generate APP_KEY if missing (only happens when operator forgot to set it).
 #    In production you SHOULD set APP_KEY explicitly via Dokploy env vars.
 if [ -z "${APP_KEY:-}" ] && ! grep -q '^APP_KEY=base64:' .env 2>/dev/null; then
