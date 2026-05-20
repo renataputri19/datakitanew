@@ -64,6 +64,10 @@ php artisan storage:link --no-interaction --force || true
 #    contract the operator chose. To re-seed a populated DB, drop it
 #    manually first. SEED_DB=false is an emergency kill-switch.
 SEED_FILE=/var/www/html/docker/seed/datakita_seed.sql
+DB_BOOTSTRAP=/var/www/html/docker/db-bootstrap.php
+# We query via PDO (php helper) instead of the mysql/mariadb CLI: Alpine's
+# mariadb-client can't authenticate against MySQL 8's caching_sha2_password
+# default, but PHP's mysqlnd — the same driver Laravel uses — can.
 if [ "${SEED_DB:-true}" = "true" ] && [ -f "$SEED_FILE" ]; then
     if [ -z "${DB_HOST:-}" ] || [ -z "${DB_DATABASE:-}" ] || [ -z "${DB_USERNAME:-}" ]; then
         echo "[entrypoint] WARNING: DB_* env not fully set. Skipping seed import."
@@ -71,22 +75,18 @@ if [ "${SEED_DB:-true}" = "true" ] && [ -f "$SEED_FILE" ]; then
         echo "[entrypoint] checking whether DB '$DB_DATABASE' is empty (will retry up to 6 times)..."
         TABLE_COUNT=""
         for attempt in 1 2 3 4 5 6; do
-            TABLE_COUNT=$(MYSQL_PWD="${DB_PASSWORD:-}" mysql \
-                -h "$DB_HOST" -P "${DB_PORT:-3306}" \
-                -u "$DB_USERNAME" \
-                -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_DATABASE'" \
-                2>/dev/null) && break
-            echo "[entrypoint] DB not reachable yet (attempt $attempt); retrying in 10s..."
+            if TABLE_COUNT=$(php "$DB_BOOTSTRAP" table-count 2>&1); then
+                break
+            fi
+            echo "[entrypoint] DB query failed (attempt $attempt): $TABLE_COUNT"
+            TABLE_COUNT=""
             sleep 10
         done
         if [ -z "$TABLE_COUNT" ]; then
             echo "[entrypoint] WARNING: could not query DB after 6 attempts. Skipping seed."
         elif [ "$TABLE_COUNT" = "0" ]; then
             echo "[entrypoint] DB is empty — importing $SEED_FILE ($(wc -c <"$SEED_FILE") bytes)..."
-            if MYSQL_PWD="${DB_PASSWORD:-}" mysql \
-                -h "$DB_HOST" -P "${DB_PORT:-3306}" \
-                -u "$DB_USERNAME" \
-                "$DB_DATABASE" < "$SEED_FILE"; then
+            if php "$DB_BOOTSTRAP" import "$SEED_FILE"; then
                 echo "[entrypoint] seed import OK"
             else
                 echo "[entrypoint] WARNING: seed import failed. Migrations will create the schema from scratch."
@@ -128,13 +128,11 @@ else
 fi
 
 # 8) Optimize caches for production (non-fatal if a config is missing)
-# view:cache and event:cache were pre-built into the image at build time
-# (see Dockerfile) — they don't depend on env vars, so no need to redo on boot.
-# config:cache and route:cache MUST stay here: they snapshot runtime env vars
-# (DB_*, APP_URL, etc.) that aren't available at image build time.
-echo "[entrypoint] caching config / routes..."
+echo "[entrypoint] caching config / routes / views..."
 php artisan config:cache  || true
 php artisan route:cache   || true
+php artisan view:cache    || true
+php artisan event:cache   || true
 
 # 9) Hand off to whatever CMD was passed (supervisord by default)
 echo "[entrypoint] handing off to: $*"

@@ -19,5 +19,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/.refact
 .DS_Store
 Thumbs.db

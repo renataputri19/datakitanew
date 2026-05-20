@@ -144,12 +144,11 @@ class KominfoController extends Controller
      */
     public function uploadDocument(Request $request, $assessmentId)
     {
-        $request->validate([
-            'file' => 'required|file|max:10240|mimes:pdf',
-            'description' => 'nullable|string|max:500',
-        ]);
-
         try {
+            $request->validate([
+                'file' => 'required|file|max:10240|mimetypes:application/pdf',
+                'description' => 'nullable|string|max:500',
+            ]);
             $assessment = MonalisaAssessment::findOrFail($assessmentId);
 
             // Check if assessment can be edited (not verified)
@@ -198,6 +197,12 @@ class KominfoController extends Controller
                 'message' => 'Document uploaded successfully',
                 'document' => $document,
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first() ?? 'Validasi gagal.',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
@@ -221,12 +226,11 @@ class KominfoController extends Controller
      */
     public function replaceDocument(Request $request, $documentId)
     {
-        $request->validate([
-            'file' => 'required|file|max:10240|mimes:pdf',
-            'description' => 'nullable|string|max:500',
-        ]);
-
         try {
+            $request->validate([
+                'file' => 'required|file|max:10240|mimetypes:application/pdf',
+                'description' => 'nullable|string|max:500',
+            ]);
             $document = MonalisaDocument::findOrFail($documentId);
 
             // Check if assessment can be edited (not verified)
@@ -278,6 +282,12 @@ class KominfoController extends Controller
                 'message' => 'Document replaced successfully',
                 'document' => $document->fresh(),
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first() ?? 'Validasi gagal.',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,

@@ -942,12 +942,18 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/monalisa/kominfo/assessment/${assessmentId}/upload`, {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
             },
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(response => response.json().then(data => ({ ok: response.ok, status: response.status, data })))
+        .then(({ ok, status, data }) => {
+            if (!ok) {
+                const msg = data?.message || data?.errors?.file?.[0] || 'Gagal mengupload file. (HTTP ' + status + ')';
+                showNotification(msg, 'error');
+                return;
+            }
             if (data.success) {
                 showNotification('File berhasil diupload!', 'success');
                 // Append to list without reloading
@@ -980,13 +986,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const item = createDocumentItem(data.document, true);
                 list.appendChild(item);
                 updateDocumentsCount();
-            } else {
-                showNotification('Gagal mengupload file.', 'error');
             }
         })
         .catch(error => {
             console.error('Upload error:', error);
-            showNotification('Terjadi kesalahan saat mengupload file.', 'error');
+            showNotification('Terjadi kesalahan koneksi saat mengupload file.', 'error');
         });
     }
 });
