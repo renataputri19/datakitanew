@@ -25,6 +25,7 @@ use App\Http\Controllers\Monalisa\KominfoController;
 use App\Http\Controllers\Monalisa\BpsController as MonalisaBpsController;
 use App\Http\Controllers\Monalisa\NotificationController as MonalisaNotificationController;
 use App\Http\Controllers\DevLoginController;
+use App\Http\Controllers\PetaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -154,6 +155,13 @@ Route::get('/test-registration', function () {
 // Route::get('/survei/sibstr', [TemporarySurveyController::class, 'showSurvey'])->name('temporary.survey.sibstr');
 // Route::post('/survei/sibstr', [TemporarySurveyController::class, 'submitSurvey'])->name('temporary.survey.sibstr.submit');
 // Route::get('/survei/sibstr/companies/search', [TemporarySurveyController::class, 'searchCompanies'])->name('temporary.survey.sibstr.companies.search');
+
+// Peta Wilayah Kerja — field guide map for petugas (login required)
+Route::middleware(['auth'])->prefix('peta-wilayah')->name('peta.')->group(function () {
+    Route::get('/', [PetaController::class, 'index'])->name('index');
+    Route::get('/data/index', [PetaController::class, 'indexData'])->name('data.index');
+    Route::get('/data/kelurahan/{key}', [PetaController::class, 'kelurahan'])->name('data.kelurahan');
+});
 
 // Dashboard (Protected Routes)
 Route::middleware(['auth'])->group(function () {
