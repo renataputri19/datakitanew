@@ -169,7 +169,7 @@
                                 </div>
                             </div>
 
-                            <a id="t-gmaps" href="#" target="_blank" rel="noopener"
+                            <a id="t-gmaps" href="https://www.google.com/maps" target="_blank" rel="noopener"
                                class="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold px-4 py-2.5 shadow-sm shadow-blue-600/20 transition-all hover:-translate-y-0.5">
                                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"/></svg>
                                 Buka di Google Maps

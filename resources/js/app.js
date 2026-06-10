@@ -21,19 +21,25 @@ document.addEventListener("DOMContentLoaded", () => {
       })
     }
 
-    // Add smooth scrolling to all links
+    // Add smooth scrolling to in-page anchor links (e.g. href="#section")
     document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
       anchor.addEventListener("click", function (e) {
-        e.preventDefault()
-
         const targetId = this.getAttribute("href")
-        if (targetId === "#") return
+        // Only handle real in-page targets like "#section". Bail out for "#"
+        // and for anchors whose href was changed to a full URL at runtime
+        // (e.g. a "navigate" button) — otherwise querySelector throws and the
+        // link's default navigation gets blocked by preventDefault().
+        if (!targetId || targetId.length < 2 || targetId.charAt(0) !== "#") return
 
-        const targetElement = document.querySelector(targetId)
+        let targetElement = null
+        try {
+          targetElement = document.querySelector(targetId)
+        } catch (err) {
+          return
+        }
         if (targetElement) {
-          targetElement.scrollIntoView({
-            behavior: "smooth",
-          })
+          e.preventDefault()
+          targetElement.scrollIntoView({ behavior: "smooth" })
         }
       })
     })
