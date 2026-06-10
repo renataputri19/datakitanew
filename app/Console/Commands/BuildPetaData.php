@@ -65,6 +65,7 @@ class BuildPetaData extends Command
 
         $kec = [];            // kdkec => ['k','n','desa'=>[kddesa=>['k','n','file','sls'=>[]]]]
         $kelFeatures = [];    // "{kdkec}_{kddesa}" => [trimmed feature, ...]
+        $idslsCount = [];     // kelKey => [idsls => count]  (detect SLS split into sub-SLS)
         $kabName = null;
         $skipped = 0;
 
@@ -78,6 +79,9 @@ class BuildPetaData extends Command
             $kdkec = $this->code($p['kdkec'] ?? null);
             $kddesa = $this->code($p['kddesa'] ?? null);
             $idsls = (string) ($p['idsls'] ?? '');
+            $kdsubsls = trim((string) ($p['kdsubsls'] ?? ''));
+            // idsubsls is globally unique; fall back to idsls+kdsubsls if missing.
+            $uid = trim((string) ($p['idsubsls'] ?? '')) ?: ($idsls . $kdsubsls);
 
             if ($kdkec === '' || $kddesa === '' || !$geom || empty($geom['coordinates'])) {
                 $skipped++;
@@ -97,7 +101,10 @@ class BuildPetaData extends Command
             $lat = round(($bbox['minLat'] + $bbox['maxLat']) / 2, $precision);
             $lng = round(($bbox['minLng'] + $bbox['maxLng']) / 2, $precision);
 
-            // Index tree
+            $idslsCount[$kelKey][$idsls] = ($idslsCount[$kelKey][$idsls] ?? 0) + 1;
+
+            // Index tree. 'ids' (idsls) is temporary — used after the loop to decide
+            // whether this SLS is split into sub-SLS, then dropped.
             if (!isset($kec[$kdkec])) {
                 $kec[$kdkec] = ['k' => $kdkec, 'n' => $nmkec, 'desa' => []];
             }
@@ -105,8 +112,9 @@ class BuildPetaData extends Command
                 $kec[$kdkec]['desa'][$kddesa] = ['k' => $kddesa, 'n' => $nmdesa, 'file' => $kelKey, 'sls' => []];
             }
             $kec[$kdkec]['desa'][$kddesa]['sls'][] = [
-                'id'  => $idsls,
-                'k'   => (string) ($p['kdsls'] ?? ''),
+                'id'  => $uid,
+                'ids' => $idsls,
+                'sub' => $kdsubsls,
                 'n'   => $nmsls,
                 'lat' => $lat,
                 'lng' => $lng,
@@ -116,7 +124,9 @@ class BuildPetaData extends Command
             $kelFeatures[$kelKey][] = [
                 'type' => 'Feature',
                 'properties' => [
-                    'id'     => $idsls,
+                    'id'     => $uid,
+                    'ids'    => $idsls,
+                    'sub'    => $kdsubsls,
                     'nmsls'  => $nmsls,
                     'nmdesa' => $nmdesa,
                     'nmkec'  => $nmkec,
@@ -135,19 +145,51 @@ class BuildPetaData extends Command
         $bar->finish();
         $this->newLine(2);
 
-        // Sort: kecamatan & kelurahan by name, SLS naturally by label.
+        // Determine which idsls are split into multiple sub-SLS (per kelurahan).
+        $split = [];
+        foreach ($idslsCount as $kk => $counts) {
+            foreach ($counts as $id => $c) {
+                if ($c > 1) {
+                    $split[$kk][$id] = true;
+                }
+            }
+        }
+
+        // Sort: kecamatan & kelurahan by name; SLS by label then sub-SLS code.
+        // Drop the temporary 'ids', keeping 'sub' only for genuinely-split SLS.
         $kecList = array_values($kec);
         usort($kecList, fn ($a, $b) => strcmp($a['n'], $b['n']));
         foreach ($kecList as &$k) {
             $desa = array_values($k['desa']);
             usort($desa, fn ($a, $b) => strcmp($a['n'], $b['n']));
             foreach ($desa as &$d) {
-                usort($d['sls'], fn ($a, $b) => strnatcasecmp($a['n'], $b['n']));
+                $kk = $d['file'];
+                foreach ($d['sls'] as &$s) {
+                    if (empty($split[$kk][$s['ids']])) {
+                        unset($s['sub']);   // standalone SLS — no sub-SLS label
+                    }
+                    unset($s['ids']);
+                }
+                unset($s);
+                usort($d['sls'], fn ($a, $b) =>
+                    strnatcasecmp($a['n'], $b['n']) ?: strcmp($a['sub'] ?? '', $b['sub'] ?? ''));
             }
             unset($d);
             $k['desa'] = $desa;
         }
         unset($k);
+
+        // Same trimming for the per-kelurahan geometry feature properties.
+        foreach ($kelFeatures as $kk => &$feats) {
+            foreach ($feats as &$ft) {
+                if (empty($split[$kk][$ft['properties']['ids']])) {
+                    unset($ft['properties']['sub']);
+                }
+                unset($ft['properties']['ids']);
+            }
+            unset($ft);
+        }
+        unset($feats);
 
         $totalSls = array_sum(array_map(
             fn ($k) => array_sum(array_map(fn ($d) => count($d['sls']), $k['desa'])),

@@ -233,7 +233,8 @@
 (function () {
     'use strict';
 
-    const INDEX_URL = @json(route('peta.data.index'));
+    const DATA_VER  = @json($dataVersion ?? 0);
+    const INDEX_URL = @json(route('peta.data.index')) + '?v=' + DATA_VER;
     const KEL_BASE  = @json(url('tunjukin-se/data/kelurahan')) + '/';
 
     const map = L.map('peta-map', { zoomControl: true }).setView([1.07, 104.03], 11);
@@ -253,7 +254,7 @@
     const STYLE_TARGET  = { color: '#ea580c', weight: 3, fillColor: '#f97316', fillOpacity: 0.28 };
 
     const $ = (id) => document.getElementById(id);
-    const compositeKey = (p) => p.id + '|' + p.lat + '|' + p.lng;
+    const featKey = (p) => p.id;   // idsubsls — globally unique per (sub-)SLS
 
     // ─────────── Filters ───────────
     async function loadIndex() {
@@ -286,11 +287,17 @@
         const d = k && k.desa[this.value];
         if (!d) return;
         await loadKelurahan(d.file);
-        const seen = {};
+        const usedLabels = {};
         d.sls.forEach((s) => {
-            const label = (seen[s.n] = (seen[s.n] || 0) + 1) > 1 ? `${s.n} (${seen[s.n]})` : s.n;
-            const o = addOption($('f-sls'), compositeKey(s), label);
-            o.dataset.lat = s.lat; o.dataset.lng = s.lng; o.dataset.name = s.n; o.dataset.sub = d.n + ', ' + k.n;
+            // Split SLS carry their real sub-SLS code (kdsubsls), e.g. "(Sub 18)".
+            let label = s.sub ? `${s.n} (Sub ${s.sub})` : s.n;
+            // Safety net for the rare same-name + same-sub data quirk.
+            if (usedLabels[label]) { label = `${label} #${++usedLabels[label]}`; }
+            else { usedLabels[label] = 1; }
+            const o = addOption($('f-sls'), featKey(s), label);
+            o.dataset.lat = s.lat; o.dataset.lng = s.lng;
+            o.dataset.name = s.n; o.dataset.subsls = s.sub || '';
+            o.dataset.loc = d.n + ', ' + k.n;
         });
         $('f-sls-count').textContent = d.sls.length + ' SLS';
         $('f-sls').disabled = false;
@@ -302,7 +309,7 @@
         const layer = layerByKey[opt.value];
         if (layer) highlight(layer);
         focusLayer(layer);
-        setTarget({ lat: +opt.dataset.lat, lng: +opt.dataset.lng, name: opt.dataset.name, sub: opt.dataset.sub });
+        setTarget({ lat: +opt.dataset.lat, lng: +opt.dataset.lng, name: opt.dataset.name, subsls: opt.dataset.subsls, loc: opt.dataset.loc });
     });
 
     // ─────────── Kelurahan geometry ───────────
@@ -313,7 +320,7 @@
             for (const key in layerByKey) delete layerByKey[key];
             highlighted = null;
 
-            const res = await fetch(KEL_BASE + fileKey, { credentials: 'same-origin' });
+            const res = await fetch(KEL_BASE + fileKey + '?v=' + DATA_VER, { credentials: 'same-origin' });
             if (!res.ok) throw new Error('kelurahan ' + res.status);
             const gj = await res.json();
 
@@ -321,7 +328,7 @@
                 style: STYLE_DEFAULT,
                 onEachFeature: (feature, layer) => {
                     const p = feature.properties;
-                    layerByKey[compositeKey(p)] = layer;
+                    layerByKey[featKey(p)] = layer;
                     layer.on('mouseover', () => { if (layer !== highlighted) layer.setStyle(STYLE_HOVER); });
                     layer.on('mouseout',  () => { if (layer !== highlighted) layer.setStyle(STYLE_DEFAULT); });
                     layer.bindPopup(() => buildPopup(p, layer));
@@ -337,14 +344,15 @@
     // Tapping a polygon shows info only; "Jadikan Tujuan" sets the destination.
     function buildPopup(p, layer) {
         const wrap = document.createElement('div');
+        const subLine = p.sub ? `<br><span style="color:#ea580c;font-weight:600">Sub-SLS ${escapeHtml(p.sub)}</span>` : '';
         wrap.innerHTML =
-            `<b style="color:#0f172a">${escapeHtml(p.nmsls)}</b><br>` +
+            `<b style="color:#0f172a">${escapeHtml(p.nmsls)}</b>${subLine}<br>` +
             `<span style="color:#64748b">${escapeHtml(p.nmdesa)}, ${escapeHtml(p.nmkec)}</span><br>` +
             `<button class="peta-popup-btn" style="background:#ea580c" data-act="target">📍 Jadikan Tujuan</button> ` +
             `<button class="peta-popup-btn" style="background:#2563eb" data-act="gmaps">Google Maps</button>`;
         wrap.querySelector('[data-act="target"]').onclick = () => {
             highlight(layer);
-            setTarget({ lat: p.lat, lng: p.lng, name: p.nmsls, sub: p.nmdesa + ', ' + p.nmkec });
+            setTarget({ lat: p.lat, lng: p.lng, name: p.nmsls, subsls: p.sub || '', loc: p.nmdesa + ', ' + p.nmkec });
             layer.closePopup();
         };
         wrap.querySelector('[data-act="gmaps"]').onclick = () => window.open(gmapsUrl(p.lat, p.lng), '_blank', 'noopener');
@@ -367,8 +375,8 @@
         target = t;
         $('target-empty').classList.add('hidden');
         $('target-info').classList.remove('hidden');
-        $('t-name').textContent = t.name;
-        $('t-sub').textContent = t.sub || '';
+        $('t-name').textContent = t.subsls ? `${t.name} · Sub ${t.subsls}` : t.name;
+        $('t-sub').textContent = t.loc || '';
         $('t-gmaps').href = gmapsUrl(t.lat, t.lng);
 
         const pin = L.divIcon({ className: '', html: '<div class="peta-pin"></div>', iconSize: [16, 16], iconAnchor: [8, 16] });

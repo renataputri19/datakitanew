@@ -23,8 +23,14 @@ class PetaController extends Controller
     /** The map page. */
     public function index()
     {
+        $indexPath = $this->dataPath('index.json');
+        $ready = File::exists($indexPath);
+
         return view('peta.index', [
-            'dataReady' => File::exists($this->dataPath('index.json')),
+            'dataReady'   => $ready,
+            // Build timestamp → cache-buster, so a fresh `peta:build` is picked up
+            // immediately instead of serving day-old cached JSON.
+            'dataVersion' => $ready ? File::lastModified($indexPath) : 0,
         ]);
     }
 
