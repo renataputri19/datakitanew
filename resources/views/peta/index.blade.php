@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Peta Wilayah Kerja - DataKita BPS Kota Batam')
-@section('description', 'Peta panduan lapangan untuk petugas: temukan batas SLS, lihat lokasi Anda secara langsung, dan dapatkan arah menuju lokasi.')
+@section('title', 'TUNJUKIN SE — Penuntun dan Penunjuk Arah SE | DataKita BPS Kota Batam')
+@section('description', 'TUNJUKIN SE: penuntun dan penunjuk arah untuk petugas Sensus Ekonomi — temukan batas SLS, lihat lokasi Anda secara langsung, dan dapatkan arah menuju lokasi.')
 
 @push('styles')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -52,26 +52,37 @@
 @section('content')
 <section class="bg-slate-50 dark:bg-slate-900 min-h-screen">
 
-    {{-- ───────────── Branded banner ───────────── --}}
+    {{-- ───────────── Branded banner: TUNJUKIN SE ───────────── --}}
     <div class="bg-gradient-to-r from-blue-600 via-blue-600 to-violet-600">
-        <div class="container mx-auto px-4 py-6">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-start gap-3">
-                    <div class="mt-0.5 flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
-                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        <div class="container mx-auto px-4 py-5">
+            <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+                {{-- Brand: SE logo + product name --}}
+                <div class="flex items-center gap-3.5">
+                    <div class="flex h-12 shrink-0 items-center rounded-2xl bg-white px-3 shadow-md ring-1 ring-white/40">
+                        <img src="{{ asset('img/logo-se2026-sm.png') }}" alt="Logo Sensus Ekonomi 2026" class="h-7 sm:h-8 w-auto object-contain">
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-white leading-tight">Peta Wilayah Kerja</h1>
-                        <p class="mt-1 text-sm text-blue-100 max-w-2xl">
-                            Panduan lapangan untuk petugas — pilih wilayah, lihat batas SLS, aktifkan lokasi Anda,
-                            lalu ikuti arah atau buka navigasi Google Maps.
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white leading-none">TUNJUKIN SE</h1>
+                            <span class="hidden sm:inline-flex items-center rounded-md bg-white/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white ring-1 ring-white/25">Sensus Ekonomi</span>
+                        </div>
+                        <p class="mt-1 text-sm font-semibold text-blue-50">Penuntun dan Penunjuk Arah SE</p>
+                        <p class="text-xs text-blue-100/90 max-w-xl">
+                            Panduan lapangan untuk petugas Sensus Ekonomi — temukan batas SLS, lihat lokasi Anda, dan arah menuju lokasi.
                         </p>
                     </div>
                 </div>
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 ring-1 ring-white/25 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
-                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="2.5"/></svg>
-                    Kota Batam
-                </span>
+
+                {{-- Institutional: BPS logo + wilayah --}}
+                <div class="flex items-center gap-3">
+                    <div class="flex h-12 items-center rounded-xl bg-white/95 px-3 shadow-sm ring-1 ring-white/40">
+                        <img src="{{ asset('img/Logo BPS.png') }}" alt="Logo Badan Pusat Statistik" class="h-8 w-auto object-contain">
+                    </div>
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 ring-1 ring-white/25 px-3 py-2 text-xs font-semibold text-white backdrop-blur">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="2.5"/></svg>
+                        Kota Batam
+                    </span>
+                </div>
             </div>
         </div>
     </div>
@@ -223,7 +234,7 @@
     'use strict';
 
     const INDEX_URL = @json(route('peta.data.index'));
-    const KEL_BASE  = @json(url('peta-wilayah/data/kelurahan')) + '/';
+    const KEL_BASE  = @json(url('tunjukin-se/data/kelurahan')) + '/';
 
     const map = L.map('peta-map', { zoomControl: true }).setView([1.07, 104.03], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

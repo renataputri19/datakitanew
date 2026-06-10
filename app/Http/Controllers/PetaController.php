@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\File;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
- * "Peta Wilayah Kerja" — a field guide map for petugas.
+ * "TUNJUKIN SE" (Penuntun dan Penunjuk Arah SE) — a field guide map for petugas Sensus Ekonomi.
  *
  * The page is rendered by index(); the wilayah index and per-kelurahan polygons
  * are served as JSON by indexData()/kelurahan(). The data lives under

@@ -156,8 +156,8 @@ Route::get('/test-registration', function () {
 // Route::post('/survei/sibstr', [TemporarySurveyController::class, 'submitSurvey'])->name('temporary.survey.sibstr.submit');
 // Route::get('/survei/sibstr/companies/search', [TemporarySurveyController::class, 'searchCompanies'])->name('temporary.survey.sibstr.companies.search');
 
-// Peta Wilayah Kerja — field guide map for petugas (login required)
-Route::middleware(['auth'])->prefix('peta-wilayah')->name('peta.')->group(function () {
+// TUNJUKIN SE — Penuntun dan Penunjuk Arah SE: field guide map for petugas (login required)
+Route::middleware(['auth'])->prefix('tunjukin-se')->name('peta.')->group(function () {
     Route::get('/', [PetaController::class, 'index'])->name('index');
     Route::get('/data/index', [PetaController::class, 'indexData'])->name('data.index');
     Route::get('/data/kelurahan/{key}', [PetaController::class, 'kelurahan'])->name('data.kelurahan');

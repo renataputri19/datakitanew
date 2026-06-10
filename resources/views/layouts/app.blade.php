@@ -9,6 +9,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="app-version" content="{{ config('app.version', '1.0.0') }}">
 
+    <!-- Favicon (BPS logo) -->
+    <link rel="icon" type="image/png" href="{{ asset('img/favicon-bps.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('img/favicon-bps.png') }}">
+
     @stack('head')
 
     <!-- Fonts -->

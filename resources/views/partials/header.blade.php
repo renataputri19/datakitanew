@@ -40,7 +40,7 @@
                 @endif
                 @auth
                 <a href="{{ route('peta.index') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('peta.*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
-                    Peta Wilayah
+                    TUNJUKIN SE
                 </a>
                 @endauth
                 <!-- Global Dashboard link: goes to /dashboard and requires auth -->
@@ -184,7 +184,7 @@
                         <line x1="16" y1="6" x2="16" y2="22"></line>
                     </svg>
                 </div>
-                <span>Peta Wilayah</span>
+                <span>TUNJUKIN SE</span>
             </a>
             @endauth
             {{-- <a href="{{ route('systems') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('systems*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">

@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 /**
- * Builds the static data used by the "Peta Wilayah Kerja" (/peta-wilayah) page
+ * Builds the static data used by the "TUNJUKIN SE" (/tunjukin-se) page
  * from the raw SLS GeoJSON export.
  *
  * The raw export (Final_SLS_*.geojson) is ~9 MB with ~30 properties per feature
