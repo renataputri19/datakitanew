@@ -44,9 +44,16 @@ services:
       DB_PASSWORD: "${DB_PASSWORD}"
 
       # Sessions / cache / queue
-      CACHE_DRIVER: "${CACHE_DRIVER:-file}"
-      SESSION_DRIVER: "${SESSION_DRIVER:-file}"
+      # DB-backed by default: the file cache/session stores race across the
+      # 20 PHP-FPM workers and crash login with "fopen(...): Failed to open
+      # stream". DB-backed sessions also survive redeploys (file sessions do
+      # not — they live in an ephemeral, non-volume path).
+      CACHE_DRIVER: "${CACHE_DRIVER:-database}"
+      SESSION_DRIVER: "${SESSION_DRIVER:-database}"
       SESSION_LIFETIME: "${SESSION_LIFETIME:-120}"
+      # Traefik terminates HTTPS in front of this container, so cookies must
+      # carry the Secure flag. TrustProxies already forwards the real scheme.
+      SESSION_SECURE_COOKIE: "${SESSION_SECURE_COOKIE:-true}"
       QUEUE_CONNECTION: "${QUEUE_CONNECTION:-sync}"
       FILESYSTEM_DISK: "${FILESYSTEM_DISK:-local}"
       BROADCAST_DRIVER: "${BROADCAST_DRIVER:-log}"

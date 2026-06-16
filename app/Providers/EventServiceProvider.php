@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Listeners\LogAccountLockout;
+use App\Listeners\LogFailedLoginAttempt;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Lockout;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -17,6 +21,13 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Registered::class => [
             SendEmailVerificationNotification::class,
+        ],
+        // Security audit trail for authentication.
+        Failed::class => [
+            LogFailedLoginAttempt::class,
+        ],
+        Lockout::class => [
+            LogAccountLockout::class,
         ],
     ];
 

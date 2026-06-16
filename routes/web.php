@@ -143,8 +143,12 @@ Route::prefix('monalisa')->name('monalisa.')->group(function () {
 });
 
 // Authentication Routes are handled by Fortify
-// Email check route for registration validation
-Route::post('/check-email', [App\Http\Controllers\AuthController::class, 'checkEmail'])->name('check.email');
+// Email check route for registration validation. Throttled because it is a
+// public, unauthenticated endpoint that queries the users table and would
+// otherwise allow unlimited email-enumeration / account-discovery probing.
+Route::post('/check-email', [App\Http\Controllers\AuthController::class, 'checkEmail'])
+    ->middleware('throttle:20,1')
+    ->name('check.email');
 
 // Test route for registration validation
 Route::get('/test-registration', function () {

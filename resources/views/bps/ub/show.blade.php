@@ -89,7 +89,7 @@ $jkMap  = [1=>'Laki-laki', 2=>'Perempuan'];
 $jaringanMap = [1=>'Perusahaan Tunggal',2=>'Kantor Pusat (memiliki cabang)',3=>'Cabang/Unit dari Kantor Pusat dalam negeri',4=>'Perwakilan dari Kantor Pusat luar negeri',5=>'Pabrik/Unit Produksi',6=>'Unit Pembantu/Penunjang'];
 $lokasiMap = [1=>'Apotek',2=>'Swalayan',3=>'Los Pasar',4=>'Toko, ruko, dan sejenisnya',5=>'Kedai, stan, tenda',6=>'Bar',7=>'Kelab malam, diskotek',8=>'Kafe',9=>'Restoran, warung makan',10=>'Keliling',11=>'Daring (online)'];
 $klasAkomodasiMap = [1=>'Hotel Bintang 1',2=>'Hotel Bintang 2',3=>'Hotel Bintang 3',4=>'Hotel Bintang 4',5=>'Hotel Bintang 5',6=>'Lainnya (hotel nonbintang, vila, dll)'];
-$sertHalalMap = [1=>'Ya, oleh BPJPH', 2=>'Ya, bukan oleh BPJPH', 3=>'Tidak'];
+$sertHalalMap = [1=>'Ya, oleh BPJPH', 2=>'Ya, bukan oleh BPJPH', 3=>'Belum/tidak', 4=>'Dalam proses'];
 $izinEdarMap  = [1=>'Ya, oleh BPOM', 2=>'Ya, bukan oleh BPOM', 3=>'Tidak'];
 $mbgMap = [1=>'Ya, sebagai SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)',2=>'Ya, sebagai supplier',3=>'Ya, sebagai penerima manfaat MBG (Sekolah, Puskesmas, Posyandu)',4=>'Ya, peran lainnya',5=>'Tidak terlibat MBG'];
 $prlMap = [1=>'Ya, seluruh produk', 2=>'Ya, sebagian produk', 3=>'Tidak'];

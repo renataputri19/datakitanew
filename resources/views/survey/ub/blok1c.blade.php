@@ -83,11 +83,12 @@
     Lihat daftar KBLI di: <a href="http://s.bps.go.id/kbli_halal" target="_blank" class="underline">http://s.bps.go.id/kbli_halal</a>
   </div>
   <div class="mb-4">
-    <label class="ub-label">a. Apakah perusahaan ini menghasilkan produk bersertifikat halal?</label>
+    <label class="ub-label">a. Apakah produk usaha/perusahaan ini sudah mendapatkan sertifikat halal?</label>
     <div class="ub-radio-group">
       <label class="ub-radio-label"><input type="radio" name="sertifikat_halal" value="1" id="halal_ya_bpjph" {{ old('sertifikat_halal',$response->sertifikat_halal)==1?'checked':'' }}> 1. Ya, oleh BPJPH</label>
       <label class="ub-radio-label"><input type="radio" name="sertifikat_halal" value="2" id="halal_ya_bukan" {{ old('sertifikat_halal',$response->sertifikat_halal)==2?'checked':'' }}> 2. Ya, bukan oleh BPJPH</label>
-      <label class="ub-radio-label"><input type="radio" name="sertifikat_halal" value="3" id="halal_tidak" {{ old('sertifikat_halal',$response->sertifikat_halal)==3?'checked':'' }}> 3. Tidak</label>
+      <label class="ub-radio-label"><input type="radio" name="sertifikat_halal" value="3" id="halal_tidak" {{ old('sertifikat_halal',$response->sertifikat_halal)==3?'checked':'' }}> 3. Belum/tidak</label>
+      <label class="ub-radio-label"><input type="radio" name="sertifikat_halal" value="4" id="halal_proses" {{ old('sertifikat_halal',$response->sertifikat_halal)==4?'checked':'' }}> 4. Dalam proses</label>
     </div>
   </div>
   <div id="sec_halal_bpjph" class="conditional-section mb-3">
