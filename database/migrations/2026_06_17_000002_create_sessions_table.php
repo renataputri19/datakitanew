@@ -20,7 +20,12 @@ return new class extends Migration
         if (! Schema::hasTable('sessions')) {
             Schema::create('sessions', function (Blueprint $table) {
                 $table->string('id')->primary();
-                $table->foreignId('user_id')->nullable()->index();
+                // user_id is a STRING, not foreignId/bigint: this app's users
+                // table uses uuid('id'), and Laravel's database session handler
+                // writes the authenticated user's UUID here on every request.
+                // A bigint column would reject the UUID and silently drop the
+                // session, bouncing the user back to the login page.
+                $table->string('user_id')->nullable()->index();
                 $table->string('ip_address', 45)->nullable();
                 $table->text('user_agent')->nullable();
                 $table->longText('payload');
