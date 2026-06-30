@@ -677,6 +677,14 @@ class SurveyResponse extends Model
      *
      * Returns an array of available triwulan numbers (1–4) for the given year.
      */
+    /**
+     * Launch date for the TW II 2026 quarter specifically. TW II would normally
+     * open on 1 July (once the Apr–Jun quarter ends); this holds it until 6 July.
+     * TW I stays open as usual, and TW III/IV follow the normal schedule.
+     * Change this one value to move the TW II opening.
+     */
+    public const TW2_LAUNCH_DATE = '2026-07-06';
+
     public static function availableTriwulan(int $tahun): array
     {
         // Triwulanan reporting is only available starting from 2026.
@@ -696,18 +704,16 @@ class SurveyResponse extends Model
             return [];
         }
 
-        // Same year — return quarters whose last month < current month.
-        //
-        // Outside production (local/staging) we also unlock the quarter that is
-        // currently *in progress* so the upcoming period can be previewed before
-        // it officially opens. Production keeps the strict "a quarter opens only
-        // after it has ended" rule.
-        $previewInProgress = ! app()->environment('production');
+        // Same year — a quarter becomes available once it has ended.
+        // TW I opens in April as usual; TW II is held until its launch date
+        // (6 Jul 2026) rather than 1 July; TW III/IV follow the normal schedule.
+        $tw2Open = $currentMonth >= 7
+            && $now->gte(\Illuminate\Support\Carbon::parse(self::TW2_LAUNCH_DATE)->startOfDay());
 
         $available = [];
-        if ($currentMonth >= 4  || ($previewInProgress && $currentMonth >= 1))  { $available[] = 1; }
-        if ($currentMonth >= 7  || ($previewInProgress && $currentMonth >= 4))  { $available[] = 2; }
-        if ($currentMonth >= 10 || ($previewInProgress && $currentMonth >= 7))  { $available[] = 3; }
+        if ($currentMonth >= 4)  { $available[] = 1; }
+        if ($tw2Open)            { $available[] = 2; }
+        if ($currentMonth >= 10) { $available[] = 3; }
         // TW4 becomes available from January of the next year
 
         return $available;
