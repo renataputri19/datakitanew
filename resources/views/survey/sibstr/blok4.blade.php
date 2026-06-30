@@ -145,14 +145,12 @@
     @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
     @include('survey.sibstr.partials.reference-drawer', [
         'referenceResponse' => $referenceResponse,
-        'currentTwLabel'    => isset($triwulan) && $triwulan > 0
-                                ? \App\Models\SurveyResponse::triwulanLabel($triwulan) . ' ' . ($tahun ?? 2025)
-                                : 'Tahunan ' . ($tahun ?? 2025),
+        'currentTwLabel'    => null,
         'fields' => [
-            ['name' => 'blok4_data.triwulan1', 'target' => 'blok4[triwulan1]', 'label' => '401. TW I (Jan–Mar): Fenomena/Catatan',   'copyable' => true],
-            ['name' => 'blok4_data.triwulan2', 'target' => 'blok4[triwulan2]', 'label' => '402. TW II (Apr–Jun): Fenomena/Catatan',  'copyable' => true],
-            ['name' => 'blok4_data.triwulan3', 'target' => 'blok4[triwulan3]', 'label' => '403. TW III (Jul–Sep): Fenomena/Catatan', 'copyable' => true],
-            ['name' => 'blok4_data.triwulan4', 'target' => 'blok4[triwulan4]', 'label' => '404. TW IV (Okt–Des): Fenomena/Catatan', 'copyable' => true],
+            ['name' => 'blok4_data.triwulan1', 'target' => 'blok4[triwulan1]', 'label' => '401. TW I (Jan–Mar): Fenomena/Catatan',   'copyable' => false],
+            ['name' => 'blok4_data.triwulan2', 'target' => 'blok4[triwulan2]', 'label' => '402. TW II (Apr–Jun): Fenomena/Catatan',  'copyable' => false],
+            ['name' => 'blok4_data.triwulan3', 'target' => 'blok4[triwulan3]', 'label' => '403. TW III (Jul–Sep): Fenomena/Catatan', 'copyable' => false],
+            ['name' => 'blok4_data.triwulan4', 'target' => 'blok4[triwulan4]', 'label' => '404. TW IV (Okt–Des): Fenomena/Catatan', 'copyable' => false],
         ],
     ])
     @endif

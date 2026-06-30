@@ -17,8 +17,12 @@
     ];
     $histTitle = $histBlockTitles[$blockKey] ?? 'Data Historis';
 
-    $histMonthKeys   = ['2024_des','2025_jan','2025_feb','2025_mar','2025_apr','2025_mei','2025_jun','2025_jul','2025_agu','2025_sep','2025_okt','2025_nov','2025_des'];
-    $histMonthLabels = ['Des 2024','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    // $histMonthKeys / $histMonthLabels are computed PER historical response inside
+    // the Blok 3A section below, because the month columns depend on that response's
+    // own period (annual → 13 columns; a quarter → its 3 months), and on its year
+    // (2025, 2026, …). A single hardcoded list would only ever match one year.
+    $histMonthAbbr = ['jan'=>'Jan','feb'=>'Feb','mar'=>'Mar','apr'=>'Apr','mei'=>'Mei','jun'=>'Jun','jul'=>'Jul','agu'=>'Agu','sep'=>'Sep','okt'=>'Okt','nov'=>'Nov','des'=>'Des'];
+    $histQuarterMonths = [1=>['jan','feb','mar'], 2=>['apr','mei','jun'], 3=>['jul','agu','sep'], 4=>['okt','nov','des']];
 
     $histGroupColors = [
         'blue'    => ['wrap'=>'border-blue-200 dark:border-blue-800',    'head'=>'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800',    'title'=>'text-blue-700 dark:text-blue-300'],
@@ -31,103 +35,200 @@
 
     $hist3bIGroups = [
         ['title'=>'Pendapatan Perusahaan', 'color'=>'blue', 'rows'=>[
-            ['label'=>'Q304a. Pendapatan royalti/bunga/dividen — triwulan lalu',   'key'=>'q304a',       'type'=>'currency'],
-            ['label'=>'Q304b. Pendapatan royalti/bunga/dividen — tahun berjalan',  'key'=>'q304b',       'type'=>'currency'],
-            ['label'=>'Q305.  % Pendapatan dari usaha online',                     'key'=>'q305_online', 'type'=>'percent'],
+            ['label'=>'304. Royalti, bunga, dividen, dll', 'key'=>'q304', 'type'=>'currency'],
         ]],
-        ['title'=>'Persediaan (Inventori) — Periode', 'color'=>'indigo', 'rows'=>[
-            ['label'=>'Q306. Bahan baku — Awal periode',   'key'=>'q306_awal',  'type'=>'currency'],
-            ['label'=>'Q306. Bahan baku — Akhir periode',  'key'=>'q306_akhir', 'type'=>'currency'],
-            ['label'=>'Q307. WIP — Awal periode',          'key'=>'q307_awal',  'type'=>'currency'],
-            ['label'=>'Q307. WIP — Akhir periode',         'key'=>'q307_akhir', 'type'=>'currency'],
-            ['label'=>'Q308. Barang Jadi — Awal periode',  'key'=>'q308_awal',  'type'=>'currency'],
-            ['label'=>'Q308. Barang Jadi — Akhir periode', 'key'=>'q308_akhir', 'type'=>'currency'],
-            ['label'=>'Q309. Total Persediaan — Awal',     'key'=>'q309_awal',  'type'=>'currency'],
-            ['label'=>'Q309. Total Persediaan — Akhir',    'key'=>'q309_akhir', 'type'=>'currency'],
+        ['title'=>'Persediaan & Barang Modal', 'color'=>'indigo', 'rows'=>[
+            ['label'=>'307.a Stok bahan baku/penolong/bakar — 1 Jan 2025',   'key'=>'q306_year_awal',   'type'=>'currency'],
+            ['label'=>'307.b Stok bahan baku/penolong/bakar — 31 Des 2025',  'key'=>'q306_year_akhir',  'type'=>'currency'],
+            ['label'=>'308.a Stok barang setengah jadi — 1 Jan 2025',        'key'=>'q307_year_awal',   'type'=>'currency'],
+            ['label'=>'308.b Stok barang setengah jadi — 31 Des 2025',       'key'=>'q307_year_akhir',  'type'=>'currency'],
+            ['label'=>'309.a Stok barang jadi — 1 Jan 2025',                 'key'=>'q308_year_awal',   'type'=>'currency'],
+            ['label'=>'309.b Stok barang jadi — 31 Des 2025',                'key'=>'q308_year_akhir',  'type'=>'currency'],
+            ['label'=>'310. Pembelian/penambahan barang modal tetap (2025)', 'key'=>'q310_beli_modal',  'type'=>'currency'],
+            ['label'=>'311. Penjualan/pengurangan barang modal tetap (2025)','key'=>'q311_jual_modal',  'type'=>'currency'],
+            ['label'=>'312. Taksiran barang modal tetap per 31 Des 2025',    'key'=>'q312_taksir_modal','type'=>'currency'],
         ]],
-        ['title'=>'Persediaan (Inventori) — Tahunan', 'color'=>'violet', 'rows'=>[
-            ['label'=>'Q306. Bahan baku — Awal tahun',          'key'=>'q306_year_awal',  'type'=>'currency'],
-            ['label'=>'Q306. Bahan baku — Akhir tahun',         'key'=>'q306_year_akhir', 'type'=>'currency'],
-            ['label'=>'Q307. WIP — Awal tahun',                 'key'=>'q307_year_awal',  'type'=>'currency'],
-            ['label'=>'Q307. WIP — Akhir tahun',                'key'=>'q307_year_akhir', 'type'=>'currency'],
-            ['label'=>'Q308. Barang Jadi — Awal tahun',         'key'=>'q308_year_awal',  'type'=>'currency'],
-            ['label'=>'Q308. Barang Jadi — Akhir tahun',        'key'=>'q308_year_akhir', 'type'=>'currency'],
-            ['label'=>'Q310b. Total Persediaan — Awal tahun',   'key'=>'q310b_awal',      'type'=>'currency'],
-            ['label'=>'Q310b. Total Persediaan — Akhir tahun',  'key'=>'q310b_akhir',     'type'=>'currency'],
+        ['title'=>'Pengeluaran Pekerja', 'color'=>'cyan', 'rows'=>[
+            ['label'=>'313.a1 Upah/gaji/tunjangan pekerja produksi',    'key'=>'q313_a1', 'type'=>'currency'],
+            ['label'=>'313.a2 Pengeluaran lain pekerja produksi',       'key'=>'q313_a2', 'type'=>'currency'],
+            ['label'=>'313.b1 Upah/gaji/tunjangan pekerja lainnya',     'key'=>'q313_b1', 'type'=>'currency'],
+            ['label'=>'313.b2 Pengeluaran lain pekerja lainnya',        'key'=>'q313_b2', 'type'=>'currency'],
+            ['label'=>'313.c Total pengeluaran pekerja',                'key'=>'q313_c',  'type'=>'currency'],
+            ['label'=>'314.a1 Outsourcing — upah pekerja produksi',     'key'=>'q314_a1', 'type'=>'currency'],
+            ['label'=>'314.a2 Outsourcing — pengeluaran lain produksi', 'key'=>'q314_a2', 'type'=>'currency'],
+            ['label'=>'314.b1 Outsourcing — upah pekerja lainnya',      'key'=>'q314_b1', 'type'=>'currency'],
+            ['label'=>'314.b2 Outsourcing — pengeluaran lain lainnya',  'key'=>'q314_b2', 'type'=>'currency'],
+            ['label'=>'314.c Total pengeluaran outsourcing',            'key'=>'q314_c',  'type'=>'currency'],
         ]],
-        ['title'=>'Pembelian & Pengeluaran', 'color'=>'cyan', 'rows'=>[
-            ['label'=>'Q310.   Pembelian bahan baku — triwulan lalu',   'key'=>'q310',      'type'=>'currency'],
-            ['label'=>'Q310.   Pembelian bahan baku — tahun berjalan',  'key'=>'q310_year', 'type'=>'currency'],
-            ['label'=>'Q311a.  Upah/gaji — triwulan lalu',              'key'=>'q311a',     'type'=>'currency'],
-            ['label'=>'Q311b.  Upah/gaji — tahun berjalan',             'key'=>'q311b',     'type'=>'currency'],
-            ['label'=>'Q311b.1 Upah produksi (tahun)',                  'key'=>'q311b1',    'type'=>'currency'],
-            ['label'=>'Q311b.2 Upah non-produksi (tahun)',              'key'=>'q311b2',    'type'=>'currency'],
-            ['label'=>'Q313.   Biaya bahan bakar — triwulan lalu',      'key'=>'q313',      'type'=>'currency'],
-            ['label'=>'Q313.   Biaya bahan bakar — tahun berjalan',     'key'=>'q313_year', 'type'=>'currency'],
+        ['title'=>'Listrik', 'color'=>'amber', 'rows'=>[
+            ['label'=>'315.a Daya tersambung PLN (VA)',         'key'=>'q315_a', 'type'=>'raw'],
+            ['label'=>'315.b Daya tersambung Non-PLN (VA)',     'key'=>'q315_b', 'type'=>'raw'],
+            ['label'=>'315.c Penggunaan listrik PLN (kWh)',     'key'=>'q315_c', 'type'=>'raw'],
+            ['label'=>'315.d Penggunaan listrik Non-PLN (kWh)', 'key'=>'q315_d', 'type'=>'raw'],
+            ['label'=>'315.e Pengeluaran listrik (Rp)',         'key'=>'q315_e', 'type'=>'currency'],
         ]],
-        ['title'=>'Subkontrak', 'color'=>'emerald', 'rows'=>[
-            ['label'=>'Q314.  % Pekerjaan disubkontrakkan keluar',    'key'=>'q314',  'type'=>'percent'],
-            ['label'=>'Q315.  % Pekerjaan subkontrak diterima',       'key'=>'q315',  'type'=>'percent'],
-            ['label'=>'Q315a. Nilai pekerjaan disubkontrak keluar',   'key'=>'q315a', 'type'=>'currency'],
-            ['label'=>'Q315b. Nilai pekerjaan subkontrak diterima',   'key'=>'q315b', 'type'=>'currency'],
+        ['title'=>'Pengeluaran Perusahaan (2025)', 'color'=>'violet', 'rows'=>[
+            ['label'=>'317.a1 Sewa/kontrak gedung, mesin, alat',  'key'=>'q317_c1', 'type'=>'currency'],
+            ['label'=>'317.a2 Sewa/kontrak tanah',                'key'=>'q317_c2', 'type'=>'currency'],
+            ['label'=>'317.b Pajak',                              'key'=>'q317_d',  'type'=>'currency'],
+            ['label'=>'317.c Bunga atas pinjaman',                'key'=>'q317_e',  'type'=>'currency'],
+            ['label'=>'317.d Hadiah, sumbangan, derma',           'key'=>'q317_f',  'type'=>'currency'],
+            ['label'=>'317.e Dividen/laba yang dibagikan',        'key'=>'q317_g',  'type'=>'currency'],
+            ['label'=>'317.f Premi asuransi kerugian',            'key'=>'q317_h',  'type'=>'currency'],
+            ['label'=>'317.g Jasa industri (maklun) dibayarkan',  'key'=>'q317_i',  'type'=>'currency'],
+            ['label'=>'317.h Air (selain bahan baku & penolong)', 'key'=>'q317_j',  'type'=>'currency'],
+            ['label'=>'317.i Pengeluaran lainnya',                'key'=>'q317_k',  'type'=>'currency'],
         ]],
-        ['title'=>'Aset Tetap & Kepemilikan Modal', 'color'=>'amber', 'rows'=>[
-            ['label'=>'Q318a. Nilai aset tetap sendiri',          'key'=>'q318a',       'type'=>'currency'],
-            ['label'=>'Q318b. Nilai aset tetap sewa guna usaha',  'key'=>'q318b',       'type'=>'currency'],
-            ['label'=>'Q318c. Total aset tetap',                  'key'=>'q318c',       'type'=>'currency'],
-            ['label'=>'Q318c. Skala range aset tetap (1–5)',      'key'=>'q318c_range', 'type'=>'raw'],
-            ['label'=>'Q318d. Luas area (m²)',                    'key'=>'q318d_area',  'type'=>'raw'],
-            ['label'=>'Q319a. Pribadi/Perorangan',                  'key'=>'q319a',       'type'=>'percent'],
-            ['label'=>'Q319b. Lembaga Nonprofit (Rumah Tangga)',   'key'=>'q319b',       'type'=>'percent'],
-            ['label'=>'Q319c. Korporasi Publik',                   'key'=>'q319c',       'type'=>'percent'],
-            ['label'=>'Q319d. Korporasi Non Publik',               'key'=>'q319d',       'type'=>'percent'],
-            ['label'=>'Q319e. Pemerintah Pusat',                   'key'=>'q319e',       'type'=>'percent'],
-            ['label'=>'Q319f. Pemerintah Daerah',                  'key'=>'q319f',       'type'=>'percent'],
-            ['label'=>'Q319g. Perusahaan Swasta Nasional',         'key'=>'q319g',       'type'=>'percent'],
-            ['label'=>'Q319h. Asing',                              'key'=>'q319h',       'type'=>'percent'],
-            ['label'=>'Q319i. Total kepemilikan',                  'key'=>'q319i',       'type'=>'percent'],
+        ['title'=>'Moda Transportasi Barang (2025)', 'color'=>'emerald', 'rows'=>[
+            ['label'=>'318.a Angkutan jalan — frekuensi (kali)',  'key'=>'q318a_freq',  'type'=>'raw'],
+            ['label'=>'318.a Angkutan jalan — biaya (Rp)',        'key'=>'q318a_biaya', 'type'=>'currency'],
+            ['label'=>'318.b Kereta api — frekuensi (kali)',      'key'=>'q318b_freq',  'type'=>'raw'],
+            ['label'=>'318.b Kereta api — biaya (Rp)',            'key'=>'q318b_biaya', 'type'=>'currency'],
+            ['label'=>'318.c Air sungai/danau — frekuensi (kali)','key'=>'q318c_freq',  'type'=>'raw'],
+            ['label'=>'318.c Air sungai/danau — biaya (Rp)',      'key'=>'q318c_biaya', 'type'=>'currency'],
+            ['label'=>'318.d Air laut — frekuensi (kali)',        'key'=>'q318d_freq',  'type'=>'raw'],
+            ['label'=>'318.d Air laut — biaya (Rp)',              'key'=>'q318d_biaya', 'type'=>'currency'],
+            ['label'=>'318.e Udara — frekuensi (kali)',           'key'=>'q318e_freq',  'type'=>'raw'],
+            ['label'=>'318.e Udara — biaya (Rp)',                 'key'=>'q318e_biaya', 'type'=>'currency'],
+            ['label'=>'319. % moda menggunakan jasa pihak ketiga','key'=>'q319_persen_pihak_ketiga', 'type'=>'percent'],
         ]],
     ];
 
     $hist3bNGroups = [
         ['title'=>'Pendapatan Perusahaan', 'color'=>'blue', 'rows'=>[
-            ['label'=>'Q303.  Pendapatan penjualan barang/jasa — triwulan lalu',  'key'=>'q303',        'type'=>'currency'],
-            ['label'=>'Q303.  Pendapatan penjualan barang/jasa — tahun berjalan', 'key'=>'q303_year',   'type'=>'currency'],
-            ['label'=>'Q304.  Pendapatan lainnya — triwulan lalu',                'key'=>'q304',        'type'=>'currency'],
-            ['label'=>'Q304.  Pendapatan lainnya — tahun berjalan',               'key'=>'q304_year',   'type'=>'currency'],
-            ['label'=>'Q305.  Total pendapatan — triwulan lalu',                  'key'=>'q305',        'type'=>'currency'],
-            ['label'=>'Q305.  Total pendapatan — tahun berjalan',                 'key'=>'q305_year',   'type'=>'currency'],
-            ['label'=>'Q306.  % Pendapatan dari usaha online',                    'key'=>'q306_online', 'type'=>'percent'],
+            ['label'=>'303.a Penjualan barang & jasa — triwulan lalu',     'key'=>'q303',        'type'=>'currency'],
+            ['label'=>'303.b Penjualan barang & jasa — tahun 2025',        'key'=>'q303_year',   'type'=>'currency'],
+            ['label'=>'304.a Royalti, bunga, dividen, dll — triwulan lalu','key'=>'q304',        'type'=>'currency'],
+            ['label'=>'304.b Royalti, bunga, dividen, dll — tahun 2025',   'key'=>'q304_year',   'type'=>'currency'],
+            ['label'=>'305.a Total pendapatan — triwulan lalu',           'key'=>'q305',        'type'=>'currency'],
+            ['label'=>'305.b Total pendapatan — tahun 2025',              'key'=>'q305_year',   'type'=>'currency'],
+            ['label'=>'306. % pendapatan dari usaha online',              'key'=>'q306_online', 'type'=>'percent'],
+        ]],
+        ['title'=>'Persediaan & Barang Modal', 'color'=>'indigo', 'rows'=>[
+            ['label'=>'307.a Stok bahan baku/penolong/bakar — 1 Jan 2025',   'key'=>'q306_year_awal',   'type'=>'currency'],
+            ['label'=>'307.b Stok bahan baku/penolong/bakar — 31 Des 2025',  'key'=>'q306_year_akhir',  'type'=>'currency'],
+            ['label'=>'308.a Stok barang setengah jadi — 1 Jan 2025',        'key'=>'q307_year_awal',   'type'=>'currency'],
+            ['label'=>'308.b Stok barang setengah jadi — 31 Des 2025',       'key'=>'q307_year_akhir',  'type'=>'currency'],
+            ['label'=>'309.a Stok barang jadi — 1 Jan 2025',                 'key'=>'q308_year_awal',   'type'=>'currency'],
+            ['label'=>'309.b Stok barang jadi — 31 Des 2025',                'key'=>'q308_year_akhir',  'type'=>'currency'],
+            ['label'=>'310. Pembelian/penambahan barang modal tetap (2025)', 'key'=>'q310_beli_modal',  'type'=>'currency'],
+            ['label'=>'311. Penjualan/pengurangan barang modal tetap (2025)','key'=>'q311_jual_modal',  'type'=>'currency'],
+            ['label'=>'312. Taksiran barang modal tetap per 31 Des 2025',    'key'=>'q312_taksir_modal','type'=>'currency'],
+        ]],
+        ['title'=>'Pengeluaran Pekerja', 'color'=>'cyan', 'rows'=>[
+            ['label'=>'313.a1 Upah/gaji/tunjangan pekerja produksi',    'key'=>'q313_a1', 'type'=>'currency'],
+            ['label'=>'313.a2 Pengeluaran lain pekerja produksi',       'key'=>'q313_a2', 'type'=>'currency'],
+            ['label'=>'313.b1 Upah/gaji/tunjangan pekerja lainnya',     'key'=>'q313_b1', 'type'=>'currency'],
+            ['label'=>'313.b2 Pengeluaran lain pekerja lainnya',        'key'=>'q313_b2', 'type'=>'currency'],
+            ['label'=>'313.c Total pengeluaran pekerja',                'key'=>'q313_c',  'type'=>'currency'],
+            ['label'=>'314.a1 Outsourcing — upah pekerja produksi',     'key'=>'q314_a1', 'type'=>'currency'],
+            ['label'=>'314.a2 Outsourcing — pengeluaran lain produksi', 'key'=>'q314_a2', 'type'=>'currency'],
+            ['label'=>'314.b1 Outsourcing — upah pekerja lainnya',      'key'=>'q314_b1', 'type'=>'currency'],
+            ['label'=>'314.b2 Outsourcing — pengeluaran lain lainnya',  'key'=>'q314_b2', 'type'=>'currency'],
+            ['label'=>'314.c Total pengeluaran outsourcing',            'key'=>'q314_c',  'type'=>'currency'],
+        ]],
+        ['title'=>'Listrik & Biaya Produksi', 'color'=>'amber', 'rows'=>[
+            ['label'=>'315.a Daya tersambung PLN (VA)',         'key'=>'q315_a', 'type'=>'raw'],
+            ['label'=>'315.b Daya tersambung Non-PLN (VA)',     'key'=>'q315_b', 'type'=>'raw'],
+            ['label'=>'315.c Penggunaan listrik PLN (kWh)',     'key'=>'q315_c', 'type'=>'raw'],
+            ['label'=>'315.d Penggunaan listrik Non-PLN (kWh)', 'key'=>'q315_d', 'type'=>'raw'],
+            ['label'=>'315.e Pengeluaran listrik (Rp)',         'key'=>'q315_e', 'type'=>'currency'],
+            ['label'=>'316.a Biaya produksi (bahan baku & penolong) — triwulan lalu', 'key'=>'q312',      'type'=>'currency'],
+            ['label'=>'316.b Biaya produksi (bahan baku & penolong) — tahun 2025',    'key'=>'q312_year', 'type'=>'currency'],
+        ]],
+        ['title'=>'Pengeluaran Perusahaan (2025)', 'color'=>'violet', 'rows'=>[
+            ['label'=>'317.a Biaya operasional (air, listrik, gas, dll)', 'key'=>'q317_a',  'type'=>'currency'],
+            ['label'=>'317.b Biaya non-operasional',                     'key'=>'q317_b',  'type'=>'currency'],
+            ['label'=>'317.c1 Sewa/kontrak gedung, mesin, alat',         'key'=>'q317_c1', 'type'=>'currency'],
+            ['label'=>'317.c2 Sewa/kontrak tanah',                       'key'=>'q317_c2', 'type'=>'currency'],
+            ['label'=>'317.d Pajak',                                     'key'=>'q317_d',  'type'=>'currency'],
+            ['label'=>'317.e Bunga atas pinjaman',                       'key'=>'q317_e',  'type'=>'currency'],
+            ['label'=>'317.f Hadiah, sumbangan, derma',                  'key'=>'q317_f',  'type'=>'currency'],
+            ['label'=>'317.g Dividen/laba yang dibagikan',               'key'=>'q317_g',  'type'=>'currency'],
+            ['label'=>'317.h Premi asuransi kerugian',                   'key'=>'q317_h',  'type'=>'currency'],
+            ['label'=>'317.i Jasa industri (maklun) dibayarkan',         'key'=>'q317_i',  'type'=>'currency'],
+            ['label'=>'317.j Air (selain bahan baku & penolong)',        'key'=>'q317_j',  'type'=>'currency'],
+            ['label'=>'317.k Pengeluaran lainnya',                       'key'=>'q317_k',  'type'=>'currency'],
+        ]],
+        ['title'=>'Ekspor & Impor Luar Negeri', 'color'=>'emerald', 'rows'=>[
+            ['label'=>'319. % produksi dijual sebagai ekspor',   'key'=>'q314', 'type'=>'percent'],
+            ['label'=>'320. % bahan baku & penolong dari impor', 'key'=>'q315', 'type'=>'percent'],
+        ]],
+        ['title'=>'Nilai Aset (31 Des 2025)', 'color'=>'blue', 'rows'=>[
+            ['label'=>'321.a Tanah dan bangunan',          'key'=>'q318a',       'type'=>'currency'],
+            ['label'=>'321.b Selain tanah dan bangunan',   'key'=>'q318b',       'type'=>'currency'],
+            ['label'=>'321.c Total nilai aset',            'key'=>'q318c',       'type'=>'currency'],
+            ['label'=>'321.c1 Rentang nilai aset (1–5)',   'key'=>'q318c_range', 'type'=>'raw'],
+            ['label'=>'321.d Luas tanah untuk usaha (m²)', 'key'=>'q318d_area',  'type'=>'raw'],
+        ]],
+        ['title'=>'Kepemilikan Modal (31 Des 2025)', 'color'=>'indigo', 'rows'=>[
+            ['label'=>'322.a Pribadi/Perorangan',               'key'=>'q319a', 'type'=>'percent'],
+            ['label'=>'322.b Lembaga Nonprofit (Rumah Tangga)', 'key'=>'q319b', 'type'=>'percent'],
+            ['label'=>'322.c Korporasi Publik',                 'key'=>'q319c', 'type'=>'percent'],
+            ['label'=>'322.d Korporasi Non Publik',             'key'=>'q319d', 'type'=>'percent'],
+            ['label'=>'322.e Pemerintah Pusat',                 'key'=>'q319e', 'type'=>'percent'],
+            ['label'=>'322.f Pemerintah Daerah',                'key'=>'q319f', 'type'=>'percent'],
+            ['label'=>'322.g Perusahaan Swasta Nasional',       'key'=>'q319g', 'type'=>'percent'],
+            ['label'=>'322.h Asing',                            'key'=>'q319h', 'type'=>'percent'],
+            ['label'=>'322.i Total kepemilikan',                'key'=>'q319i', 'type'=>'percent'],
+        ]],
+    ];
+
+    // ── Triwulanan field sets ──────────────────────────────────────────────────
+    // The quarterly Blok 3B forms use a different (smaller) set of keys than the
+    // annual forms above, so quarter-to-quarter comparison needs its own mapping.
+    // Selected per response below based on $hResp->triwulan.
+    $hist3bIGroupsTw = [
+        ['title'=>'Pendapatan Perusahaan', 'color'=>'blue', 'rows'=>[
+            ['label'=>'304. Pendapatan royalti, bunga, dividen, dll', 'key'=>'q304', 'type'=>'currency'],
         ]],
         ['title'=>'Persediaan (Inventori)', 'color'=>'indigo', 'rows'=>[
-            ['label'=>'Q307. Barang dagangan — Awal periode',  'key'=>'q306a',        'type'=>'currency'],
-            ['label'=>'Q307. Barang dagangan — Akhir periode', 'key'=>'q306b',        'type'=>'currency'],
-            ['label'=>'Q307. Barang dagangan — Awal tahun',    'key'=>'q306_year_awal',  'type'=>'currency'],
-            ['label'=>'Q307. Barang dagangan — Akhir tahun',   'key'=>'q306_year_akhir', 'type'=>'currency'],
-            ['label'=>'Q308. Bahan baku — Awal periode',       'key'=>'q307a',        'type'=>'currency'],
-            ['label'=>'Q308. Bahan baku — Akhir periode',      'key'=>'q307b',        'type'=>'currency'],
-            ['label'=>'Q309. Persediaan lainnya — Awal',       'key'=>'q308a',        'type'=>'currency'],
-            ['label'=>'Q309. Persediaan lainnya — Akhir',      'key'=>'q308b',        'type'=>'currency'],
-            ['label'=>'Q310. Total persediaan — Awal',         'key'=>'q309a',        'type'=>'currency'],
-            ['label'=>'Q310. Total persediaan — Akhir',        'key'=>'q309b',        'type'=>'currency'],
+            ['label'=>'306. Bahan baku & bahan bakar — Awal',  'key'=>'q306_awal',  'type'=>'currency'],
+            ['label'=>'306. Bahan baku & bahan bakar — Akhir', 'key'=>'q306_akhir', 'type'=>'currency'],
+            ['label'=>'307. Barang dalam proses — Awal',       'key'=>'q307_awal',  'type'=>'currency'],
+            ['label'=>'307. Barang dalam proses — Akhir',      'key'=>'q307_akhir', 'type'=>'currency'],
+            ['label'=>'308. Barang jadi — Awal',               'key'=>'q308_awal',  'type'=>'currency'],
+            ['label'=>'308. Barang jadi — Akhir',              'key'=>'q308_akhir', 'type'=>'currency'],
+            ['label'=>'309. Total persediaan — Awal',          'key'=>'q309_awal',  'type'=>'currency'],
+            ['label'=>'309. Total persediaan — Akhir',         'key'=>'q309_akhir', 'type'=>'currency'],
         ]],
-        ['title'=>'Pembelian & Pengeluaran', 'color'=>'cyan', 'rows'=>[
-            ['label'=>'Q311.   Pembelian/pengadaan — triwulan lalu',   'key'=>'q310',      'type'=>'currency'],
-            ['label'=>'Q311.   Pembelian/pengadaan — tahun berjalan',  'key'=>'q310_year', 'type'=>'currency'],
-            ['label'=>'Q312a.  Upah/gaji — triwulan lalu',             'key'=>'q311a',     'type'=>'currency'],
-            ['label'=>'Q312b.  Upah/gaji — tahun berjalan',            'key'=>'q311b',     'type'=>'currency'],
-            ['label'=>'Q312b.1 Upah produksi (tahun)',                  'key'=>'q311b1',    'type'=>'currency'],
-            ['label'=>'Q312b.2 Upah non-produksi (tahun)',              'key'=>'q311b2',    'type'=>'currency'],
-            ['label'=>'Q313.   Biaya listrik',                          'key'=>'q312',      'type'=>'currency'],
-            ['label'=>'Q313.   Biaya listrik — tahun berjalan',         'key'=>'q312_year', 'type'=>'currency'],
-            ['label'=>'Q314.   Biaya bahan bakar',                      'key'=>'q313',      'type'=>'currency'],
-            ['label'=>'Q314.   Biaya bahan bakar — tahun berjalan',     'key'=>'q313_year', 'type'=>'currency'],
+        ['title'=>'Item Pengeluaran Perusahaan', 'color'=>'cyan', 'rows'=>[
+            ['label'=>'310. Upah, gaji & jaminan sosial pegawai',    'key'=>'q310',     'type'=>'currency'],
+            ['label'=>'311. Penambahan aset tetap (kecuali tanah)',  'key'=>'q311',     'type'=>'currency'],
+            ['label'=>'312. Biaya produksi (bahan baku & penolong)', 'key'=>'q312_tw',  'type'=>'currency'],
+            ['label'=>'313. Biaya operasional (air, listrik, dll)',  'key'=>'q313_tw',  'type'=>'currency'],
         ]],
-        ['title'=>'Subkontrak', 'color'=>'emerald', 'rows'=>[
-            ['label'=>'Q315.  % Pekerjaan disubkontrakkan keluar',    'key'=>'q314',  'type'=>'percent'],
-            ['label'=>'Q316.  % Pekerjaan subkontrak diterima',       'key'=>'q315',  'type'=>'percent'],
-            ['label'=>'Q315a. Nilai pekerjaan disubkontrak keluar',   'key'=>'q315a', 'type'=>'currency'],
-            ['label'=>'Q315b. Nilai pekerjaan subkontrak diterima',   'key'=>'q315b', 'type'=>'currency'],
+        ['title'=>'Ekspor & Impor Luar Negeri', 'color'=>'emerald', 'rows'=>[
+            ['label'=>'314. % produksi dijual sebagai ekspor',      'key'=>'q314_tw', 'type'=>'percent'],
+            ['label'=>'315. % bahan baku & penolong dari impor',    'key'=>'q315_tw', 'type'=>'percent'],
+        ]],
+    ];
+
+    $hist3bNGroupsTw = [
+        ['title'=>'Pendapatan Perusahaan', 'color'=>'blue', 'rows'=>[
+            ['label'=>'303. Pendapatan penjualan barang & jasa',     'key'=>'q303', 'type'=>'currency'],
+            ['label'=>'304. Pendapatan royalti, bunga, dividen, dll','key'=>'q304', 'type'=>'currency'],
+            ['label'=>'305. Total pendapatan (303 + 304)',           'key'=>'q305', 'type'=>'currency'],
+        ]],
+        ['title'=>'Persediaan (Inventori)', 'color'=>'indigo', 'rows'=>[
+            ['label'=>'306. Bahan baku & bahan bakar — Awal',  'key'=>'q306_awal',  'type'=>'currency'],
+            ['label'=>'306. Bahan baku & bahan bakar — Akhir', 'key'=>'q306_akhir', 'type'=>'currency'],
+            ['label'=>'307. Barang dalam proses — Awal',       'key'=>'q307_awal',  'type'=>'currency'],
+            ['label'=>'307. Barang dalam proses — Akhir',      'key'=>'q307_akhir', 'type'=>'currency'],
+            ['label'=>'308. Barang jadi — Awal',               'key'=>'q308_awal',  'type'=>'currency'],
+            ['label'=>'308. Barang jadi — Akhir',              'key'=>'q308_akhir', 'type'=>'currency'],
+            ['label'=>'309. Total persediaan — Awal',          'key'=>'q309_awal',  'type'=>'currency'],
+            ['label'=>'309. Total persediaan — Akhir',         'key'=>'q309_akhir', 'type'=>'currency'],
+        ]],
+        ['title'=>'Item Pengeluaran Perusahaan', 'color'=>'cyan', 'rows'=>[
+            ['label'=>'310. Upah, gaji & jaminan sosial pegawai',    'key'=>'q310_tw',  'type'=>'currency'],
+            ['label'=>'311. Penambahan aset tetap (kecuali tanah)',  'key'=>'q311_tw',  'type'=>'currency'],
+            ['label'=>'312. Biaya produksi (bahan baku & penolong)', 'key'=>'q312_tw',  'type'=>'currency'],
+            ['label'=>'313. Biaya operasional (air, listrik, dll)',  'key'=>'q313_tw',  'type'=>'currency'],
+        ]],
+        ['title'=>'Ekspor & Impor Luar Negeri', 'color'=>'emerald', 'rows'=>[
+            ['label'=>'314. % produksi dijual sebagai ekspor',   'key'=>'q314_tw', 'type'=>'percent'],
+            ['label'=>'315. % bahan baku & penolong dari impor', 'key'=>'q315_tw', 'type'=>'percent'],
         ]],
     ];
 @endphp
@@ -306,6 +407,20 @@
                 $hProducts = $hResp->blok3a_products ?? [];
                 $hLainnya  = $hResp->blok3a_lainnya ?? [];
                 $hTotals   = $hResp->blok3a_totals ?? [];
+
+                // Month columns for THIS response's period (mirrors how Blok 3A stores
+                // them: a leading "Des {prevYear}" carry-over column, then either all
+                // 12 months of the year (annual) or the quarter's 3 months.
+                $hPrevYear       = (int) $hResp->tahun - 1;
+                $histMonthKeys   = ["{$hPrevYear}_des"];
+                $histMonthLabels = ["Des {$hPrevYear}"];
+                $hMonths = ((int) $hResp->triwulan === 0)
+                    ? array_keys($histMonthAbbr)
+                    : ($histQuarterMonths[(int) $hResp->triwulan] ?? []);
+                foreach ($hMonths as $hAbbr) {
+                    $histMonthKeys[]   = "{$hResp->tahun}_{$hAbbr}";
+                    $histMonthLabels[] = $histMonthAbbr[$hAbbr];
+                }
             @endphp
 
             @if(empty($hProducts) && empty($hLainnya) && empty($hTotals))
@@ -443,8 +558,9 @@
                     <p style="font-size:0.85rem;margin:0;">Tidak ada data Blok IIIB Industri untuk periode ini.</p>
                 </div>
             @else
+                @php $hGroups3bI = ((int) $hResp->triwulan > 0) ? $hist3bIGroupsTw : $hist3bIGroups; @endphp
                 <div style="display:flex;flex-direction:column;gap:1rem;">
-                @foreach($hist3bIGroups as $hGroup)
+                @foreach($hGroups3bI as $hGroup)
                 @php
                     $hC = $histGroupColors[$hGroup['color']] ?? $histGroupColors['blue'];
                     $hHasVal = false;
@@ -550,8 +666,9 @@
                     <p style="font-size:0.85rem;margin:0;">Tidak ada data Blok IIIB Non-Industri untuk periode ini.</p>
                 </div>
             @else
+                @php $hGroups3bN = ((int) $hResp->triwulan > 0) ? $hist3bNGroupsTw : $hist3bNGroups; @endphp
                 <div style="display:flex;flex-direction:column;gap:1rem;">
-                @foreach($hist3bNGroups as $hGroup)
+                @foreach($hGroups3bN as $hGroup)
                 @php
                     $hC = $histGroupColors[$hGroup['color']] ?? $histGroupColors['blue'];
                     $hHasVal = false;

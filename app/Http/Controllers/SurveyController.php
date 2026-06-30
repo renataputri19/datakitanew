@@ -501,8 +501,11 @@ class SurveyController extends Controller
         // Fetch reference response from the immediately preceding period for comparison
         $referenceResponse = $this->getPreviousPeriodResponse($user->id, $tahun, $triwulan);
 
-        // Cross-fill: offer to copy overlapping Blok I answers from the user's UB survey
-        $crossFill = $this->ubCrossFillForSibstr($user->id);
+        // Cross-fill: offer to copy overlapping Blok I answers from the user's UB survey.
+        // Only relevant when identity is first established (Tahunan or TW I). For
+        // TW II–IV the previous-quarter reference drawer is the correct source, so
+        // the UB cross-fill is suppressed there.
+        $crossFill = $triwulan <= 1 ? $this->ubCrossFillForSibstr($user->id) : null;
 
         // Get jenis kawasan options
         $jenisKawasanOptions = SurveyResponse::getJenisKawasanOptions();

@@ -174,11 +174,9 @@
     @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
     @include('survey.sibstr.partials.reference-drawer', [
         'referenceResponse' => $referenceResponse,
-        'currentTwLabel'    => isset($triwulan) && $triwulan > 0
-                                ? \App\Models\SurveyResponse::triwulanLabel($triwulan) . ' ' . ($tahun ?? 2025)
-                                : 'Tahunan ' . ($tahun ?? 2025),
+        'currentTwLabel'    => null,
         'fields' => [
-            ['name' => 'catatan', 'label' => '601. Catatan Tambahan', 'copyable' => true],
+            ['name' => 'catatan', 'label' => '601. Catatan Tambahan', 'copyable' => false],
         ],
     ])
     @endif

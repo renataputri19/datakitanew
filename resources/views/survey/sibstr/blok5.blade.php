@@ -228,39 +228,35 @@
     </form>
 
     @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
+    @php
+        // Blok 5 rows (questions 501–507).
+        $b5rows = [
+            '501' => 'Pesanan', '502' => 'Produksi', '503' => 'Kapasitas Produksi',
+            '504' => 'Tenaga Kerja', '505' => 'Jam Kerja',
+            '506' => 'Waktu Pengiriman Pemasok', '507' => 'Persediaan Bahan Baku',
+        ];
+        $b5fields = [];
+        if (($triwulan ?? 0) > 0) {
+            // Triwulanan: the previous quarter stored only p1 (Kondisi/realisasi) and
+            // p2 (Prospek — its forecast for the quarter now being filled).
+            foreach ($b5rows as $k => $lbl) {
+                $b5fields[] = ['name' => "blok5_data.$k.p1", 'label' => "$k. $lbl — Kondisi (realisasi triwulan lalu)",    'copyable' => false];
+                $b5fields[] = ['name' => "blok5_data.$k.p2", 'label' => "$k. $lbl — Prospek (perkiraan utk triwulan ini)", 'copyable' => false];
+            }
+        } else {
+            // Tahunan: quarter-over-quarter columns p1–p5.
+            $b5cols = ['p1' => 'TW I vs TW IV', 'p2' => 'TW II vs TW I', 'p3' => 'TW III vs TW II', 'p5' => 'TW IV vs TW III'];
+            foreach ($b5rows as $k => $lbl) {
+                foreach ($b5cols as $pk => $plabel) {
+                    $b5fields[] = ['name' => "blok5_data.$k.$pk", 'label' => "$k. $lbl — $plabel", 'copyable' => false];
+                }
+            }
+        }
+    @endphp
     @include('survey.sibstr.partials.reference-drawer', [
         'referenceResponse' => $referenceResponse,
         'currentTwLabel'    => null,
-        'fields' => [
-            ['name' => 'blok5_data.501.p1', 'label' => '501. Pesanan — TW I vs TW IV',         'copyable' => false],
-            ['name' => 'blok5_data.501.p2', 'label' => '501. Pesanan — TW II vs TW I',         'copyable' => false],
-            ['name' => 'blok5_data.501.p3', 'label' => '501. Pesanan — TW III vs TW II',       'copyable' => false],
-            ['name' => 'blok5_data.501.p5', 'label' => '501. Pesanan — TW IV vs TW III',       'copyable' => false],
-            ['name' => 'blok5_data.502.p1', 'label' => '502. Produksi — TW I vs TW IV',        'copyable' => false],
-            ['name' => 'blok5_data.502.p2', 'label' => '502. Produksi — TW II vs TW I',        'copyable' => false],
-            ['name' => 'blok5_data.502.p3', 'label' => '502. Produksi — TW III vs TW II',      'copyable' => false],
-            ['name' => 'blok5_data.502.p5', 'label' => '502. Produksi — TW IV vs TW III',      'copyable' => false],
-            ['name' => 'blok5_data.503.p1', 'label' => '503. Kapasitas — TW I vs TW IV',       'copyable' => false],
-            ['name' => 'blok5_data.503.p2', 'label' => '503. Kapasitas — TW II vs TW I',       'copyable' => false],
-            ['name' => 'blok5_data.503.p3', 'label' => '503. Kapasitas — TW III vs TW II',     'copyable' => false],
-            ['name' => 'blok5_data.503.p5', 'label' => '503. Kapasitas — TW IV vs TW III',     'copyable' => false],
-            ['name' => 'blok5_data.504.p1', 'label' => '504. Tenaga Kerja — TW I vs TW IV',    'copyable' => false],
-            ['name' => 'blok5_data.504.p2', 'label' => '504. Tenaga Kerja — TW II vs TW I',    'copyable' => false],
-            ['name' => 'blok5_data.504.p3', 'label' => '504. Tenaga Kerja — TW III vs TW II',  'copyable' => false],
-            ['name' => 'blok5_data.504.p5', 'label' => '504. Tenaga Kerja — TW IV vs TW III',  'copyable' => false],
-            ['name' => 'blok5_data.505.p1', 'label' => '505. Jam Kerja — TW I vs TW IV',       'copyable' => false],
-            ['name' => 'blok5_data.505.p2', 'label' => '505. Jam Kerja — TW II vs TW I',       'copyable' => false],
-            ['name' => 'blok5_data.505.p3', 'label' => '505. Jam Kerja — TW III vs TW II',     'copyable' => false],
-            ['name' => 'blok5_data.505.p5', 'label' => '505. Jam Kerja — TW IV vs TW III',     'copyable' => false],
-            ['name' => 'blok5_data.506.p1', 'label' => '506. Pengiriman Pemasok — TW I vs TW IV',  'copyable' => false],
-            ['name' => 'blok5_data.506.p2', 'label' => '506. Pengiriman Pemasok — TW II vs TW I',  'copyable' => false],
-            ['name' => 'blok5_data.506.p3', 'label' => '506. Pengiriman Pemasok — TW III vs TW II','copyable' => false],
-            ['name' => 'blok5_data.506.p5', 'label' => '506. Pengiriman Pemasok — TW IV vs TW III','copyable' => false],
-            ['name' => 'blok5_data.507.p1', 'label' => '507. Persediaan Bahan Baku — TW I vs TW IV',  'copyable' => false],
-            ['name' => 'blok5_data.507.p2', 'label' => '507. Persediaan Bahan Baku — TW II vs TW I',  'copyable' => false],
-            ['name' => 'blok5_data.507.p3', 'label' => '507. Persediaan Bahan Baku — TW III vs TW II','copyable' => false],
-            ['name' => 'blok5_data.507.p5', 'label' => '507. Persediaan Bahan Baku — TW IV vs TW III','copyable' => false],
-        ],
+        'fields'            => $b5fields,
     ])
     @endif
 </div>

@@ -696,11 +696,18 @@ class SurveyResponse extends Model
             return [];
         }
 
-        // Same year — return quarters whose last month < current month
+        // Same year — return quarters whose last month < current month.
+        //
+        // Outside production (local/staging) we also unlock the quarter that is
+        // currently *in progress* so the upcoming period can be previewed before
+        // it officially opens. Production keeps the strict "a quarter opens only
+        // after it has ended" rule.
+        $previewInProgress = ! app()->environment('production');
+
         $available = [];
-        if ($currentMonth >= 4)  { $available[] = 1; }
-        if ($currentMonth >= 7)  { $available[] = 2; }
-        if ($currentMonth >= 10) { $available[] = 3; }
+        if ($currentMonth >= 4  || ($previewInProgress && $currentMonth >= 1))  { $available[] = 1; }
+        if ($currentMonth >= 7  || ($previewInProgress && $currentMonth >= 4))  { $available[] = 2; }
+        if ($currentMonth >= 10 || ($previewInProgress && $currentMonth >= 7))  { $available[] = 3; }
         // TW4 becomes available from January of the next year
 
         return $available;

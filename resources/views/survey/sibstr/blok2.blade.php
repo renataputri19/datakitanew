@@ -866,35 +866,34 @@
     @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
     @php
     $refFields = $currentTriwulan > 0 ? [
-        ['name' => 'kondisi_perusahaan',        'label' => 'Kondisi Perusahaan (201)',           'copyable' => true],
-        ['name' => 'jaringan_unit_kegiatan',    'label' => 'Jaringan Unit Kegiatan (202)',       'copyable' => true],
-        ['name' => 'kegiatan_utama_perusahaan', 'label' => 'Kegiatan Utama Perusahaan (208.a)', 'copyable' => true],
-        ['name' => 'kbli_utama',                'label' => 'KBLI Utama (208.c)',                'copyable' => true],
+        ['name' => 'kondisi_perusahaan',        'label' => 'Kondisi Perusahaan (201)',           'copyable' => false],
+        ['name' => 'jaringan_unit_kegiatan',    'label' => 'Jaringan Unit Kegiatan (202)',       'copyable' => false],
+        ['name' => 'rata_rata_tenaga_kerja',    'label' => 'Rata-rata Tenaga Kerja (207)',       'copyable' => false],
+        ['name' => 'kegiatan_utama_perusahaan', 'label' => 'Kegiatan Utama Perusahaan (208.a)', 'copyable' => false],
+        ['name' => 'kbli_utama',                'label' => 'KBLI Utama (208.c)',                'copyable' => false],
     ] : [
-        ['name' => 'kondisi_perusahaan',                  'label' => 'Kondisi Perusahaan',                       'copyable' => true],
-        ['name' => 'jaringan_unit_kegiatan',              'label' => 'Jaringan Unit Kegiatan',                   'copyable' => true],
-        ['name' => 'kegiatan_utama_perusahaan',           'label' => 'Kegiatan Utama Perusahaan',                'copyable' => true],
-        ['name' => 'kbli_utama',                          'label' => 'KBLI Utama',                               'copyable' => true],
-        ['name' => 'jumlah_bulan_aktif_2025',             'label' => 'Jumlah Bulan Aktif',                       'copyable' => true],
-        ['name' => 'rata_hari_kerja_bulanan_2025',        'label' => 'Rata-rata Hari Kerja Bulanan',             'copyable' => true],
-        ['name' => 'jumlah_seluruh_pekerja',              'label' => 'Jumlah Seluruh Pekerja (207.a)',           'copyable' => true],
-        ['name' => 'tenaga_kerja_laki_laki',              'label' => 'TK Laki-laki (207.b.1)',                   'copyable' => true],
-        ['name' => 'tenaga_kerja_perempuan',              'label' => 'TK Perempuan (207.b.2)',                   'copyable' => true],
-        ['name' => 'pekerja_bukan_outsourcing_produksi',  'label' => 'TK Bukan Outsourcing Produksi (207.c.1)', 'copyable' => true],
-        ['name' => 'pekerja_bukan_outsourcing_lainnya',   'label' => 'TK Bukan Outsourcing Lainnya (207.c.2)',  'copyable' => true],
-        ['name' => 'pekerja_outsourcing_produksi',        'label' => 'TK Outsourcing Produksi (207.d.1)',        'copyable' => true],
-        ['name' => 'pekerja_outsourcing_lainnya',         'label' => 'TK Outsourcing Lainnya (207.d.2)',         'copyable' => true],
-        ['name' => 'tenaga_kerja_asing',                  'label' => 'TK Asing (207.e)',                         'copyable' => true],
-        ['name' => 'memproduksi_barang_sendiri',          'label' => 'Memproduksi Barang Sendiri',               'copyable' => true],
-        ['name' => 'penggunaan_internet',                 'label' => 'Penggunaan Internet',                      'copyable' => true],
-        ['name' => 'produksi_ramah_lingkungan',           'label' => 'Produksi Ramah Lingkungan',                'copyable' => true],
+        ['name' => 'kondisi_perusahaan',                  'label' => 'Kondisi Perusahaan',                       'copyable' => false],
+        ['name' => 'jaringan_unit_kegiatan',              'label' => 'Jaringan Unit Kegiatan',                   'copyable' => false],
+        ['name' => 'kegiatan_utama_perusahaan',           'label' => 'Kegiatan Utama Perusahaan',                'copyable' => false],
+        ['name' => 'kbli_utama',                          'label' => 'KBLI Utama',                               'copyable' => false],
+        ['name' => 'jumlah_bulan_aktif_2025',             'label' => 'Jumlah Bulan Aktif',                       'copyable' => false],
+        ['name' => 'rata_hari_kerja_bulanan_2025',        'label' => 'Rata-rata Hari Kerja Bulanan',             'copyable' => false],
+        ['name' => 'jumlah_seluruh_pekerja',              'label' => 'Jumlah Seluruh Pekerja (207.a)',           'copyable' => false],
+        ['name' => 'tenaga_kerja_laki_laki',              'label' => 'TK Laki-laki (207.b.1)',                   'copyable' => false],
+        ['name' => 'tenaga_kerja_perempuan',              'label' => 'TK Perempuan (207.b.2)',                   'copyable' => false],
+        ['name' => 'pekerja_bukan_outsourcing_produksi',  'label' => 'TK Bukan Outsourcing Produksi (207.c.1)', 'copyable' => false],
+        ['name' => 'pekerja_bukan_outsourcing_lainnya',   'label' => 'TK Bukan Outsourcing Lainnya (207.c.2)',  'copyable' => false],
+        ['name' => 'pekerja_outsourcing_produksi',        'label' => 'TK Outsourcing Produksi (207.d.1)',        'copyable' => false],
+        ['name' => 'pekerja_outsourcing_lainnya',         'label' => 'TK Outsourcing Lainnya (207.d.2)',         'copyable' => false],
+        ['name' => 'tenaga_kerja_asing',                  'label' => 'TK Asing (207.e)',                         'copyable' => false],
+        ['name' => 'memproduksi_barang_sendiri',          'label' => 'Memproduksi Barang Sendiri',               'copyable' => false],
+        ['name' => 'penggunaan_internet',                 'label' => 'Penggunaan Internet',                      'copyable' => false],
+        ['name' => 'produksi_ramah_lingkungan',           'label' => 'Produksi Ramah Lingkungan',                'copyable' => false],
     ];
     @endphp
     @include('survey.sibstr.partials.reference-drawer', [
         'referenceResponse' => $referenceResponse,
-        'currentTwLabel'    => isset($triwulan) && $triwulan > 0
-                                ? \App\Models\SurveyResponse::triwulanLabel($triwulan) . ' ' . ($tahun ?? 2025)
-                                : 'Tahunan ' . ($tahun ?? 2025),
+        'currentTwLabel'    => null,
         'fields'            => $refFields,
     ])
     @endif
