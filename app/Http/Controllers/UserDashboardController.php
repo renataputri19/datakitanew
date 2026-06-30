@@ -182,6 +182,14 @@ class UserDashboardController extends Controller
             $isCompleted   = $resp ? (bool) $resp->is_completed : false;
             $isInProgress  = $resp && !$isCompleted;
 
+            // A quarter that hasn't opened yet stays locked even if a draft row
+            // already exists (e.g. created before its launch date) — nothing is
+            // actionable until it opens.
+            if (!$isAvailable) {
+                $isCompleted  = false;
+                $isInProgress = false;
+            }
+
             $triwulanCards[$tw] = [
                 'triwulan'    => $tw,
                 'label'       => SurveyResponse::triwulanLabel($tw),
@@ -189,7 +197,7 @@ class UserDashboardController extends Controller
                 'is_available'   => $isAvailable,
                 'is_completed'   => $isCompleted,
                 'is_in_progress' => $isInProgress,
-                'is_locked'      => !$isAvailable && !$resp,
+                'is_locked'      => !$isAvailable,
             ];
         }
 

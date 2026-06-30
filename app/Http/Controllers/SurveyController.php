@@ -142,6 +142,14 @@ class SurveyController extends Controller
                 ->with('error', 'Survei Triwulanan 2026 hanya dapat diakses setelah Survei Tahunan 2025 diselesaikan sepenuhnya melalui Blok VI.');
         }
 
+        // Block access to a quarter that has not opened yet (e.g. TW II before its
+        // launch date), even via direct URL or an existing draft.
+        if (!in_array($triwulan, SurveyResponse::availableTriwulan($tahun), true)) {
+            return redirect()
+                ->route('survey.sibstr.entry')
+                ->with('error', 'Survei triwulan ini belum dibuka.');
+        }
+
         return null;
     }
 
@@ -453,6 +461,14 @@ class SurveyController extends Controller
             $isCompleted  = $resp ? (bool) $resp->is_completed : false;
             $isInProgress = $resp && !$isCompleted;
 
+            // A quarter that hasn't opened yet stays locked even if a draft row
+            // already exists (e.g. created before its launch date) — nothing is
+            // actionable until it opens.
+            if (!$isAvailable) {
+                $isCompleted  = false;
+                $isInProgress = false;
+            }
+
             $triwulanCards[$tw] = [
                 'triwulan'       => $tw,
                 'label'          => SurveyResponse::triwulanLabel($tw),
@@ -460,7 +476,7 @@ class SurveyController extends Controller
                 'is_available'   => $isAvailable,
                 'is_completed'   => $isCompleted,
                 'is_in_progress' => $isInProgress,
-                'is_locked'      => !$isAvailable && !$resp,
+                'is_locked'      => !$isAvailable,
             ];
         }
 
