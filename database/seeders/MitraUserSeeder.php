@@ -14,11 +14,24 @@ class MitraUserSeeder extends Seeder
      */
     public function run(): void
     {
+        // User::updateOrCreate(
+        //     ['email' => 'akunmitra21713@gmail.com'],
+        //     [
+        //         'name'            => 'Mitra SIBSTR',
+        //         'password'        => Hash::make('Mitra21713'),
+        //         'is_mitra'        => true,
+        //         'is_bps'          => false,
+        //         'is_admin'        => false,
+        //         'is_superadmin'   => false,
+        //         'is_kominfo_user' => false,
+        //     ]
+        // );
+
         User::updateOrCreate(
-            ['email' => 'akunmitra21713@gmail.com'],
+            ['email' => 'aditprameswara@bps.go.id'],
             [
-                'name'            => 'Mitra SIBSTR',
-                'password'        => Hash::make('Mitra21713'),
+                'name'            => 'Adit Prameswara',
+                'password'        => Hash::make('Bps-12345'),
                 'is_mitra'        => true,
                 'is_bps'          => false,
                 'is_admin'        => false,

@@ -286,6 +286,14 @@
 </div>
 </div>
 
+@if(!empty($crossFill))
+@include('survey.partials.cross-fill-drawer', [
+    'items'       => $crossFill['items'],
+    'sourceBadge' => $crossFill['sourceBadge'],
+    'sourceLabel' => $crossFill['sourceLabel'],
+])
+@endif
+
 @push('scripts')
 <script>
 window.surveyRoutes = {

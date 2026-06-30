@@ -215,7 +215,14 @@ class SurveyUbController extends Controller
 
     public function entry()
     {
-        $response = UbSurveyResponse::where('user_id', Auth::id())->where('tahun', 2026)->first();
+        $user = Auth::user();
+
+        // Mitra users see the full UB results index at this URL (mirrors SIBSTR)
+        if ($user->is_mitra) {
+            return $this->mitraUbIndex(request());
+        }
+
+        $response = UbSurveyResponse::where('user_id', $user->id)->where('tahun', 2026)->first();
         return view('survey.ub.landing', compact('response'));
     }
 
@@ -242,8 +249,42 @@ class SurveyUbController extends Controller
     public function blok1a()
     {
         if ($r = $this->checkCompletion()) return $r;
-        $response = UbSurveyResponse::getOrCreateForUser(Auth::id(), 2026, 'blok1a');
-        return view('survey.ub.blok1a', compact('response'));
+        $response  = UbSurveyResponse::getOrCreateForUser(Auth::id(), 2026, 'blok1a');
+        $crossFill = self::sibstrCrossFillForUb(Auth::id());
+        return view('survey.ub.blok1a', compact('response', 'crossFill'));
+    }
+
+    /**
+     * Build the cross-fill payload for a UB Blok I-A form: overlapping answers
+     * from this user's most-recently-updated SIBSTR response.
+     *
+     * @return array{items: array, sourceBadge: string, sourceLabel: string}|null
+     */
+    public static function sibstrCrossFillForUb(int|string $userId): ?array
+    {
+        $sibstr = \App\Models\SurveyResponse::where('user_id', $userId)
+            ->where('survey_type', 'sibstr')
+            ->orderByDesc('updated_at')
+            ->first();
+
+        if (!$sibstr) {
+            return null;
+        }
+
+        $items = \App\Support\SurveyCrossFill::sibstrToUb($sibstr);
+        if (!\App\Support\SurveyCrossFill::hasCopyable($items)) {
+            return null;
+        }
+
+        $periodLabel = (int) $sibstr->triwulan === 0
+            ? 'Tahunan ' . $sibstr->tahun
+            : \App\Models\SurveyResponse::triwulanLabel((int) $sibstr->triwulan) . ' ' . $sibstr->tahun;
+
+        return [
+            'items'       => $items,
+            'sourceBadge' => 'SIBSTR',
+            'sourceLabel' => 'Data dari SIBSTR (' . $periodLabel . ') yang sudah Anda isi',
+        ];
     }
 
     public function autoSaveBlok1a(Request $request): \Illuminate\Http\JsonResponse
@@ -975,6 +1016,7 @@ class SurveyUbController extends Controller
                 ->with('error', 'Survei belum diselesaikan. Selesaikan survei terlebih dahulu untuk mengunduh PDF.');
         }
 
+        // The responder receives a lightweight submission receipt ("Bukti Pengisian Terkirim").
         $completedAt = $resp->last_saved_at
             ? $resp->last_saved_at->locale('id')->isoFormat('D MMMM YYYY, HH:mm') . ' WIB'
             : '—';
@@ -986,5 +1028,77 @@ class SurveyUbController extends Controller
         $filename = 'SE2026-L.UB_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $resp->nama_perusahaan ?? 'survei') . '.pdf';
 
         return $pdf->download($filename);
+    }
+
+    // ── Mitra: read-only index, detail & PDF (mirrors SIBSTR) ──────────────────
+
+    /**
+     * Display all UB survey responses for Mitra users (read-only, user-dashboard layout).
+     */
+    private function mitraUbIndex(Request $request)
+    {
+        $user    = Auth::user();
+        $search  = $request->input('search');
+        $status  = $request->input('status');
+        $sortBy  = $request->input('sort_by', 'updated_at');
+        $perPage = $request->input('per_page', 25);
+
+        $query = UbSurveyResponse::with('user');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_perusahaan', 'like', "%{$search}%")
+                  ->orWhere('nama_komersial', 'like', "%{$search}%")
+                  ->orWhere('kabupaten_kota', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($uq) use ($search) {
+                      $uq->where('name', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($status !== null && $status !== '') {
+            if ($status === 'completed') {
+                $query->where('is_completed', true);
+            } elseif ($status === 'in_progress') {
+                $query->where('is_completed', false);
+            }
+        }
+
+        $allowed = ['updated_at', 'created_at', 'nama_perusahaan'];
+        $query->orderBy(in_array($sortBy, $allowed) ? $sortBy : 'updated_at', 'desc');
+
+        $surveyResponses = $query->paginate($perPage)->withQueryString();
+
+        $stats = [
+            'total'       => UbSurveyResponse::count(),
+            'completed'   => UbSurveyResponse::where('is_completed', true)->count(),
+            'in_progress' => UbSurveyResponse::where('is_completed', false)->count(),
+        ];
+
+        return view('mitra.ub.index', compact('surveyResponses', 'stats', 'user'));
+    }
+
+    /**
+     * Show a single UB submission for Mitra users (read-only, user-dashboard layout).
+     */
+    public function mitraUbShow($id)
+    {
+        abort_if(!Auth::user()->is_mitra, 403);
+
+        $response = UbSurveyResponse::with('user')->findOrFail($id);
+        $user     = Auth::user();
+
+        return view('mitra.ub.show', compact('response', 'user'));
+    }
+
+    /**
+     * Download the full-data UB PDF for Mitra users. Delegates to BPS UbController.
+     */
+    public function mitraUbDownload($id)
+    {
+        abort_if(!Auth::user()->is_mitra, 403);
+
+        return app(\App\Http\Controllers\BPS\UbController::class)->download($id);
     }
 }

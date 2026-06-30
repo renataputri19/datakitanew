@@ -1,6 +1,6 @@
-@extends('layouts.bps')
+@extends('layouts.user-dashboard')
 
-@section('title', 'Detail Survei UB – BPS Dashboard')
+@section('title', 'Detail Survei UB - Mitra')
 @section('description', 'Detail respons Survei UB dalam mode tampilan')
 
 @push('styles')
@@ -79,7 +79,7 @@
 </style>
 @endpush
 
-@section('content')
+@section('dashboard-content')
 @php
 $yn  = [1 => 'Ya', 2 => 'Tidak'];
 $kawasanMap = [1=>'Kawasan Ekonomi Khusus (KEK)',2=>'Kawasan Industri (KI)',3=>'Stasiun',4=>'Bandara',5=>'Pelabuhan',6=>'Terminal',7=>'Rest area jalan tol',8=>'Kawasan sentra ekonomi perdesaan/kelurahan',9=>'Kawasan usaha lainnya',10=>'Di luar kawasan'];
@@ -104,7 +104,7 @@ $str = fn($v) => ($v !== null && $v !== '') ? e($v) : '<span class="ub-field-emp
 <div class="space-y-4">
     {{-- Back button + header row --}}
     <div class="flex items-center justify-between gap-4 flex-wrap">
-        <a href="{{ route('bps.ub.index') }}"
+        <a href="{{ route('survey.ub.entry') }}"
            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -112,7 +112,7 @@ $str = fn($v) => ($v !== null && $v !== '') ? e($v) : '<span class="ub-field-emp
             Kembali ke Daftar
         </a>
         <div class="flex items-center gap-3 flex-wrap">
-            <a href="{{ route('bps.ub.download', $response->id) }}"
+            <a href="{{ route('survey.mitra.ub.download', $response->id) }}"
                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -241,7 +241,7 @@ $_totalCount     = count($navItems);
               @endforeach
             </nav>
             <div class="border-t border-gray-100 dark:border-gray-700 px-3 py-2">
-              <a href="{{ route('bps.ub.index') }}"
+              <a href="{{ route('survey.ub.entry') }}"
                  class="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition font-medium">
                 <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 Daftar Survei UB
@@ -789,7 +789,7 @@ $_totalCount     = count($navItems);
       @endforeach
     </nav>
     <div class="border-t border-gray-100 dark:border-gray-700 px-4 py-3">
-      <a href="{{ route('bps.ub.index') }}"
+      <a href="{{ route('survey.ub.entry') }}"
          class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition font-medium">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>

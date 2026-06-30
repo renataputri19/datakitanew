@@ -250,6 +250,9 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['is_mitra'])->group(function () {
             Route::get('/mitra/sibstr/{id}',          [SurveyController::class, 'mitraSibstrShow'])->name('mitra.sibstr.show');
             Route::get('/mitra/sibstr/{id}/download', [SurveyController::class, 'mitraSibstrDownload'])->name('mitra.sibstr.download');
+
+            Route::get('/mitra/ub/{id}',          [SurveyUbController::class, 'mitraUbShow'])->name('mitra.ub.show');
+            Route::get('/mitra/ub/{id}/download', [SurveyUbController::class, 'mitraUbDownload'])->name('mitra.ub.download');
         });
 
         // ── SIBSTR SURVEY FORMS — Annual: /sibstr/{year}/tahunan/blok{n}
@@ -411,6 +414,7 @@ Route::middleware(['auth'])->group(function () {
 
         // UB Survey Data Management (View Only)
         Route::get('/ub', [App\Http\Controllers\BPS\UbController::class, 'index'])->name('ub.index');
+        Route::get('/ub/{id}/download', [App\Http\Controllers\BPS\UbController::class, 'download'])->name('ub.download');
         Route::get('/ub/{id}', [App\Http\Controllers\BPS\UbController::class, 'show'])->name('ub.show');
 
         // BPS User Profile Route

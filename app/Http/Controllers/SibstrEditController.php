@@ -358,10 +358,26 @@ class SibstrEditController extends Controller
         $editRoutes        = $this->editRoutesBlok1($tahun, $triwulan);
         $referenceResponse = $this->getPreviousPeriodResponse($surveyResponse->user_id, $tahun, $triwulan);
 
+        // Cross-fill: overlapping Blok I answers from this user's UB survey
+        $ub = \App\Models\UbSurveyResponse::where('user_id', $surveyResponse->user_id)
+            ->where('tahun', 2026)
+            ->first();
+        $crossFill = null;
+        if ($ub) {
+            $items = \App\Support\SurveyCrossFill::ubToSibstr($ub);
+            if (\App\Support\SurveyCrossFill::hasCopyable($items)) {
+                $crossFill = [
+                    'items'       => $items,
+                    'sourceBadge' => 'Survei UB',
+                    'sourceLabel' => 'Data dari Survei UB SE2026 yang sudah Anda isi',
+                ];
+            }
+        }
+
         return view('survey.sibstr.blok1', compact(
             'surveyResponse', 'jenisKawasanOptions', 'bpsRiData',
             'isEditMode', 'editRoutes', 'tahun', 'triwulan', 'period',
-            'referenceResponse'
+            'referenceResponse', 'crossFill'
         ));
     }
 

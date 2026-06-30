@@ -224,6 +224,14 @@
         var attempts  = parseInt(localStorage.getItem(KEY_ATTEMPTS) || '0', 10);
         var lockedAt  = parseInt(localStorage.getItem(KEY_LOCKED_AT) || '0', 10);
 
+        // Fresh visit (a GET with no login error and not throttled): clear the
+        // stale client-side counter so the warning doesn't linger across
+        // sessions/navigations. The server is the source of truth for throttling.
+        if (!hadServerError && !wasThrottled) {
+            attempts = 0;
+            localStorage.removeItem(KEY_ATTEMPTS);
+        }
+
         // If throttled by server, record lockout start time
         if (wasThrottled && !lockedAt) {
             lockedAt = Date.now();
@@ -276,18 +284,6 @@
             var lockTimer = setInterval(tickLock, 1000);
         }
 
-        // Reset attempt counter on successful form submit (optimistic)
-        var form = document.getElementById('loginForm');
-        if (form) {
-            form.addEventListener('submit', function () {
-                // Counter reset happens on next page load only if no errors appear
-            });
-        }
-
-        // Clear counter if user navigated here fresh (no errors at all)
-        if (!hadServerError && !wasThrottled) {
-            // Don't clear — preserve across navigations so the counter is meaningful
-        }
     })();
     </script>
 </body>

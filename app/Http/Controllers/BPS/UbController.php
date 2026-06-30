@@ -4,6 +4,7 @@ namespace App\Http\Controllers\BPS;
 
 use App\Http\Controllers\Controller;
 use App\Models\UbSurveyResponse;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -70,5 +71,30 @@ class UbController extends Controller
         $response = UbSurveyResponse::with('user')->findOrFail($id);
 
         return view('bps.ub.show', compact('response', 'user'));
+    }
+
+    /**
+     * Download the full-data UB PDF (all inputted fields) for a given response.
+     * Used by BPS and, via delegation, by Mitra users.
+     */
+    public function download($id)
+    {
+        $response = UbSurveyResponse::with('user')->findOrFail($id);
+
+        $completedAt = $response->last_saved_at
+            ? $response->last_saved_at->locale('id')->isoFormat('D MMMM YYYY, HH:mm') . ' WIB'
+            : '—';
+
+        $pdf = Pdf::loadView('bps.ub.pdf', [
+                'response'    => $response,
+                'user'        => $response->user,
+                'completedAt' => $completedAt,
+            ])
+            ->setPaper('A4', 'portrait')
+            ->setOptions(['defaultFont' => 'sans-serif', 'isRemoteEnabled' => false]);
+
+        $filename = 'SE2026-L.UB_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $response->nama_perusahaan ?? 'survei') . '.pdf';
+
+        return $pdf->download($filename);
     }
 }

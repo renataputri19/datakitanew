@@ -564,6 +564,16 @@
         ],
     ])
     @endif
+
+    @if(!empty($crossFill))
+    @include('survey.partials.cross-fill-drawer', [
+        'items'        => $crossFill['items'],
+        'sourceBadge'  => $crossFill['sourceBadge'],
+        'sourceLabel'  => $crossFill['sourceLabel'],
+        // Stack above the blue reference button when both drawers are present.
+        'offsetBottom' => isset($referenceResponse) && $referenceResponse ? '5.75rem' : '1.75rem',
+    ])
+    @endif
 </div>
 @endif
 {{-- end active form / read-only gate --}}

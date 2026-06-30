@@ -38,9 +38,10 @@ class SurveyUbEditController extends Controller
     public function blok1a()
     {
         if ($r = $this->requiresCompletedSurvey()) return $r;
-        $response = UbSurveyResponse::getOrCreateForUser(Auth::id(), 2026, 'blok1a');
-        $editMode = true;
-        return view('survey.ub.blok1a', compact('response', 'editMode'));
+        $response  = UbSurveyResponse::getOrCreateForUser(Auth::id(), 2026, 'blok1a');
+        $editMode  = true;
+        $crossFill = SurveyUbController::sibstrCrossFillForUb(Auth::id());
+        return view('survey.ub.blok1a', compact('response', 'editMode', 'crossFill'));
     }
 
     public function saveBlok1a(Request $request)

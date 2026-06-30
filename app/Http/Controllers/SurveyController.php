@@ -501,6 +501,9 @@ class SurveyController extends Controller
         // Fetch reference response from the immediately preceding period for comparison
         $referenceResponse = $this->getPreviousPeriodResponse($user->id, $tahun, $triwulan);
 
+        // Cross-fill: offer to copy overlapping Blok I answers from the user's UB survey
+        $crossFill = $this->ubCrossFillForSibstr($user->id);
+
         // Get jenis kawasan options
         $jenisKawasanOptions = SurveyResponse::getJenisKawasanOptions();
 
@@ -515,8 +518,36 @@ class SurveyController extends Controller
 
         return view('survey.sibstr.blok1', compact(
             'surveyResponse', 'jenisKawasanOptions', 'bpsRiData',
-            'referenceResponse', 'tahun', 'triwulan', 'period'
+            'referenceResponse', 'tahun', 'triwulan', 'period', 'crossFill'
         ));
+    }
+
+    /**
+     * Build the cross-fill payload for a SIBSTR Blok 1 form: the overlapping
+     * answers from this user's UB survey, ready for the cross-fill drawer.
+     *
+     * @return array{items: array, sourceBadge: string, sourceLabel: string}|null
+     */
+    private function ubCrossFillForSibstr(int|string $userId): ?array
+    {
+        $ub = \App\Models\UbSurveyResponse::where('user_id', $userId)
+            ->where('tahun', 2026)
+            ->first();
+
+        if (!$ub) {
+            return null;
+        }
+
+        $items = \App\Support\SurveyCrossFill::ubToSibstr($ub);
+        if (!\App\Support\SurveyCrossFill::hasCopyable($items)) {
+            return null;
+        }
+
+        return [
+            'items'       => $items,
+            'sourceBadge' => 'Survei UB',
+            'sourceLabel' => 'Data dari Survei UB SE2026 yang sudah Anda isi',
+        ];
     }
 
     /**
