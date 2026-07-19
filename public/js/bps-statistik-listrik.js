@@ -65,7 +65,7 @@
     /* ═══════════════ state + filtering ═══════════════ */
 
     // katSel: checkbox multi-select (empty = semua). Status defaults to Selesai.
-    var state = { tahun: 'all', bulan: 'all', katSel: {}, status: 'done', excluded: {}, sortKey: 'kwh', sortDir: -1 };
+    var state = { tahun: 'all', bulan: 'all', katSel: {}, status: 'done', excluded: {}, sortKey: 'kwh', sortDir: -1, tableLimit: 10 };
     function katSelCount() { return Object.keys(state.katSel).length; }
     function katSelected(cat) { return !katSelCount() || !!state.katSel[cat]; }
 
@@ -409,7 +409,7 @@
         card.appendChild(body);
 
         var chartPane = el('div');
-        var tablePane = el('div', 'stx-tablewrap');
+        var tablePane = el('div'); // simpleTable() supplies its own .stx-tablewrap
         tablePane.style.display = 'none';
         body.appendChild(chartPane);
         body.appendChild(tablePane);
@@ -442,8 +442,11 @@
         pane.appendChild(box);
     }
 
+    // Always wrapped in .stx-tablewrap: cells are nowrap, so an unwrapped table
+    // overflows its container (visibly spilling outside the modal card).
     function simpleTable(pane, headers, rows, numericFrom) {
         clear(pane);
+        var wrap = el('div', 'stx-tablewrap');
         var t = el('table', 'stx-table');
         var thead = el('thead'); var trh = el('tr');
         headers.forEach(function (h, i) {
@@ -460,7 +463,8 @@
             tb.appendChild(tr);
         });
         t.appendChild(tb);
-        pane.appendChild(t);
+        wrap.appendChild(t);
+        pane.appendChild(wrap);
     }
 
     /* ═══════════════ scale helpers ═══════════════ */
@@ -1310,6 +1314,40 @@
 
     /* ═══════════════ TABLE — per company ═══════════════ */
 
+    var TABLE_PAGE = 10;
+
+    // Paged footer: keeps the card short by default instead of one endless scroll.
+    function pagerFoot(card, total, limit) {
+        if (total <= TABLE_PAGE) return;
+        var foot = el('div', 'stx-more');
+        foot.appendChild(el('span', 'cnt', 'Menampilkan ' + limit + ' dari ' + total + ' baris'));
+        var btns = el('div', 'stx-more-btns');
+        function btn(label, onClick) {
+            var b = el('button', null, label);
+            b.type = 'button';
+            b.addEventListener('click', onClick);
+            btns.appendChild(b);
+        }
+        if (limit < total) {
+            btn('Tampilkan ' + Math.min(TABLE_PAGE, total - limit) + ' lagi', function () {
+                state.tableLimit = limit + TABLE_PAGE;
+                renderTable();
+            });
+            btn('Tampilkan semua (' + total + ')', function () {
+                state.tableLimit = total;
+                renderTable();
+            });
+        } else {
+            btn('Tampilkan lebih sedikit', function () {
+                state.tableLimit = TABLE_PAGE;
+                renderTable();
+                card.scrollIntoView({ block: 'nearest' });
+            });
+        }
+        foot.appendChild(btns);
+        card.appendChild(foot);
+    }
+
     function renderTable() {
         var card = document.getElementById('card-table');
         clear(card);
@@ -1377,7 +1415,8 @@
             td0.style.padding = '2rem';
             tr0.appendChild(td0); tb.appendChild(tr0);
         }
-        enriched.forEach(function (x) {
+        var limit = Math.min(Math.max(state.tableLimit, TABLE_PAGE), enriched.length);
+        enriched.slice(0, limit).forEach(function (x) {
             var r = x.r;
             var tr = el('tr');
             tr.setAttribute('tabindex', 0);
@@ -1403,6 +1442,7 @@
         table.appendChild(tb);
         wrapT.appendChild(table);
         card.appendChild(wrapT);
+        pagerFoot(card, enriched.length, limit);
     }
 
     /* ═══════════════ company drill-down modal ═══════════════ */
@@ -1433,7 +1473,7 @@
             ]);
 
             var s3 = sect(body, 'Per bulan');
-            var scr = el('div', 'stx-scroll-x');
+            var scr = el('div');
             simpleTable(scr, ['Bulan', 'Produksi (KWH)', 'Nilai (Rp)'],
                 months.map(function (ym) {
                     return [monthLabel(ym), fmtKwhFull(rowSum(r, [ym], cats, 'kwh')), fmtRpFull(rowSum(r, [ym], cats, 'rp'))];

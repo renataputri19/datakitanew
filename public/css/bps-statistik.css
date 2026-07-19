@@ -186,7 +186,10 @@ svg.stx-svg text { font-family: inherit; }
 .stx-tip .t-val { font-weight: 700; color: var(--stx-ink); margin-left: auto; font-variant-numeric: tabular-nums; }
 
 /* ═══════════════════ Data table ═══════════════════ */
-.stx-tablewrap { overflow-x: auto; }
+/* Cells are nowrap, so every table needs this wrapper — without it the table's
+   intrinsic width wins and the columns bleed out of the card/modal. min-width:0
+   keeps it shrinkable inside flex/grid parents. */
+.stx-tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; min-width: 0; }
 table.stx-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 .stx-table thead th { text-align: left; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--stx-muted); padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--stx-border); white-space: nowrap; cursor: pointer; user-select: none; }
 .stx-table thead th.num, .stx-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -201,15 +204,34 @@ table.stx-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; 
 .dark .stx-badge.draft { color: #ffc862; }
 .stx-badge.neutral { background: var(--stx-plane); color: var(--stx-ink-2); }
 
+/* paging footer — tables open on a short page instead of scrolling forever */
+.stx-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.75rem 1.15rem 1rem; border-top: 1px solid var(--stx-grid); }
+.stx-more .cnt { font-size: 0.75rem; color: var(--stx-muted); }
+.stx-more-btns { display: inline-flex; gap: 0.4rem; }
+.stx-more button { border: 1px solid var(--stx-border); background: var(--stx-surface); color: var(--stx-ink-2); font: inherit; font-size: 0.75rem; font-weight: 700;
+    padding: 0.35rem 0.85rem; border-radius: 9999px; cursor: pointer; transition: border-color .12s, background .12s, color .12s; }
+.stx-more button:hover { border-color: var(--stx-s1); color: var(--stx-ink); background: var(--stx-wash); }
+
 /* ═══════════════════ Modal ═══════════════════ */
-.stx-modal-ov { position: fixed; inset: 0; z-index: 70; background: rgba(9, 12, 20, 0.55); backdrop-filter: blur(2px); display: none; align-items: flex-start; justify-content: center; padding: 3.5rem 1rem 2rem; overflow-y: auto; }
+/* The dialog itself is the scroll container (not the overlay): overflow:hidden
+   on .stx-modal clips every child to the rounded corners — wide tables can
+   never paint outside the card — while the head stays put and only the body
+   scrolls. */
+.stx-modal-ov { position: fixed; inset: 0; z-index: 70; background: rgba(9, 12, 20, 0.55); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
 .stx-modal-ov.open { display: flex; }
-.stx-modal { background: var(--stx-surface); border: 1px solid var(--stx-border); border-radius: 1rem; box-shadow: 0 20px 50px rgba(9,12,20,.35); width: 100%; max-width: 46rem; animation: stxPop .16s ease-out; }
+.stx-modal { background: var(--stx-surface); border: 1px solid var(--stx-border); border-radius: 1rem; box-shadow: 0 20px 50px rgba(9,12,20,.35); width: 100%; max-width: 46rem; animation: stxPop .16s ease-out;
+    display: flex; flex-direction: column; max-height: calc(100vh - 4rem); max-height: calc(100dvh - 4rem); overflow: hidden; }
 @keyframes stxPop { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
-.stx-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.15rem 1.25rem 0.75rem; border-bottom: 1px solid var(--stx-grid); position: sticky; top: 0; background: var(--stx-surface); border-radius: 1rem 1rem 0 0; }
-.stx-modal-title { font-size: 1.05rem; font-weight: 700; }
+/* overlay padding and the modal's max-height must stay in sync (2 × padding) */
+@media (max-width: 640px) {
+    .stx-modal-ov { padding: 1rem 0.75rem; }
+    .stx-modal { max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem); }
+}
+.stx-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.15rem 1.25rem 0.75rem; border-bottom: 1px solid var(--stx-grid); background: var(--stx-surface); flex: 0 0 auto; }
+.stx-modal-head > div { min-width: 0; }
+.stx-modal-title { font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
 .stx-modal-sub { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
-.stx-modal-body { padding: 1rem 1.25rem 1.25rem; }
+.stx-modal-body { padding: 1rem 1.25rem 1.25rem; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .stx-x { border: 0; background: var(--stx-plane); color: var(--stx-ink-2); width: 2rem; height: 2rem; border-radius: 9999px; cursor: pointer; font-size: 0.9rem; line-height: 1; flex-shrink: 0; }
 .stx-x:hover { background: var(--stx-hover); color: var(--stx-ink); }
 .stx-sect { margin-top: 1.1rem; }
@@ -235,7 +257,6 @@ table.stx-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; 
 .stx-div-row:hover { background: var(--stx-hover); }
 .stx-div-label { font-size: 0.8125rem; font-weight: 600; color: var(--stx-ink-2); line-height: 1.25; }
 .stx-div-net { font-size: 0.8125rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
-.stx-scroll-x { overflow-x: auto; }
 
 /* ═══════════════════ In-card KPI strip + split panes (Kategori C / D) ═══════════════════ */
 .stx-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; padding: 0.25rem 1.15rem 0.9rem; }

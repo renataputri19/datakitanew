@@ -81,7 +81,7 @@
 
     // kbliSel: checkbox multi-select (empty object = semua). Status defaults to
     // "Selesai" so the dashboard opens on final data only.
-    var state = { tw: 'all', kbliSel: {}, status: 'done', sortKey: 'pendapatanTotal', sortDir: -1, excluded: {} };
+    var state = { tw: 'all', kbliSel: {}, status: 'done', sortKey: 'pendapatanTotal', sortDir: -1, excluded: {}, tableLimit: 10 };
 
     var EXCL_KEY = 'stx-excl-' + DATA.tahun;
     try {
@@ -442,7 +442,7 @@
         card.appendChild(body);
 
         var chartPane = el('div');
-        var tablePane = el('div', 'stx-tablewrap');
+        var tablePane = el('div'); // simpleTable() supplies its own .stx-tablewrap
         tablePane.style.display = 'none';
         body.appendChild(chartPane);
         body.appendChild(tablePane);
@@ -475,8 +475,11 @@
         pane.appendChild(box);
     }
 
+    // Always wrapped in .stx-tablewrap: cells are nowrap, so an unwrapped table
+    // overflows its container (visibly spilling outside the modal card).
     function simpleTable(pane, headers, rows, numericFrom) {
         clear(pane);
+        var wrap = el('div', 'stx-tablewrap');
         var t = el('table', 'stx-table');
         var thead = el('thead'); var trh = el('tr');
         headers.forEach(function (h, i) {
@@ -493,7 +496,8 @@
             tb.appendChild(tr);
         });
         t.appendChild(tb);
-        pane.appendChild(t);
+        wrap.appendChild(t);
+        pane.appendChild(wrap);
     }
 
     /* ═══════════════ scale helpers ═══════════════ */
@@ -1746,6 +1750,7 @@
                     openModal(c.label + ' — ' + (pdef[0] === 'p1' ? 'Kondisi' : 'Prospek'), filterPills(), function (body) {
                         var s = sect(body, 'Jawaban per perusahaan');
                         if (!counts.answers.length) { s.appendChild(el('p', 'stx-note', 'Belum ada jawaban.')); return; }
+                        var wrapB5 = el('div', 'stx-tablewrap');
                         var tt = el('table', 'stx-table');
                         var tb = el('tbody');
                         counts.answers.forEach(function (a) {
@@ -1759,7 +1764,8 @@
                             tb.appendChild(tr);
                         });
                         tt.appendChild(tb);
-                        s.appendChild(tt);
+                        wrapB5.appendChild(tt);
+                        s.appendChild(wrapB5);
                     });
                 }
                 row.addEventListener('click', openB5);
@@ -1786,6 +1792,40 @@
         { key: 'eksporPct', label: 'Ekspor', num: true },
         { key: 'updatedAt', label: 'Diperbarui', num: false }
     ];
+
+    var TABLE_PAGE = 10;
+
+    // Paged footer: keeps the card short by default instead of one endless scroll.
+    function pagerFoot(card, total, limit) {
+        if (total <= TABLE_PAGE) return;
+        var foot = el('div', 'stx-more');
+        foot.appendChild(el('span', 'cnt', 'Menampilkan ' + limit + ' dari ' + total + ' baris'));
+        var btns = el('div', 'stx-more-btns');
+        function btn(label, onClick) {
+            var b = el('button', null, label);
+            b.type = 'button';
+            b.addEventListener('click', onClick);
+            btns.appendChild(b);
+        }
+        if (limit < total) {
+            btn('Tampilkan ' + Math.min(TABLE_PAGE, total - limit) + ' lagi', function () {
+                state.tableLimit = limit + TABLE_PAGE;
+                renderTable();
+            });
+            btn('Tampilkan semua (' + total + ')', function () {
+                state.tableLimit = total;
+                renderTable();
+            });
+        } else {
+            btn('Tampilkan lebih sedikit', function () {
+                state.tableLimit = TABLE_PAGE;
+                renderTable();
+                card.scrollIntoView({ block: 'nearest' });
+            });
+        }
+        foot.appendChild(btns);
+        card.appendChild(foot);
+    }
 
     function renderTable() {
         var card = document.getElementById('card-table');
@@ -1835,7 +1875,8 @@
             td0.style.padding = '2rem';
             tr0.appendChild(td0); tb.appendChild(tr0);
         }
-        rows.forEach(function (r) {
+        var limit = Math.min(Math.max(state.tableLimit, TABLE_PAGE), rows.length);
+        rows.slice(0, limit).forEach(function (r) {
             var tr = el('tr');
             tr.setAttribute('tabindex', 0);
             tr.appendChild(el('td', 'strong', r.perusahaan));
@@ -1860,6 +1901,7 @@
         table.appendChild(tb);
         wrapT.appendChild(table);
         card.appendChild(wrapT);
+        pagerFoot(card, rows.length, limit);
     }
 
     /* ═══════════════ company drill-down modal ═══════════════ */
@@ -1920,7 +1962,7 @@
                     name.style.margin = '0.6rem 0 0.3rem';
                     s5.appendChild(name);
                     var months = Object.keys(p.nilai).sort(monthKeySort);
-                    var scr = el('div', 'stx-scroll-x');
+                    var scr = el('div');
                     simpleTable(scr, ['Bulan', 'Banyaknya', 'Nilai (Rp)'],
                         months.map(function (m) { return [monthLong(m), fmtN(p.banyak[m]), fmtRpFull(p.nilai[m])]; }), 1);
                     s5.appendChild(scr);
@@ -1928,6 +1970,7 @@
             }
 
             var s6 = sect(body, 'Kondisi dan prospek usaha (Blok V)');
+            var wrap6 = el('div', 'stx-tablewrap');
             var tt = el('table', 'stx-table');
             var tb = el('tbody');
             BLOK5.forEach(function (c) {
@@ -1948,7 +1991,8 @@
             thead.appendChild(trh);
             tt.insertBefore(thead, tb);
             tt.appendChild(tb);
-            s6.appendChild(tt);
+            wrap6.appendChild(tt);
+            s6.appendChild(wrap6);
 
             if (r.catatan) {
                 var s7 = sect(body, 'Catatan responden (Blok VI)');
