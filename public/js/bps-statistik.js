@@ -96,21 +96,18 @@
         return true;
     }
 
-    // Registry of distinct respondents (a company may report several quarters)
+    // Registry of distinct respondents (a company may report several quarters).
+    // Identity only — figures are computed per slice, never cached here.
     var COMPANIES = (function () {
         var byUid = {};
         DATA.rows.forEach(function (r) {
             if (!byUid[r.uid]) {
-                byUid[r.uid] = { uid: r.uid, name: r.perusahaan, kbli: r.kbli, kbli2: r.kbli2, kbliGroup: r.kbliGroup, quarters: [], totalPend: null, nRows: 0 };
+                byUid[r.uid] = { uid: r.uid, name: r.perusahaan, kbli: r.kbli, kbli2: r.kbli2, kbliGroup: r.kbliGroup };
             }
             var c = byUid[r.uid];
-            c.nRows++;
-            if (c.quarters.indexOf(r.triwulan) === -1) c.quarters.push(r.triwulan);
-            if (r.pendapatanTotal !== null && r.pendapatanTotal !== undefined) c.totalPend = (c.totalPend || 0) + r.pendapatanTotal;
             if (!c.name && r.perusahaan) c.name = r.perusahaan;
         });
         var list = Object.keys(byUid).map(function (k) { return byUid[k]; });
-        list.forEach(function (c) { c.quarters.sort(); });
         list.sort(function (a, b) { return (a.kbliGroup || '').localeCompare(b.kbliGroup || '', 'id') || (a.name || '').localeCompare(b.name || '', 'id'); });
         return list;
     })();
@@ -118,32 +115,40 @@
     function kbliSelCount() { return Object.keys(state.kbliSel).length; }
 
     /**
-     * Respondents with at least one report matching the active status filter.
-     * The picker is scoped to these: a company the Status filter already drops
-     * must not sit there checked, claiming to be part of the aggregation.
+     * Faceted filtering. `skip` names the single facet to ignore, so each
+     * control can count its own options against every OTHER active filter
+     * without narrowing itself — the rule that stops cross-filtering from
+     * trapping the user in a choice they can no longer widen.
+     * skip: 'tw' | 'kbli' | 'status' | 'company' | null (null = the live slice)
+     */
+    function rowsFor(skip) {
+        return DATA.rows.filter(function (r) {
+            if (skip !== 'company' && state.excluded[r.uid]) return false;
+            if (skip !== 'tw' && state.tw !== 'all' && r.triwulan !== state.tw) return false;
+            if (skip !== 'kbli' && kbliSelCount() && !state.kbliSel[r.kbli2]) return false;
+            if (skip !== 'status' && !matchesStatus(r)) return false;
+            return true;
+        });
+    }
+    function filteredRows() { return rowsFor(null); }
+    // every facet except triwulan, then pinned to one quarter
+    function rowsOfQuarter(q) {
+        return rowsFor('tw').filter(function (r) { return r.triwulan === q; });
+    }
+
+    /**
+     * Respondents the other filters still admit — the pool the Perusahaan
+     * picker lists. A company already dropped by Triwulan/KBLI/Status must not
+     * sit there checked, claiming to be part of the aggregation.
      */
     function eligibleCompanies() {
-        if (state.status === 'all') return COMPANIES;
         var seen = {};
-        DATA.rows.forEach(function (r) { if (matchesStatus(r)) seen[r.uid] = true; });
+        rowsFor('company').forEach(function (r) { seen[r.uid] = true; });
         return COMPANIES.filter(function (c) { return seen[c.uid]; });
     }
     function excludedEligible() {
         return eligibleCompanies().filter(function (c) { return state.excluded[c.uid]; }).length;
     }
-
-    function matchesKS(r) {
-        if (state.excluded[r.uid]) return false;
-        if (kbliSelCount() && !state.kbliSel[r.kbli2]) return false;
-        return matchesStatus(r);
-    }
-    function filteredRows() {
-        return DATA.rows.filter(function (r) {
-            if (state.tw !== 'all' && r.triwulan !== state.tw) return false;
-            return matchesKS(r);
-        });
-    }
-    function rowsOfQuarter(q) { return DATA.rows.filter(function (r) { return r.triwulan === q && matchesKS(r); }); }
 
     function sumField(rows, key) {
         var any = false, total = 0;
@@ -303,19 +308,35 @@
 
     /* ═══════════════ styled dropdowns (single + checkbox multi) ═══════════════ */
 
+    /**
+     * Cross-filtering: every control's option list is counted against the OTHER
+     * active filters, so those counts go stale the moment a sibling changes.
+     * Options are therefore passed as a function and evaluated when the panel
+     * opens; the collapsed button faces refresh through these hooks.
+     */
+    var facetRefreshers = [];
+    function refreshFilterBar() { facetRefreshers.forEach(function (f) { f(); }); }
+
     function ddSingle(bar, labelText, options, current, onPick) {
+        var optsOf = typeof options === 'function' ? options : function () { return options; };
         bar.appendChild(el('span', 'stx-filter-label', labelText));
         var wrapEl = el('div', 'stx-popwrap');
         var btn = el('button', 'stx-popbtn');
         btn.type = 'button';
-        var cur = options.filter(function (o) { return o.v === current; })[0];
-        btn.appendChild(el('span', null, cur ? cur.t : '—'));
+        var lbl = el('span', null, '');
+        function refreshBtn() {
+            var cur = optsOf().filter(function (o) { return o.v === current; })[0];
+            lbl.textContent = cur ? cur.t : '—';
+        }
+        refreshBtn();
+        facetRefreshers.push(refreshBtn);
+        btn.appendChild(lbl);
         btn.appendChild(el('span', 'caret', '▼'));
         btn.addEventListener('click', function () {
             togglePop(wrapEl, btn, function (panel) {
                 panel.style.width = 'min(16rem, 90vw)';
                 var list = el('div', 'stx-pop-list');
-                options.forEach(function (o) {
+                optsOf().forEach(function (o) {
                     var row = el('button', 'stx-pop-row' + (o.v === current ? ' on' : ''));
                     row.type = 'button';
                     if (o.disabled) row.disabled = true;
@@ -335,23 +356,27 @@
     }
 
     function ddMulti(bar, labelText, options, selSet, allLabel, onChange) {
+        var optsOf = typeof options === 'function' ? options : function () { return options; };
         bar.appendChild(el('span', 'stx-filter-label', labelText));
         var wrapEl = el('div', 'stx-popwrap');
         var btn = el('button', 'stx-popbtn');
         btn.type = 'button';
         var lbl = el('span', null, '');
+        var badge = el('span', 'n', '');
         function refreshBtn() {
             var sel = Object.keys(selSet);
             if (!sel.length) lbl.textContent = allLabel;
             else if (sel.length === 1) {
-                var o = options.filter(function (x) { return x.v === sel[0]; })[0];
+                var o = optsOf().filter(function (x) { return x.v === sel[0]; })[0];
                 lbl.textContent = o ? o.t : sel[0];
             } else lbl.textContent = sel.length + ' dipilih';
+            badge.textContent = String(optsOf().length);
             btn.classList.toggle('active', sel.length > 0);
         }
         refreshBtn();
+        facetRefreshers.push(refreshBtn);
         btn.appendChild(lbl);
-        btn.appendChild(el('span', 'n', String(options.length)));
+        btn.appendChild(badge);
         btn.appendChild(el('span', 'caret', '▼'));
         btn.addEventListener('click', function () {
             togglePop(wrapEl, btn, function (panel) {
@@ -366,12 +391,15 @@
                     var n = Object.keys(selSet).length;
                     cnt.textContent = n ? n + ' dipilih' : 'Semua ditampilkan';
                 }
-                options.forEach(function (o) {
+                optsOf().forEach(function (o) {
                     var on = !!selSet[o.v];
                     var row = el('button', 'stx-pop-row' + (on ? ' on' : ''));
                     row.type = 'button';
                     row.setAttribute('role', 'checkbox');
                     row.setAttribute('aria-checked', on ? 'true' : 'false');
+                    // a checked option is never disabled — the user must always
+                    // be able to undo a choice that emptied its own slice
+                    if (o.disabled && !on) row.disabled = true;
                     var check = el('span', 'p-check', on ? '✓' : '');
                     row.appendChild(check);
                     var main = el('div', 'p-main');
@@ -380,6 +408,7 @@
                     row.appendChild(main);
                     if (o.n !== undefined) row.appendChild(el('span', 'p-val', String(o.n)));
                     row.addEventListener('click', function () {
+                        if (row.disabled) return;
                         if (selSet[o.v]) delete selSet[o.v]; else selSet[o.v] = true;
                         var isOn = !!selSet[o.v];
                         row.classList.toggle('on', isOn);
@@ -588,22 +617,41 @@
         var bar = document.getElementById('stx-filters');
         closePop();
         clear(bar);
+        facetRefreshers = [];
 
-        // ── Triwulan: styled dropdown ──
-        var twOpts = [{ v: 'all', t: 'Semua triwulan' }];
-        [1, 2, 3, 4].forEach(function (q) {
-            var has = DATA.quarters.indexOf(q) !== -1;
-            twOpts.push({ v: q, t: 'Triwulan ' + TW_ROMAN[q], disabled: !has, sub: has ? null : 'Belum ada data' });
-        });
-        ddSingle(bar, 'Triwulan', twOpts, state.tw, function (v) { state.tw = v; rerender(); });
+        // ── Triwulan: counted against KBLI + Status + Perusahaan ──
+        ddSingle(bar, 'Triwulan', function () {
+            var pool = rowsFor('tw');
+            var opts = [{ v: 'all', t: 'Semua triwulan', sub: distinctCompanies(pool) + ' perusahaan' }];
+            [1, 2, 3, 4].forEach(function (q) {
+                var has = DATA.quarters.indexOf(q) !== -1;
+                var n = has ? distinctCompanies(pool.filter(function (r) { return r.triwulan === q; })) : 0;
+                opts.push({
+                    v: q,
+                    t: 'Triwulan ' + TW_ROMAN[q],
+                    // never disable the active option — it stays the way back out
+                    disabled: state.tw !== q && !n,
+                    sub: !has ? 'Belum ada data' : (n ? n + ' perusahaan' : 'Kosong pada filter lain')
+                });
+            });
+            return opts;
+        }, state.tw, function (v) { state.tw = v; rerender(); });
 
         bar.appendChild(el('div', 'stx-filter-sep'));
 
-        // ── Kelompok KBLI: checkbox multi-select dropdown ──
-        ddMulti(bar, 'Kelompok KBLI',
-            kbliGroups().map(function (g) { return { v: g.key, t: g.label, sub: g.n + ' perusahaan' }; }),
-            state.kbliSel, 'Semua KBLI',
-            function () { rerenderData(); });
+        // ── Kelompok KBLI: counted against Triwulan + Status + Perusahaan ──
+        ddMulti(bar, 'Kelompok KBLI', function () {
+            var pool = rowsFor('kbli');
+            return kbliGroups().map(function (g) {
+                var n = distinctCompanies(pool.filter(function (r) { return (r.kbli2 || '??') === (g.key || '??'); }));
+                return {
+                    v: g.key, t: g.label, n: n,
+                    sub: n ? n + ' perusahaan' : 'Kosong pada filter lain',
+                    disabled: !n
+                };
+            });
+        }, state.kbliSel, 'Semua KBLI',
+            function () { rerenderData(); refreshFilterBar(); });
 
         bar.appendChild(el('div', 'stx-filter-sep'));
 
@@ -621,6 +669,7 @@
             pickBtn.classList.toggle('active', out > 0);
         }
         refreshPickBtn();
+        facetRefreshers.push(refreshPickBtn);
         pickBtn.appendChild(pickLabel);
         pickBtn.appendChild(pickBadge);
         pickBtn.appendChild(el('span', 'caret', '▼'));
@@ -632,17 +681,19 @@
 
         bar.appendChild(el('div', 'stx-filter-sep'));
 
-        // ── Status: styled dropdown (default Selesai) ──
+        // ── Status: counted against Triwulan + KBLI + Perusahaan ──
         // Subtitles carry the company count each status yields, so it is clear
         // up front that switching status also resizes the Perusahaan picker.
-        var nDone = {}, nDraft = {};
-        DATA.rows.forEach(function (r) { (r.selesai ? nDone : nDraft)[r.uid] = true; });
-        function nComp(o) { return Object.keys(o).length + ' perusahaan'; }
-        ddSingle(bar, 'Status', [
-            { v: 'done', t: 'Selesai', sub: 'hanya isian final · ' + nComp(nDone) },
-            { v: 'all', t: 'Semua status', sub: 'termasuk draf · ' + COMPANIES.length + ' perusahaan' },
-            { v: 'draft', t: 'Masih draf', sub: 'belum diselesaikan · ' + nComp(nDraft) }
-        ], state.status, function (v) { state.status = v; rerender(); });
+        ddSingle(bar, 'Status', function () {
+            var pool = rowsFor('status');
+            var done = pool.filter(function (r) { return r.selesai; });
+            var draft = pool.filter(function (r) { return !r.selesai; });
+            return [
+                { v: 'done', t: 'Selesai', sub: 'hanya isian final · ' + distinctCompanies(done) + ' perusahaan' },
+                { v: 'all', t: 'Semua status', sub: 'termasuk draf · ' + distinctCompanies(pool) + ' perusahaan' },
+                { v: 'draft', t: 'Masih draf', sub: 'belum diselesaikan · ' + distinctCompanies(draft) + ' perusahaan' }
+            ];
+        }, state.status, function (v) { state.status = v; rerender(); });
     }
 
     /**
@@ -678,7 +729,7 @@
         function refreshCnt() {
             var total = eligibleCompanies().length, hidden = COMPANIES.length - total;
             cnt.textContent = (total - excludedEligible()) + ' dari ' + total + ' perusahaan dihitung'
-                + (hidden ? ' · ' + hidden + ' di luar filter status' : '');
+                + (hidden ? ' · ' + hidden + ' di luar filter lain' : '');
         }
 
         function apply() {
@@ -686,6 +737,25 @@
             refreshBtn();
             refreshCnt();
             rerenderData();
+            refreshFilterBar();
+        }
+
+        /**
+         * Per-company figures for the current slice (its own exclusion aside),
+         * so the quarters, report count, and rupiah beside each name match what
+         * the dashboard is actually showing rather than the company's all-time
+         * totals.
+         */
+        function sliceInfo() {
+            var by = {};
+            rowsFor('company').forEach(function (r) {
+                var i = by[r.uid] || (by[r.uid] = { quarters: [], n: 0, pend: null });
+                i.n++;
+                if (i.quarters.indexOf(r.triwulan) === -1) i.quarters.push(r.triwulan);
+                if (r.pendapatanTotal !== null && r.pendapatanTotal !== undefined) i.pend = (i.pend || 0) + r.pendapatanTotal;
+            });
+            Object.keys(by).forEach(function (k) { by[k].quarters.sort(); });
+            return by;
         }
 
         var rows = [];
@@ -694,6 +764,7 @@
             rows = [];
             var q = (search.value || '').toLowerCase();
             var lastGroup = null;
+            var info = sliceInfo();
             eligibleCompanies().forEach(function (c) {
                 var hay = ((c.name || '') + ' ' + (c.kbli || '') + ' ' + (c.kbliGroup || '')).toLowerCase();
                 if (q && hay.indexOf(q) === -1) return;
@@ -710,13 +781,14 @@
                 row.appendChild(check);
                 var main = el('div', 'p-main');
                 main.appendChild(el('div', 'p-name', c.name || 'Tanpa nama'));
+                var si = info[c.uid] || { quarters: [], n: 0, pend: null };
                 var meta = el('div', 'p-meta');
                 meta.appendChild(el('span', null, 'KBLI ' + (c.kbli || '—')));
-                meta.appendChild(el('span', null, 'TW ' + c.quarters.map(function (t) { return TW_ROMAN[t]; }).join(', ')));
-                meta.appendChild(el('span', null, c.nRows + ' laporan'));
+                meta.appendChild(el('span', null, 'TW ' + si.quarters.map(function (t) { return TW_ROMAN[t]; }).join(', ')));
+                meta.appendChild(el('span', null, si.n + ' laporan'));
                 main.appendChild(meta);
                 row.appendChild(main);
-                row.appendChild(el('span', 'p-val', fmtRp(c.totalPend)));
+                row.appendChild(el('span', 'p-val', fmtRp(si.pend)));
                 row.addEventListener('click', function () {
                     var nowOn = !!state.excluded[c.uid]; // will become included?
                     if (nowOn) delete state.excluded[c.uid];
@@ -732,7 +804,7 @@
                 rows.push(row);
             });
             if (!rows.length) {
-                var none = el('div', 'stx-pop-group', q ? 'Tidak ada perusahaan yang cocok.' : 'Tidak ada perusahaan pada filter status ini.');
+                var none = el('div', 'stx-pop-group', q ? 'Tidak ada perusahaan yang cocok.' : 'Tidak ada perusahaan pada irisan filter ini.');
                 none.style.padding = '0.8rem 0.6rem';
                 list.appendChild(none);
             }
