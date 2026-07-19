@@ -34,7 +34,6 @@ class SurveyListrikController extends Controller
         'nama_pengusaha'    => 'required|string',
         'jenis_kelamin'     => 'required|integer',
         'umur'              => 'required|integer',
-        'nik'               => 'required|string',
     ];
 
     private const FIELD_MAX_LENGTHS = [
@@ -310,7 +309,7 @@ class SurveyListrikController extends Controller
             'nama_pengusaha'    => 'required|string|max:255',
             'jenis_kelamin'     => 'required|integer|between:1,2',
             'umur'              => 'required|integer|min:1|max:120',
-            'nik'               => 'required|string|max:20',
+            'nik'               => 'nullable|string|max:20',
         ], [
             'required'       => ':attribute wajib diisi.',
             'email'          => 'Format email tidak valid.',

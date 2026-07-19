@@ -195,7 +195,7 @@
       <div class="ub-err-msg" data-field="umur"></div>
     </div>
     <div>
-      <label class="ub-label">d. NIK <span class="ub-required">*</span></label>
+      <label class="ub-label">d. NIK</label>
       <input name="nik" class="ub-input" value="{{ old('nik', $response->nik) }}" placeholder="16 digit NIK" maxlength="20">
       <div class="ub-err-msg" data-field="nik"></div>
     </div>
@@ -241,8 +241,7 @@ window.surveyRoutes = {
         jenis_pembangkit: 'Jenis pembangkit wajib dipilih.',
         nama_pengusaha: 'Nama penanggung jawab wajib diisi.',
         jenis_kelamin: 'Jenis kelamin wajib dipilih.',
-        umur: 'Umur wajib diisi.',
-        nik: 'NIK wajib diisi.'
+        umur: 'Umur wajib diisi.'
     };
     var form = document.getElementById('survey-form');
     form.addEventListener('submit', function (e) {
