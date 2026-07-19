@@ -13,6 +13,8 @@
   </div>
 
   <nav class="flex-1 py-4">
+    <div class="ud-sidebar-group">Dasbor</div>
+
     <a href="{{ route('dashboard') }}"
        class="ud-sidebar-item {{ request()->routeIs('dashboard') ? 'active' : '' }}"
        aria-current="{{ request()->routeIs('dashboard') ? 'page' : 'false' }}">
@@ -32,11 +34,24 @@
       Aplikasi
     </a>
 
+    <a href="{{ route('peta.index') }}"
+       class="ud-sidebar-item {{ request()->routeIs('peta.*') ? 'active' : '' }}"
+       aria-current="{{ request()->routeIs('peta.*') ? 'page' : 'false' }}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+      </svg>
+      TUNJUKIN SE
+    </a>
+
     @php
-      $sibstrActive = request()->routeIs('survey.sibstr.*')
-                   || request()->routeIs('dashboard.surveys.sibstr.*');
-      $ubActive     = request()->routeIs('survey.ub.*');
+      $sibstrActive  = request()->routeIs('survey.sibstr.*')
+                    || request()->routeIs('dashboard.surveys.sibstr.*');
+      $ubActive      = request()->routeIs('survey.ub.*');
+      $listrikActive = request()->routeIs('survey.listrik.*');
     @endphp
+
+    <div class="ud-sidebar-group">Survei</div>
+
     <a href="{{ route('survey.sibstr.entry') }}"
        class="ud-sidebar-item {{ $sibstrActive ? 'active' : '' }}"
        aria-current="{{ $sibstrActive ? 'page' : 'false' }}">
@@ -56,14 +71,16 @@
       Survei UB
     </a>
 
-    <a href="{{ route('dashboard.profile') }}"
-       class="ud-sidebar-item {{ request()->routeIs('dashboard.profile') ? 'active' : '' }}"
-       aria-current="{{ request()->routeIs('dashboard.profile') ? 'page' : 'false' }}">
+    <a href="{{ route('survey.listrik.entry') }}"
+       class="ud-sidebar-item {{ $listrikActive ? 'active' : '' }}"
+       aria-current="{{ $listrikActive ? 'page' : 'false' }}">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
       </svg>
-      Profil Saya
+      Survei Listrik
     </a>
+
+    <div class="ud-sidebar-group">Konten</div>
 
     <a href="{{ route('dashboard.news') }}"
        class="ud-sidebar-item {{ request()->routeIs('dashboard.news') ? 'active' : '' }}"
@@ -81,6 +98,17 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 002 2v8a2 2 0 002 2z"></path>
       </svg>
       Video
+    </a>
+
+    <div class="ud-sidebar-group">Akun</div>
+
+    <a href="{{ route('dashboard.profile') }}"
+       class="ud-sidebar-item {{ request()->routeIs('dashboard.profile') ? 'active' : '' }}"
+       aria-current="{{ request()->routeIs('dashboard.profile') ? 'page' : 'false' }}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+      </svg>
+      Profil Saya
     </a>
 
     <a href="{{ route('dashboard.settings') }}"

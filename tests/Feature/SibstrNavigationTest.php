@@ -891,7 +891,7 @@ class SibstrNavigationTest extends TestCase
     }
 
     /** @test */
-    public function finish_survey_tahunan_sets_finish_survey_status_and_grants_triwulan_access(): void
+    public function finish_survey_tahunan_sets_finish_survey_status(): void
     {
         $user = $this->makeUser();
         $this->seedResponse($user, array_merge(
@@ -914,7 +914,7 @@ class SibstrNavigationTest extends TestCase
 
         $response->assertStatus(200)
                  ->assertJsonPath('success', true)
-                 ->assertJsonPath('triwulan_access_granted', true);
+                 ->assertJsonPath('is_tahunan', true);
 
         $this->assertTrue(SurveyResponse::isTahunanFullyCompletedForUser($user->id));
     }

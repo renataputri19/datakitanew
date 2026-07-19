@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TemporarySurveiSibstr;
 use App\Models\Company;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -136,12 +137,39 @@ class TemporarySurveyController extends Controller
     }
 
     /**
-     * Display the superadmin dashboard.
+     * Display the superadmin overview dashboard (stats + management hub).
      *
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\View\View
      */
     public function superadminDashboard(Request $request)
+    {
+        // SIBSTR submission statistics
+        $stats = [
+            'total' => TemporarySurveiSibstr::count(),
+            'industri' => TemporarySurveiSibstr::where('jenis_perusahaan', 'industri')->count(),
+            'non_industri' => TemporarySurveiSibstr::where('jenis_perusahaan', 'non-industri')->count(),
+            'today' => TemporarySurveiSibstr::whereDate('created_at', today())->count(),
+        ];
+
+        // Platform-wide stats for the overview section
+        $userStats = User::roleCounts();
+        $userStats['total'] = array_sum($userStats);
+        $roleDefinitions = User::roleDefinitions();
+        $companyCount = Company::count();
+
+        return view('survey.superadmin-dashboard', compact(
+            'stats', 'userStats', 'roleDefinitions', 'companyCount'
+        ));
+    }
+
+    /**
+     * Display the SIBSTR submissions management page (filter + table).
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
+    public function submissionsIndex(Request $request)
     {
         $query = TemporarySurveiSibstr::query();
 
@@ -185,16 +213,9 @@ class TemporarySurveyController extends Controller
         // Preserve query parameters in pagination links
         $submissions->appends($request->query());
 
-        // Get statistics for dashboard cards
-        $stats = [
-            'total' => $totalCount,
-            'filtered' => $filteredCount,
-            'industri' => TemporarySurveiSibstr::where('jenis_perusahaan', 'industri')->count(),
-            'non_industri' => TemporarySurveiSibstr::where('jenis_perusahaan', 'non-industri')->count(),
-            'today' => TemporarySurveiSibstr::whereDate('created_at', today())->count(),
-        ];
-
-        return view('survey.superadmin-dashboard', compact('submissions', 'filters', 'stats', 'totalCount', 'filteredCount'));
+        return view('superadmin.submissions.index', compact(
+            'submissions', 'filters', 'totalCount', 'filteredCount'
+        ));
     }
 
     /**
@@ -253,7 +274,7 @@ class TemporarySurveyController extends Controller
             'perusahaan', 'alamat', 'jenis_perusahaan'
         ]));
 
-        return redirect()->route('superadmin.dashboard')
+        return redirect()->route('superadmin.submissions.index')
                         ->with('success', 'Data submission berhasil ditambahkan.');
     }
 
@@ -298,7 +319,7 @@ class TemporarySurveyController extends Controller
             'perusahaan', 'alamat', 'jenis_perusahaan'
         ]));
 
-        return redirect()->route('superadmin.dashboard')
+        return redirect()->route('superadmin.submissions.index')
                         ->with('success', 'Data submission berhasil diperbarui.');
     }
 
@@ -322,7 +343,7 @@ class TemporarySurveyController extends Controller
 
         $submission->delete();
 
-        return redirect()->route('superadmin.dashboard')
+        return redirect()->route('superadmin.submissions.index')
                         ->with('success', 'Data submission berhasil dihapus.');
     }
 }

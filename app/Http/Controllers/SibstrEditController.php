@@ -156,29 +156,6 @@ class SibstrEditController extends Controller
         ];
     }
 
-    /**
-     * Guard for Triwulan 2026 edit pages: denies access unless the 2025 Tahunan survey
-     * has reached FINISH_SURVEY status (is_completed = true).
-     * Returns a redirect when access is denied, or null to allow.
-     */
-    private function checkTriwulanAccess(): ?\Illuminate\Http\RedirectResponse
-    {
-        ['tahun' => $tahun, 'triwulan' => $triwulan] = $this->getPeriod();
-
-        if ($tahun !== 2026 || $triwulan < 1) {
-            return null;
-        }
-
-        $user = Auth::user();
-        if (!SurveyResponse::isTahunanFullyCompletedForUser($user->id)) {
-            return redirect()
-                ->route('survey.sibstr.entry')
-                ->with('error', 'Survei Triwulanan 2026 hanya dapat diakses setelah Survei Tahunan 2025 diselesaikan sepenuhnya melalui Blok VI.');
-        }
-
-        return null;
-    }
-
     // ──────────────────────────────────────────────
     //  PER-TEMPLATE EDIT ROUTES
     //  Each returns the exact same keys the original
@@ -340,10 +317,6 @@ class SibstrEditController extends Controller
 
     public function blok1()
     {
-        if ($redirect = $this->checkTriwulanAccess()) {
-            return $redirect;
-        }
-
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -386,10 +359,6 @@ class SibstrEditController extends Controller
 
     public function blok2()
     {
-        if ($redirect = $this->checkTriwulanAccess()) {
-            return $redirect;
-        }
-
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -410,10 +379,6 @@ class SibstrEditController extends Controller
 
     public function blok3a()
     {
-        if ($redirect = $this->checkTriwulanAccess()) {
-            return $redirect;
-        }
-
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -445,10 +410,6 @@ class SibstrEditController extends Controller
 
     public function blok3cIndustri()
     {
-        if ($redirect = $this->checkTriwulanAccess()) {
-            return $redirect;
-        }
-
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -474,10 +435,6 @@ class SibstrEditController extends Controller
 
     public function blok3bIndustri()
     {
-        if ($redirect = $this->checkTriwulanAccess()) {
-            return $redirect;
-        }
-
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -498,10 +455,6 @@ class SibstrEditController extends Controller
 
     public function blok3bNonIndustri()
     {
-        if ($redirect = $this->checkTriwulanAccess()) {
-            return $redirect;
-        }
-
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -522,10 +475,6 @@ class SibstrEditController extends Controller
 
     public function blok4()
     {
-        if ($redirect = $this->checkTriwulanAccess()) {
-            return $redirect;
-        }
-
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -551,10 +500,6 @@ class SibstrEditController extends Controller
 
     public function blok5()
     {
-        if ($redirect = $this->checkTriwulanAccess()) {
-            return $redirect;
-        }
-
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;
@@ -575,10 +520,6 @@ class SibstrEditController extends Controller
 
     public function blok6()
     {
-        if ($redirect = $this->checkTriwulanAccess()) {
-            return $redirect;
-        }
-
         $result = $this->getExistingSurveyResponse();
         if ($result instanceof \Illuminate\Http\RedirectResponse) {
             return $result;

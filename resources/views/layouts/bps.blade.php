@@ -16,12 +16,39 @@
     <!-- TinyMCE -->
     <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
+    <style>
+        /* Laptop & above: sidebar collapses out of the flow to widen content */
+        @media (min-width: 768px) {
+            #bps-sidebar {
+                transition: width 300ms ease, opacity 200ms ease;
+            }
+
+            html.bps-sidebar-collapsed #bps-sidebar {
+                width: 0;
+                opacity: 0;
+                overflow: hidden;
+                border-right-width: 0;
+                pointer-events: none;
+            }
+        }
+    </style>
+    <script>
+        // Applied before first paint so a collapsed sidebar never flashes open.
+        (function () {
+            try {
+                if (localStorage.getItem('bps-sidebar-collapsed') === '1') {
+                    document.documentElement.classList.add('bps-sidebar-collapsed');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
     @stack('styles')
 </head>
 <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
     <div class="flex min-h-screen">
         <!-- Sidebar -->
-        <div class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-sm hidden md:block">
+        <div id="bps-sidebar" class="w-64 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-sm hidden md:block">
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <a href="{{ route('home') }}" class="flex items-center space-x-2">
                     <span class="text-xl font-bold text-blue-600 dark:text-blue-500">DataKita</span>
@@ -30,14 +57,57 @@
             </div>
             <nav class="p-4">
                 <ul class="space-y-1">
+                    <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.25rem 1rem 0.35rem;">Dasbor</li>
                     <li>
                         <a href="{{ route('bps.dashboard') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.dashboard') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                             </svg>
-                            Dashboard
+                            Beranda
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('bps.statistik.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.statistik.index') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            Statistik SIBSTR
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('bps.statistik.listrik') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.statistik.listrik') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Statistik Listrik
+                        </a>
+                    </li>
+                    <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:1.1rem 1rem 0.35rem;">Data Survei</li>
+                    <li>
+                        <a href="{{ route('bps.sibstr.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.sibstr.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Survei SIBSTR
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('bps.ub.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.ub.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            Survei UB
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('bps.listrik.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.listrik.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Survei Listrik
+                        </a>
+                    </li>
+                    <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:1.1rem 1rem 0.35rem;">Konten</li>
                     <li>
                         <a href="{{ route('bps.news.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.news.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,22 +124,7 @@
                             Video
                         </a>
                     </li>
-                    <li>
-                        <a href="{{ route('bps.sibstr.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.sibstr.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Data Survei SIBSTR
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('bps.ub.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.ub.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                            Data Survei UB
-                        </a>
-                    </li>
+                    <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:1.1rem 1rem 0.35rem;">Pengguna &amp; Akun</li>
                     <li>
                         <a href="{{ route('bps.users.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.users.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -78,7 +133,7 @@
                             Manajemen Pengguna
                         </a>
                     </li>
-                    <li class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                    <li>
                         <a href="{{ route('bps.user.profile.show') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('user.profile.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -102,12 +157,12 @@
         </div>
 
         <!-- Main Content -->
-        <div class="flex-1 flex flex-col">
+        <div class="flex-1 min-w-0 flex flex-col">
             <!-- Top Navigation -->
             <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
                 <div class="flex items-center justify-between px-4 py-3">
-                    <div class="flex items-center md:hidden">
-                        <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none">
+                    <div class="flex items-center">
+                        <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none" aria-label="Sembunyikan menu" aria-expanded="true">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
@@ -161,14 +216,57 @@
             <div id="mobile-menu" class="md:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm hidden">
                 <nav class="p-4">
                     <ul class="space-y-2">
+                        <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.25rem 1rem 0.1rem;">Dasbor</li>
                         <li>
                             <a href="{{ route('bps.dashboard') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.dashboard') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                                 </svg>
-                                Dashboard
+                                Beranda
                             </a>
                         </li>
+                        <li>
+                            <a href="{{ route('bps.statistik.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.statistik.index') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                Statistik SIBSTR
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('bps.statistik.listrik') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.statistik.listrik') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Statistik Listrik
+                            </a>
+                        </li>
+                        <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.9rem 1rem 0.1rem;">Data Survei</li>
+                        <li>
+                            <a href="{{ route('bps.sibstr.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.sibstr.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Survei SIBSTR
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('bps.ub.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.ub.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                Survei UB
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('bps.listrik.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.listrik.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Survei Listrik
+                            </a>
+                        </li>
+                        <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.9rem 1rem 0.1rem;">Konten</li>
                         <li>
                             <a href="{{ route('bps.news.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.news.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -185,22 +283,7 @@
                                 Video
                             </a>
                         </li>
-                        <li>
-                            <a href="{{ route('bps.sibstr.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.sibstr.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Data Survei SIBSTR
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('bps.ub.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.ub.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                                Data Survei UB
-                            </a>
-                        </li>
+                        <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.9rem 1rem 0.1rem;">Pengguna &amp; Akun</li>
                         <li>
                             <a href="{{ route('bps.users.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.users.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -209,7 +292,7 @@
                                 Manajemen Pengguna
                             </a>
                         </li>
-                        <li class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                        <li>
                             <a href="{{ route('bps.user.profile.show') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.user.profile.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -253,13 +336,33 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Mobile menu toggle
+            // Menu toggle: drops down the stacked menu on mobile, collapses the
+            // sidebar on md and above. Collapsed state is remembered per browser.
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const mobileMenu = document.getElementById('mobile-menu');
+            const COLLAPSE_KEY = 'bps-sidebar-collapsed';
+            const SIDEBAR_MIN_WIDTH = 768; // Tailwind md
 
-            if (mobileMenuButton && mobileMenu) {
+            function syncMenuButton() {
+                if (!mobileMenuButton) return;
+                const collapsed = document.documentElement.classList.contains('bps-sidebar-collapsed');
+                mobileMenuButton.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                mobileMenuButton.setAttribute('aria-label', collapsed ? 'Tampilkan menu' : 'Sembunyikan menu');
+            }
+
+            syncMenuButton();
+
+            if (mobileMenuButton) {
                 mobileMenuButton.addEventListener('click', function() {
-                    mobileMenu.classList.toggle('hidden');
+                    if (window.innerWidth >= SIDEBAR_MIN_WIDTH) {
+                        const collapsed = document.documentElement.classList.toggle('bps-sidebar-collapsed');
+                        try {
+                            localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
+                        } catch (e) {}
+                        syncMenuButton();
+                    } else if (mobileMenu) {
+                        mobileMenu.classList.toggle('hidden');
+                    }
                 });
             }
 

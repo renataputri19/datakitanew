@@ -176,11 +176,11 @@ class SurveyBlok6Manager {
                 const result = await response.json().catch(() => ({}));
 
                 if (result.success) {
-                    if (result.triwulan_access_granted) {
+                    if (result.is_tahunan) {
                         showSurveyModal({
                             type: 'success',
                             title: 'Survei Tahunan 2025 Selesai!',
-                            body: 'Akses Survei Triwulanan 2026 kini telah dibuka. Anda akan diarahkan ke halaman dashboard.',
+                            body: 'Data Survei Tahunan 2025 Anda telah berhasil disimpan. Anda akan diarahkan ke halaman dashboard.',
                             confirmText: 'Ke Dashboard',
                             redirectUrl: '/dashboard/surveys/sibstr/results',
                             redirectDelay: 4000,

@@ -16,6 +16,10 @@
         const overlay = document.getElementById('dashboard-sidebar-overlay');
         const openButtons = document.querySelectorAll('[data-open-sidebar]');
         const closeButtons = document.querySelectorAll('[data-close-sidebar]');
+        const toggleButtons = document.querySelectorAll('[data-toggle-sidebar]');
+
+        const COLLAPSE_KEY = 'ud-sidebar-collapsed';
+        const DESKTOP_MIN_WIDTH = 1024;
 
         if (!sidebar) return;
 
@@ -39,11 +43,34 @@
             document.body.style.overflow = '';
         }
 
+        /**
+         * Laptop & above: collapse the sidebar out of the flow so the content
+         * area gets the full width. State is remembered across page loads.
+         */
+        function syncDesktopToggle(collapsed) {
+            toggleButtons.forEach(btn => {
+                btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                btn.setAttribute('aria-label', collapsed ? 'Tampilkan menu' : 'Sembunyikan menu');
+            });
+        }
+
+        function toggleDesktopSidebar() {
+            const collapsed = document.documentElement.classList.toggle('ud-sidebar-collapsed');
+            try {
+                localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
+            } catch (e) {}
+            syncDesktopToggle(collapsed);
+        }
+
+        // The collapsed class is applied pre-paint by the layout; mirror it here.
+        syncDesktopToggle(document.documentElement.classList.contains('ud-sidebar-collapsed'));
+
         // Event listeners
         openButtons.forEach(btn => btn.addEventListener('click', openSidebar));
         closeButtons.forEach(btn => btn.addEventListener('click', closeSidebar));
+        toggleButtons.forEach(btn => btn.addEventListener('click', toggleDesktopSidebar));
         if (overlay) overlay.addEventListener('click', closeSidebar);
-        
+
         // Close on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeSidebar();
@@ -54,7 +81,7 @@
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(() => {
-                if (window.innerWidth >= 1024) {
+                if (window.innerWidth >= DESKTOP_MIN_WIDTH) {
                     closeSidebar();
                 }
             }, 250);

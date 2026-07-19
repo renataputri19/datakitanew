@@ -26,6 +26,7 @@ use App\Http\Controllers\Monalisa\BpsController as MonalisaBpsController;
 use App\Http\Controllers\Monalisa\NotificationController as MonalisaNotificationController;
 use App\Http\Controllers\DevLoginController;
 use App\Http\Controllers\PetaController;
+use App\Http\Controllers\Superadmin\UserController as SuperadminUserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -243,6 +244,23 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/ub/edit/blok3',           [SurveyUbEditController::class, 'blok3'])->name('ub.edit.blok3');
         Route::post('/ub/edit/blok3/finish',   [SurveyUbEditController::class, 'finish'])->name('ub.edit.blok3.finish');
 
+        // ── SURVEI LISTRIK (produksi & nilai produksi listrik bulanan) ──
+        Route::get('/listrik',                 [App\Http\Controllers\SurveyListrikController::class, 'entry'])->name('listrik.entry');
+        Route::post('/listrik/start-edit',     [App\Http\Controllers\SurveyListrikController::class, 'startEdit'])->name('listrik.start-edit');
+        Route::get('/listrik/blok1',           [App\Http\Controllers\SurveyListrikController::class, 'blok1'])->name('listrik.blok1');
+        Route::post('/listrik/blok1/autosave', [App\Http\Controllers\SurveyListrikController::class, 'autoSaveBlok1'])->name('listrik.blok1.autosave');
+        Route::get('/listrik/blok1/status',    [App\Http\Controllers\SurveyListrikController::class, 'getStatusBlok1'])->name('listrik.blok1.status');
+        Route::post('/listrik/blok1/save',     [App\Http\Controllers\SurveyListrikController::class, 'saveBlok1'])->name('listrik.blok1.save');
+        Route::get('/listrik/blok2',           [App\Http\Controllers\SurveyListrikController::class, 'blok2'])->name('listrik.blok2');
+        Route::post('/listrik/blok2/autosave', [App\Http\Controllers\SurveyListrikController::class, 'autoSaveBlok2'])->name('listrik.blok2.autosave');
+        Route::get('/listrik/blok2/status',    [App\Http\Controllers\SurveyListrikController::class, 'getStatusBlok2'])->name('listrik.blok2.status');
+        Route::post('/listrik/blok2/save',     [App\Http\Controllers\SurveyListrikController::class, 'saveBlok2'])->name('listrik.blok2.save');
+        Route::get('/listrik/blok3',           [App\Http\Controllers\SurveyListrikController::class, 'blok3'])->name('listrik.blok3');
+        Route::post('/listrik/blok3/autosave', [App\Http\Controllers\SurveyListrikController::class, 'autoSaveBlok3'])->name('listrik.blok3.autosave');
+        Route::get('/listrik/blok3/status',    [App\Http\Controllers\SurveyListrikController::class, 'getStatusBlok3'])->name('listrik.blok3.status');
+        Route::post('/listrik/blok3/finish',   [App\Http\Controllers\SurveyListrikController::class, 'finish'])->name('listrik.blok3.finish');
+        Route::get('/listrik/pdf',             [App\Http\Controllers\SurveyListrikController::class, 'downloadPdf'])->name('listrik.pdf.download');
+
         // ── SIBSTR LANDING PAGE (no period params) ──
         Route::get('/sibstr', [SurveyController::class, 'sibstrEntry'])->name('sibstr.entry');
 
@@ -401,21 +419,35 @@ Route::middleware(['auth'])->group(function () {
         // BPS Dashboard
         Route::get('/', [BPSDashboardController::class, 'index'])->name('dashboard');
 
+        // SIBSTR Statistics Dashboard (quarterly data viz)
+        Route::get('/statistik', [App\Http\Controllers\BPS\StatistikController::class, 'index'])->name('statistik.index');
+
+        // Listrik Statistics Dashboard (monthly electricity production viz)
+        Route::get('/statistik-listrik', [App\Http\Controllers\BPS\StatistikListrikController::class, 'index'])->name('statistik.listrik');
+
         // News Management
         Route::resource('news', BPSNewsController::class);
 
         // Video Management
         Route::resource('videos', BPSVideoController::class);
 
-        // SIBSTR Survey Data Management (View Only)
+        // SIBSTR Survey Data Management (view + PDF + delete — BPS only)
         Route::get('/sibstr', [App\Http\Controllers\BPS\SibstrController::class, 'index'])->name('sibstr.index');
         Route::get('/sibstr/{id}', [App\Http\Controllers\BPS\SibstrController::class, 'show'])->name('sibstr.show');
         Route::get('/sibstr/{id}/download', [App\Http\Controllers\BPS\SibstrController::class, 'download'])->name('sibstr.download');
+        Route::delete('/sibstr/{id}', [App\Http\Controllers\BPS\SibstrController::class, 'destroy'])->name('sibstr.destroy');
 
-        // UB Survey Data Management (View Only)
+        // UB Survey Data Management (view + PDF + delete — BPS only)
         Route::get('/ub', [App\Http\Controllers\BPS\UbController::class, 'index'])->name('ub.index');
         Route::get('/ub/{id}/download', [App\Http\Controllers\BPS\UbController::class, 'download'])->name('ub.download');
         Route::get('/ub/{id}', [App\Http\Controllers\BPS\UbController::class, 'show'])->name('ub.show');
+        Route::delete('/ub/{id}', [App\Http\Controllers\BPS\UbController::class, 'destroy'])->name('ub.destroy');
+
+        // Listrik Survey Data Management (view + PDF + delete — BPS only)
+        Route::get('/listrik', [App\Http\Controllers\BPS\ListrikController::class, 'index'])->name('listrik.index');
+        Route::get('/listrik/{id}/download', [App\Http\Controllers\BPS\ListrikController::class, 'download'])->name('listrik.download');
+        Route::get('/listrik/{id}', [App\Http\Controllers\BPS\ListrikController::class, 'show'])->name('listrik.show');
+        Route::delete('/listrik/{id}', [App\Http\Controllers\BPS\ListrikController::class, 'destroy'])->name('listrik.destroy');
 
         // BPS User Profile Route
         Route::get('/user/profile', [BPSUserController::class, 'profile'])->name('user.profile.show');
@@ -431,7 +463,21 @@ Route::middleware(['auth', 'is_superadmin'])->prefix('superadmin')->name('supera
     Route::get('/dashboard', [TemporarySurveyController::class, 'superadminDashboard'])->name('dashboard');
     Route::get('/download/{filename}', [TemporarySurveyController::class, 'downloadFile'])->name('download.file');
 
+    // Recycle bin for survey submissions soft-deleted by BPS
+    Route::get('/data-terhapus', [App\Http\Controllers\Superadmin\TrashController::class, 'index'])->name('trash.index');
+    Route::post('/data-terhapus/{type}/restore-all', [App\Http\Controllers\Superadmin\TrashController::class, 'restoreAll'])->name('trash.restore-all');
+    Route::post('/data-terhapus/{type}/{id}/restore', [App\Http\Controllers\Superadmin\TrashController::class, 'restore'])->name('trash.restore');
+
+    // User Management (create users & assign a single, non-overlapping role)
+    Route::get('/users', [SuperadminUserController::class, 'index'])->name('users.index');
+    Route::get('/users/create', [SuperadminUserController::class, 'create'])->name('users.create');
+    Route::post('/users', [SuperadminUserController::class, 'store'])->name('users.store');
+    Route::get('/users/{user}/edit', [SuperadminUserController::class, 'edit'])->name('users.edit');
+    Route::put('/users/{user}', [SuperadminUserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [SuperadminUserController::class, 'destroy'])->name('users.destroy');
+
     // Submissions Management Routes
+    Route::get('/submissions', [TemporarySurveyController::class, 'submissionsIndex'])->name('submissions.index');
     Route::get('/submissions/create', [TemporarySurveyController::class, 'createSubmission'])->name('submissions.create');
     Route::post('/submissions', [TemporarySurveyController::class, 'storeSubmission'])->name('submissions.store');
     Route::get('/submissions/{submission}/edit', [TemporarySurveyController::class, 'editSubmission'])->name('submissions.edit');

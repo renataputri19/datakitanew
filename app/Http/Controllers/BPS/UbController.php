@@ -97,4 +97,19 @@ class UbController extends Controller
 
         return $pdf->download($filename);
     }
+
+    /**
+     * Soft-delete a single UB submission. Scoped to this table only — the same
+     * user's SIBSTR and Listrik submissions are untouched.
+     */
+    public function destroy($id)
+    {
+        $response = UbSurveyResponse::findOrFail($id);
+        $label    = $response->nama_perusahaan ?: ($response->user->name ?? 'Responden');
+
+        $response->delete();
+
+        return redirect()->route('bps.ub.index')
+            ->with('success', "Data Survei UB milik \"{$label}\" berhasil dihapus.");
+    }
 }

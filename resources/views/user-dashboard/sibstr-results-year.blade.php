@@ -143,28 +143,6 @@
   {{-- ── TRIWULAN CARDS ─────────────────────────────────────────────────── --}}
   @if($tahun >= 2026)
 
-  @if(!$tahunanFullyComplete)
-  {{-- Blocking banner: Tahunan 2025 not yet completed through Block 6 --}}
-  <div class="mt-6 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 p-4 flex flex-col sm:flex-row sm:items-start gap-3">
-    <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-    </svg>
-    <div class="flex-1">
-      <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">Ada Pembaruan di Survei Tahunan 2025</p>
-      <p class="mt-1 text-sm text-amber-700 dark:text-amber-400">
-        Formulir tahunan 2025 telah diperbarui dengan tambahan data baru. Lengkapi bagian yang belum terisi — survei triwulanan {{ $tahun }} akan terbuka setelah semua data tahunan selesai diisi.
-      </p>
-      <a href="{{ route('survey.sibstr.edit.blok1', ['year' => 2025, 'period' => 'tahunan']) }}"
-         class="inline-flex items-center gap-1.5 mt-3 text-sm font-medium text-amber-800 dark:text-amber-300 underline hover:no-underline">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-        </svg>
-        Lengkapi Sekarang
-      </a>
-    </div>
-  </div>
-  @endif
-
   <div class="ud-section-header mt-8">
     <h2 class="ud-section-title">
       <div class="ud-section-icon">
@@ -186,7 +164,6 @@
         $inProgress= $card['is_in_progress'];
         $available = $card['is_available'];
         $locked    = $card['is_locked'];
-        $tahunanLocked = !$tahunanFullyComplete && !$completed;
 
         // URL for new/in-progress entry (fill flow)
         $surveyUrl = route('survey.sibstr.blok1', ['year' => $tahun, 'period' => $tw]);
@@ -249,7 +226,7 @@
               </svg>
               Bukti
             </a>
-          @elseif($inProgress && !$tahunanLocked)
+          @elseif($inProgress)
             <a href="{{ $surveyUrl }}"
                class="ud-btn ud-btn-primary w-full justify-center text-sm">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -257,7 +234,7 @@
               </svg>
               Lanjutkan
             </a>
-          @elseif($available && !$tahunanLocked)
+          @elseif($available)
             <a href="{{ $surveyUrl }}"
                class="ud-btn ud-btn-primary w-full justify-center text-sm">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -265,13 +242,6 @@
               </svg>
               Mulai Isi
             </a>
-          @elseif($tahunanLocked && ($available || $inProgress))
-            <button disabled class="ud-btn w-full justify-center text-sm cursor-not-allowed opacity-50 border border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-              </svg>
-              Selesaikan Tahunan Dulu
-            </button>
           @else
             <button disabled class="ud-btn w-full justify-center text-sm cursor-not-allowed opacity-50 border border-gray-300 text-gray-500 bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

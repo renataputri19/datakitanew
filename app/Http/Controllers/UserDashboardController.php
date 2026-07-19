@@ -32,7 +32,7 @@ class UserDashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         // Get recent news for the dashboard (limit to 4 as per requirements)
         $recentNews = News::orderBy('created_at', 'desc')->take(4)->get();
         // Get recent videos for the dashboard (limit to 2 as per requirements)
@@ -209,8 +209,6 @@ class UserDashboardController extends Controller
         // Explicit ?tahun=&triwulan= params on edit links will override this correctly.
         session(['sibstr.tahun' => $tahun, 'sibstr.triwulan' => 0]);
 
-        $tahunanFullyComplete = SurveyResponse::isTahunanFullyCompletedForUser($user->id);
-
         return view('user-dashboard.sibstr-results-year', [
             'user'                  => $user,
             'tahun'                 => $tahun,
@@ -218,7 +216,6 @@ class UserDashboardController extends Controller
             'triwulanCards'         => $triwulanCards,
             'ringkasanResponse'     => $ringkasanResponse,
             'availableTriwulan'     => $availableTriwulan,
-            'tahunanFullyComplete'  => $tahunanFullyComplete,
         ]);
     }
 

@@ -6,10 +6,11 @@ use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SurveyResponse extends Model
 {
-    use HasFactory, HasUuid;
+    use HasFactory, HasUuid, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -480,7 +481,6 @@ class SurveyResponse extends Model
 
     /**
      * Check whether the 2025 annual Q207 detailed worker breakdown is fully filled.
-     * Used to gate Triwulanan 2026 access for existing users.
      */
     public function isQ207TahunanComplete(): bool
     {
@@ -519,16 +519,14 @@ class SurveyResponse extends Model
     }
 
     /**
-     * Authoritative gate for 2026 Triwulan access (FINISH_SURVEY status).
+     * True when the user finished Tahunan 2025 through the Block 6 finish flow.
      *
      * Returns true only when the user's 2025 Tahunan survey record has
      * annual_survey_status = 'FINISH_SURVEY', which is set exclusively by
-     * SurveyController::finishSurvey() when the user explicitly submits
-     * Block 6 through the finish flow.
+     * SurveyController::finishSurvey(). Legacy rows where is_completed was set
+     * by the old mechanism have annual_survey_status = null and return false.
      *
-     * Legacy rows where is_completed was set by the old mechanism will have
-     * annual_survey_status = null and will NOT pass this check — forcing those
-     * users to go through Block 6 again before Triwulanan is unlocked.
+     * This is reporting only — Triwulanan 2026 is not gated behind it.
      */
     public static function isTahunanFullyCompletedForUser(int|string $userId): bool
     {
@@ -592,7 +590,11 @@ class SurveyResponse extends Model
 
         // Determine which columns to merge
         $columns = \Illuminate\Support\Facades\Schema::getColumnListing($base->getTable());
-        $skip = ['id', 'user_id', 'survey_type', 'survey_section', 'created_at', 'updated_at'];
+        // active_flag is a generated column (writing it errors) and deleted_at
+        // must not be carried over from another row, or merging would resurrect
+        // or bury the base record.
+        $skip = ['id', 'user_id', 'survey_type', 'survey_section', 'created_at', 'updated_at',
+                 'deleted_at', 'active_flag'];
 
         foreach ($responses->slice(1) as $resp) {
             foreach ($columns as $col) {

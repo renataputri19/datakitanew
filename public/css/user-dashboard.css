@@ -84,6 +84,20 @@
     -webkit-overflow-scrolling: touch;
 }
 
+/* Section heading that groups related sidebar links, matching the BPS sidebar */
+.ud-sidebar-group {
+    padding: 1.15rem 1.5rem 0.35rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ud-gray-400);
+}
+
+.ud-sidebar-group:first-child {
+    padding-top: 0.25rem;
+}
+
 .ud-sidebar-item {
     display: flex;
     align-items: center;
@@ -164,6 +178,11 @@
     margin-bottom: var(--ud-spacing-2xl);
     position: relative;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--ud-spacing-lg);
 }
 
 .ud-page-header::before {
@@ -191,6 +210,11 @@
 }
 
 .ud-page-header-content {
+    position: relative;
+    z-index: 1;
+}
+
+.ud-page-header > .ud-btn {
     position: relative;
     z-index: 1;
 }
@@ -1039,6 +1063,10 @@
 .dark .ud-sidebar {
     background: var(--ud-gray-800);
     border-color: var(--ud-gray-700);
+}
+
+.dark .ud-sidebar-group {
+    color: var(--ud-gray-500);
 }
 
 .dark .ud-sidebar-item {

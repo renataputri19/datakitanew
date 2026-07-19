@@ -121,25 +121,19 @@ class SurveyController extends Controller
     }
 
     /**
-     * Guard for Triwulan 2026: blocks access unless the 2025 Tahunan survey has
-     * reached FINISH_SURVEY status (is_completed = true, set only by Block 6 finish).
+     * Guard for Triwulan 2026: blocks access to quarters that have not opened yet.
+     * Triwulanan is independent of the 2025 Tahunan survey — a respondent may fill
+     * it without having started, let alone finished, Tahunan 2025.
      * Returns a redirect to the landing page when access is denied, or null to allow.
      *
-     * @param  \App\Models\User $user
      * @return \Illuminate\Http\RedirectResponse|null
      */
-    private function checkTriwulanAccess($user): ?\Illuminate\Http\RedirectResponse
+    private function checkTriwulanAccess(): ?\Illuminate\Http\RedirectResponse
     {
         ['tahun' => $tahun, 'triwulan' => $triwulan] = $this->getPeriod();
 
         if ($tahun !== 2026 || $triwulan < 1) {
             return null;
-        }
-
-        if (!SurveyResponse::isTahunanFullyCompletedForUser($user->id)) {
-            return redirect()
-                ->route('survey.sibstr.entry')
-                ->with('error', 'Survei Triwulanan 2026 hanya dapat diakses setelah Survei Tahunan 2025 diselesaikan sepenuhnya melalui Blok VI.');
         }
 
         // Block access to a quarter that has not opened yet (e.g. TW II before its
@@ -413,8 +407,8 @@ class SurveyController extends Controller
 
     /**
      * SIBSTR survey landing/overview page.
-     * Shows the sequential steps: Annual 2025 → Quarterly 2026.
-     * Quarterly is gated behind annual completion + Q207 fields.
+     * Shows both surveys: Annual 2025 and Quarterly 2026. The two are independent —
+     * Quarterly is open on its own schedule regardless of Annual's status.
      */
     public function sibstrEntry()
     {
@@ -437,12 +431,6 @@ class SurveyController extends Controller
 
         $annualDone       = $annualResponse && $annualResponse->is_completed;
         $annualInProgress = $annualResponse && !$annualResponse->is_completed;
-
-        // Quarterly unlocked ONLY when annual_survey_status = 'FINISH_SURVEY'.
-        // This is set exclusively by finishSurvey() when the user submits Block 6.
-        // Legacy rows with is_completed = true but null annual_survey_status remain locked
-        // until the user re-submits Block 6 through the finish flow.
-        $quarterlyUnlocked = SurveyResponse::isTahunanFullyCompletedForUser($user->id);
 
         // Build triwulan cards for 2026
         $availableTriwulan = SurveyResponse::availableTriwulan($triwulanYear);
@@ -484,7 +472,6 @@ class SurveyController extends Controller
             'annualResponse'    => $annualResponse,
             'annualDone'        => $annualDone,
             'annualInProgress'  => $annualInProgress,
-            'quarterlyUnlocked' => $quarterlyUnlocked,
             'annualYear'        => $annualYear,
             'triwulanYear'      => $triwulanYear,
             'availableTriwulan' => $availableTriwulan,
@@ -501,7 +488,7 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
-        if ($redirect = $this->checkTriwulanAccess($user)) {
+        if ($redirect = $this->checkTriwulanAccess()) {
             return $redirect;
         }
 
@@ -578,7 +565,7 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
-        if ($redirect = $this->checkTriwulanAccess($user)) {
+        if ($redirect = $this->checkTriwulanAccess()) {
             return $redirect;
         }
 
@@ -610,7 +597,7 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
-        if ($redirect = $this->checkTriwulanAccess($user)) {
+        if ($redirect = $this->checkTriwulanAccess()) {
             return $redirect;
         }
 
@@ -663,7 +650,7 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
-        if ($redirect = $this->checkTriwulanAccess($user)) {
+        if ($redirect = $this->checkTriwulanAccess()) {
             return $redirect;
         }
 
@@ -704,7 +691,7 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
-        if ($redirect = $this->checkTriwulanAccess($user)) {
+        if ($redirect = $this->checkTriwulanAccess()) {
             return $redirect;
         }
 
@@ -747,7 +734,7 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
-        if ($redirect = $this->checkTriwulanAccess($user)) {
+        if ($redirect = $this->checkTriwulanAccess()) {
             return $redirect;
         }
 
@@ -789,7 +776,7 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
-        if ($redirect = $this->checkTriwulanAccess($user)) {
+        if ($redirect = $this->checkTriwulanAccess()) {
             return $redirect;
         }
 
@@ -834,7 +821,7 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
-        if ($redirect = $this->checkTriwulanAccess($user)) {
+        if ($redirect = $this->checkTriwulanAccess()) {
             return $redirect;
         }
 
@@ -2144,7 +2131,7 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
-        if ($redirect = $this->checkTriwulanAccess($user)) {
+        if ($redirect = $this->checkTriwulanAccess()) {
             return $redirect;
         }
 
@@ -2326,7 +2313,7 @@ class SurveyController extends Controller
     {
         $user = Auth::user();
 
-        if ($redirect = $this->checkTriwulanAccess($user)) {
+        if ($redirect = $this->checkTriwulanAccess()) {
             return $redirect;
         }
 
@@ -2955,20 +2942,19 @@ class SurveyController extends Controller
             $updateData = ['is_completed' => true, 'blok6_completed' => true];
 
             if ($isTahunan) {
-                // Setting FINISH_SURVEY is the authoritative gate for Triwulan 2026 access.
-                // isTahunanFullyCompletedForUser() checks exactly this field.
+                // Marks the Tahunan survey as finished through the Block 6 flow.
                 $updateData['annual_survey_status'] = 'FINISH_SURVEY';
             }
 
             $surveyResponse->updateWithAutoSave($updateData);
 
             return response()->json([
-                'success'                 => true,
-                'message'                 => $isTahunan
-                    ? 'Survei Tahunan 2025 berhasil diselesaikan. Akses Survei Triwulanan 2026 telah dibuka.'
+                'success'      => true,
+                'message'      => $isTahunan
+                    ? 'Survei Tahunan 2025 berhasil diselesaikan.'
                     : 'Survei berhasil diselesaikan.',
-                'completed_at'            => $surveyResponse->last_saved_at->format('Y-m-d H:i:s'),
-                'triwulan_access_granted' => $isTahunan,
+                'completed_at' => $surveyResponse->last_saved_at->format('Y-m-d H:i:s'),
+                'is_tahunan'   => $isTahunan,
             ]);
 
         } catch (\Exception $e) {

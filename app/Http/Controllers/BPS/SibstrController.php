@@ -359,4 +359,29 @@ class SibstrController extends Controller
             'blok2Visibility'
         ));
     }
+
+    /**
+     * Soft-delete a single SIBSTR submission.
+     *
+     * Scoped to one period only: the unique key on
+     * (user_id, survey_type, tahun, triwulan) guarantees this row *is* the
+     * whole submission for that period, so the user's other periods — and
+     * their UB and Listrik submissions — are untouched.
+     */
+    public function destroy($id)
+    {
+        $response = SurveyResponse::with('user')
+            ->where('survey_type', 'sibstr')
+            ->findOrFail($id);
+
+        $label  = $response->nama_perusahaan ?: ($response->user->name ?? 'Responden');
+        $period = ((int) ($response->triwulan ?? 0)) === 0
+            ? 'Tahunan ' . ($response->tahun ?? '')
+            : 'Triwulan ' . $response->triwulan . ' ' . ($response->tahun ?? '');
+
+        $response->delete();
+
+        return redirect()->route('bps.sibstr.index')
+            ->with('success', "Data Survei SIBSTR ({$period}) milik \"{$label}\" berhasil dihapus.");
+    }
 }

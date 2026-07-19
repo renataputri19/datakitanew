@@ -1,6 +1,22 @@
 <header class="sticky top-0 z-50 w-full border-b bg-white/95 dark:bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-900/60 transition-colors duration-300">
     <div class="container mx-auto px-4 flex h-16 items-center justify-between">
         <div class="flex items-center">
+            {{-- Dashboard sidebar collapse toggle. Hidden by default; the dashboard
+                 layout's stylesheet reveals it on laptop and above, so it only ever
+                 appears on pages that actually have a sidebar. --}}
+            <button type="button"
+                    id="ud-header-sidebar-toggle"
+                    class="hidden mr-3 items-center justify-center h-9 w-9 p-0 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                    data-toggle-sidebar
+                    aria-controls="dashboard-sidebar"
+                    aria-expanded="true"
+                    aria-label="Sembunyikan menu">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+                <span class="sr-only">Tampilkan atau sembunyikan menu samping</span>
+            </button>
+
             {{-- @if(request()->routeIs('dashboard*'))
                 <img src="{{ asset('img/Logo BPS 1.png') }}" alt="Logo BPS" class="h-6 w-auto mr-3" loading="lazy">
             @endif --}}
@@ -19,30 +35,8 @@
                 <a href="{{ route('news') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('news*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
                     Berita & Update
                 </a>
-                @php
-                    $sibstrCompleted = false;
-                    if (Auth::check()) {
-                        // Consider SIBSTR completed for header if any SIBSTR survey for the user is marked completed
-                        $sibstrCompleted = \App\Models\SurveyResponse::where('user_id', Auth::id())
-                            ->where('survey_type', 'sibstr')
-                            ->where('is_completed', true)
-                            ->exists();
-                    }
-                @endphp
-                @if($sibstrCompleted)
-                    <a href="{{ route('dashboard.surveys.sibstr.results') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('dashboard.surveys.sibstr.results') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
-                        Lihat Ringkasan Hasil
-                    </a>
-                @else
-                    <a href="{{ route('survey.sibstr.entry') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('survey.sibstr*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
-                        Survei SIBSTR
-                    </a>
-                @endif
-                @auth
-                <a href="{{ route('peta.index') }}" class="flex items-center text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('peta.*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400' }}">
-                    TUNJUKIN SE
-                </a>
-                @endauth
+                {{-- SIBSTR (entry + hasil) and TUNJUKIN SE now live in the dashboard
+                     sidebar, so the header stays short. --}}
                 <!-- Global Dashboard link: goes to /dashboard and requires auth -->
                 <a href="{{ route('dashboard') }}" class="nav-cta {{ request()->routeIs('dashboard') ? 'nav-cta-active' : '' }}">
                     Dashboard
@@ -138,33 +132,6 @@
                 </div>
                 <span>Berita & Update</span>
             </a>
-            @if($sibstrCompleted)
-                <a href="{{ route('dashboard.surveys.sibstr.results') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('dashboard.surveys.sibstr.results') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
-                    <div class="w-8 flex-shrink-0 mr-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                    </div>
-                    <span>Lihat Ringkasan Hasil</span>
-                </a>
-            @else
-                <a href="{{ route('survey.sibstr.entry') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('survey.sibstr*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
-                    <div class="w-8 flex-shrink-0 mr-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                    </div>
-                    <span>Survei SIBSTR</span>
-                </a>
-            @endif
             <!-- Global Dashboard link on mobile -->
             <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('dashboard') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
                 <div class="w-8 flex-shrink-0 mr-3">
@@ -175,18 +142,6 @@
                 </div>
                 <span>Dashboard</span>
             </a>
-            @auth
-            <a href="{{ route('peta.index') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('peta.*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
-                <div class="w-8 flex-shrink-0 mr-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-                        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
-                        <line x1="8" y1="2" x2="8" y2="18"></line>
-                        <line x1="16" y1="6" x2="16" y2="22"></line>
-                    </svg>
-                </div>
-                <span>TUNJUKIN SE</span>
-            </a>
-            @endauth
             {{-- <a href="{{ route('systems') }}" class="flex items-center px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-500 {{ request()->routeIs('systems*') ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300' }}">
                 <div class="w-8 flex-shrink-0 mr-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
