@@ -222,7 +222,7 @@
                 <span class="font-medium">{{ $isTahunan ? 'Tahunan' : 'Triwulanan' }} {{ $year }}</span>
             </p>
         </div>
-        <!-- Year selector quick links -->
+        <!-- Year selector quick links + Excel export -->
         <div class="flex items-center gap-2 flex-wrap">
             @foreach([2025, 2026] as $yr)
                 <a href="{{ route('bps.sibstr.index', array_merge(request()->except(['year','page']), ['year' => $yr, 'type' => $type])) }}"
@@ -231,6 +231,12 @@
                     {{ $yr }}
                 </a>
             @endforeach
+            <button type="button" class="btn-export-excel" onclick="bpsOpenExportModal()">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                Export Excel
+            </button>
         </div>
     </div>
 
@@ -561,4 +567,68 @@
 </div>
 
 @include('bps.partials.delete-survey-modal')
+
+{{--
+  Export dialog. It defaults to the tab currently on screen but every filter
+  can be widened to "semua" — the export is not bound to the page's own filters.
+--}}
+@include('bps.partials.export-excel-modal', [
+    'exportAction'   => route('bps.sibstr.export'),
+    'exportTitle'    => 'Ekspor Data Survei SIBSTR',
+    'exportSubtitle' => 'Satu baris per submisi berisi Blok I (identitas), kelengkapan Blok I dan status survei. Kosongkan filter untuk mengunduh semua data.',
+    'exportFields'   => [
+        [
+            'type'    => 'select',
+            'name'    => 'year',
+            'label'   => 'Tahun',
+            'value'   => $year,
+            'options' => ['' => 'Semua Tahun', '2025' => '2025', '2026' => '2026'],
+        ],
+        [
+            'type'    => 'select',
+            'name'    => 'type',
+            'label'   => 'Jenis Periode',
+            'value'   => $type,
+            'options' => [
+                ''            => 'Tahunan + Triwulanan',
+                'tahunan'     => 'Tahunan saja',
+                'triwulanan'  => 'Triwulanan saja',
+            ],
+        ],
+        [
+            'type'      => 'select',
+            'name'      => 'triwulan',
+            'label'     => 'Triwulan',
+            'value'     => $triwulanFilter,
+            'options'   => ['' => 'Semua Triwulan', '1' => 'Triwulan 1', '2' => 'Triwulan 2', '3' => 'Triwulan 3', '4' => 'Triwulan 4'],
+            'show_when' => ['field' => 'type', 'in' => ['', 'triwulanan']],
+        ],
+        [
+            'type'    => 'select',
+            'name'    => 'status',
+            'label'   => 'Status Survei',
+            'value'   => request('status'),
+            'options' => ['' => 'Semua Status', 'completed' => 'Selesai', 'in_progress' => 'Dalam Proses'],
+            'hint'    => 'Tahunan dihitung selesai saat FINISH_SURVEY.',
+        ],
+        [
+            'type'  => 'date',
+            'name'  => 'date_from',
+            'label' => 'Diperbarui Dari',
+        ],
+        [
+            'type'  => 'date',
+            'name'  => 'date_to',
+            'label' => 'Diperbarui Sampai',
+        ],
+        [
+            'type'        => 'text',
+            'name'        => 'search',
+            'label'       => 'Pencarian',
+            'value'       => request('search'),
+            'placeholder' => 'Nama perusahaan, KIP, IDSBR, pengguna...',
+            'full'        => true,
+        ],
+    ],
+])
 @endsection

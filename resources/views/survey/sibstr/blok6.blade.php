@@ -1,56 +1,29 @@
-@extends('layouts.app')
+@extends('layouts.user-dashboard')
 
-@section('title', 'SURVEI INDUSTRI BESAR DAN SEDANG TRIWULANAN (SIBSTR) - Blok VI - DataKita')
+@section('title', 'SIBSTR — Blok VI: Catatan & Selesai')
 @section('description', 'Survei Industri Besar dan Sedang Triwulanan - Blok VI: Catatan')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/survey.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-validation.css') }}">
+<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}">
 @endpush
 
-@section('content')
+@section('dashboard-content')
+@include('survey.sibstr.partials.page-head', [
+    'blokTitle' => 'Blok VI — Catatan & Selesai',
+    'blokSub'   => 'Langkah terakhir pengisian',
+])
 <div class="survey-container">
-    @if(!empty($isEditMode))
-    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
-    @endif
-
-    <!-- Survey Header -->
-    <div class="survey-header" data-aos="fade-up">
-        <h1 class="survey-title">
-            SURVEI INDUSTRI BESAR DAN SEDANG TRIWULANAN (SIBSTR)
-        </h1>
-        <h2 class="survey-subtitle">
-            VI. CATATAN
-        </h2>
-        <p class="survey-description">
-            Catatan tambahan untuk survei industri besar dan sedang triwulanan
-        </p>
-
-        @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
-        <div style="margin-top:1rem;">
-            <button type="button"
-                    onclick="openRefDrawer()"
-                    style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
-                           border-radius:0.625rem;border:2px solid #fbbf24;
-                           background:rgba(254,243,199,0.85);color:#92400e;
-                           font-size:0.8125rem;font-weight:700;cursor:pointer;
-                           transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;
-                           box-shadow:0 1px 4px rgba(251,191,36,0.25);"
-                    aria-label="Buka panel data referensi untuk perbandingan">
-                <svg style="width:1rem;height:1rem;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                Lihat Data Referensi
-            </button>
-        </div>
-        @endif
-    </div>
+    @include('survey.sibstr.partials.blok-toolbar')
 
     <!-- Auto-save Status -->
     <div id="autosave-status" class="autosave-status hidden">
         <span id="autosave-text"></span>
     </div>
+
+    {{-- Pre-flight checklist: show what is still missing before finishing --}}
+    @include('survey.sibstr.partials.completeness-summary')
 
     <!-- Survey Form -->
     <form id="survey-form" class="survey-form" data-aos="fade-up" data-aos-delay="200">
@@ -181,6 +154,7 @@
     ])
     @endif
 </div>
+@include('survey.sibstr.partials.page-foot')
 
 @push('scripts')
 <script>

@@ -180,9 +180,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/videos', [UserDashboardController::class, 'videos'])->name('dashboard.videos');
     Route::get('/dashboard/settings', [UserDashboardController::class, 'settings'])->name('dashboard.settings');
 
-    // Survey Results (SIBSTR) — year picker + year detail
-    Route::get('/dashboard/surveys/sibstr/results', [UserDashboardController::class, 'sibstrResults'])->name('dashboard.surveys.sibstr.results');
-    Route::get('/dashboard/surveys/sibstr/results/{tahun}', [UserDashboardController::class, 'sibstrResultsYear'])->name('dashboard.surveys.sibstr.results.year')->where('tahun', '[0-9]{4}');
+    // Survey Results (SIBSTR) — consolidated into the single /survei/sibstr page.
+    // The old year-picker and year-detail URLs now redirect there; the route
+    // names are kept so existing links and bookmarks keep resolving.
+    Route::redirect('/dashboard/surveys/sibstr/results', '/survei/sibstr')
+        ->name('dashboard.surveys.sibstr.results');
+    Route::redirect('/dashboard/surveys/sibstr/results/{tahun}', '/survei/sibstr')
+        ->name('dashboard.surveys.sibstr.results.year')
+        ->where('tahun', '[0-9]{4}');
     Route::get('/dashboard/surveys/sibstr/download-certificate', [UserDashboardController::class, 'downloadSibstrCertificate'])->name('dashboard.surveys.sibstr.download-certificate');
 
     // Legacy user dashboard routes (still available for backward compatibility)
@@ -279,6 +284,9 @@ Route::middleware(['auth'])->group(function () {
             ->name('sibstr.')
             ->where(['year' => '[0-9]{4}', 'period' => 'tahunan|[1-4]'])
             ->group(function () {
+                // Blok navigation rail — re-rendered live after each autosave
+                Route::get('/nav',                [SurveyController::class, 'sibstrNav'])->name('nav');
+
                 // Page routes
                 Route::get('/blok1',              [SurveyController::class, 'sibstrBlok1'])->name('blok1');
                 Route::get('/blok2',              [SurveyController::class, 'sibstrBlok2'])->name('blok2');
@@ -432,19 +440,23 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('videos', BPSVideoController::class);
 
         // SIBSTR Survey Data Management (view + PDF + delete — BPS only)
+        // NOTE: /export must stay above /{id} or the show route swallows it.
         Route::get('/sibstr', [App\Http\Controllers\BPS\SibstrController::class, 'index'])->name('sibstr.index');
+        Route::get('/sibstr/export', [App\Http\Controllers\BPS\SibstrController::class, 'export'])->name('sibstr.export');
         Route::get('/sibstr/{id}', [App\Http\Controllers\BPS\SibstrController::class, 'show'])->name('sibstr.show');
         Route::get('/sibstr/{id}/download', [App\Http\Controllers\BPS\SibstrController::class, 'download'])->name('sibstr.download');
         Route::delete('/sibstr/{id}', [App\Http\Controllers\BPS\SibstrController::class, 'destroy'])->name('sibstr.destroy');
 
         // UB Survey Data Management (view + PDF + delete — BPS only)
         Route::get('/ub', [App\Http\Controllers\BPS\UbController::class, 'index'])->name('ub.index');
+        Route::get('/ub/export', [App\Http\Controllers\BPS\UbController::class, 'export'])->name('ub.export');
         Route::get('/ub/{id}/download', [App\Http\Controllers\BPS\UbController::class, 'download'])->name('ub.download');
         Route::get('/ub/{id}', [App\Http\Controllers\BPS\UbController::class, 'show'])->name('ub.show');
         Route::delete('/ub/{id}', [App\Http\Controllers\BPS\UbController::class, 'destroy'])->name('ub.destroy');
 
         // Listrik Survey Data Management (view + PDF + delete — BPS only)
         Route::get('/listrik', [App\Http\Controllers\BPS\ListrikController::class, 'index'])->name('listrik.index');
+        Route::get('/listrik/export', [App\Http\Controllers\BPS\ListrikController::class, 'export'])->name('listrik.export');
         Route::get('/listrik/{id}/download', [App\Http\Controllers\BPS\ListrikController::class, 'download'])->name('listrik.download');
         Route::get('/listrik/{id}', [App\Http\Controllers\BPS\ListrikController::class, 'show'])->name('listrik.show');
         Route::delete('/listrik/{id}', [App\Http\Controllers\BPS\ListrikController::class, 'destroy'])->name('listrik.destroy');

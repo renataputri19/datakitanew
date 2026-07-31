@@ -1,0 +1,600 @@
+/* ============================================================================
+   SIBSTR read-only detail page (BPS + Mitra)
+   ----------------------------------------------------------------------------
+   Styles the neutral markup contract emitted by resources/views/bps/sibstr/data/*:
+
+     table.kv   label/value facts     — td.k (label) + td.v (value)
+     table.dt   wide data table       — always inside div.sx (own scroll box)
+     div.sub    sub-section heading
+     p.note     footnote / helper line
+     div.empty  empty state
+     .num       right-aligned tabular figure
+     .hint      muted inline note
+
+   The same partials are rendered into the PDF, which supplies its own
+   dompdf-safe rules for these classes.
+   ========================================================================== */
+
+/* ── Page layout: content + sticky TOC ───────────────────────────────────── */
+.sd-layout {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 250px;
+    gap: 1.75rem;
+    align-items: start;
+}
+
+.sd-main { min-width: 0; }
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.sd-head {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: .875rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.dark .sd-head { background: #1f2937; border-color: #374151; }
+
+.sd-head-text { flex: 1 1 22rem; min-width: 0; }
+
+.sd-head h1 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.dark .sd-head h1 { color: #f9fafb; }
+
+.sd-company {
+    margin: .3rem 0 0;
+    font-size: .95rem;
+    font-weight: 600;
+    color: #1e40af;
+}
+
+.dark .sd-company { color: #93c5fd; }
+
+.sd-meta {
+    margin-top: 1.15rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: .9rem 1.25rem;
+}
+
+.sd-meta-label {
+    display: block;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: #9ca3af;
+    margin-bottom: .2rem;
+}
+
+.sd-meta-value {
+    display: block;
+    font-size: .85rem;
+    font-weight: 600;
+    color: #111827;
+    overflow-wrap: anywhere;
+}
+
+.dark .sd-meta-value { color: #f3f4f6; }
+
+.sd-meta-note {
+    display: block;
+    font-size: .72rem;
+    color: #9ca3af;
+    overflow-wrap: anywhere;
+}
+
+.sd-head-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .875rem;
+}
+
+.sd-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .4rem .85rem;
+    border-radius: 9999px;
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.sd-badge svg { width: .95rem; height: .95rem; flex-shrink: 0; }
+.sd-badge.done { background: #d1fae5; color: #065f46; }
+.sd-badge.wip  { background: #fef3c7; color: #92400e; }
+.dark .sd-badge.done { background: rgba(6, 78, 59, .5); color: #a7f3d0; }
+.dark .sd-badge.wip  { background: rgba(120, 53, 15, .5); color: #fde68a; }
+
+.sd-actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+
+.sd-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .5rem 1rem;
+    border-radius: .55rem;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    font-size: .8125rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .15s, border-color .15s;
+}
+
+.sd-btn:hover { background: #f9fafb; border-color: #9ca3af; }
+.sd-btn svg { width: .95rem; height: .95rem; flex-shrink: 0; }
+
+.sd-btn.primary {
+    background: #1e40af;
+    border-color: #1e40af;
+    color: #fff;
+}
+
+.sd-btn.primary:hover { background: #1e3a8a; border-color: #1e3a8a; }
+
+.dark .sd-btn { background: #374151; border-color: #4b5563; color: #e5e7eb; }
+.dark .sd-btn:hover { background: #4b5563; }
+
+.sd-viewnote {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 1rem 0 1.5rem;
+    padding: .7rem 1rem;
+    border-radius: .625rem;
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    color: #1e40af;
+    font-size: .8125rem;
+    font-weight: 500;
+}
+
+.sd-viewnote svg { width: 1.05rem; height: 1.05rem; flex-shrink: 0; }
+.dark .sd-viewnote { background: rgba(30, 58, 138, .25); color: #bfdbfe; }
+
+/* ── Block cards ─────────────────────────────────────────────────────────── */
+.sd-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: .875rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    scroll-margin-top: 1.5rem;
+}
+
+.dark .sd-card { background: #1f2937; border-color: #374151; }
+
+.sd-card-head {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .9rem 1.25rem;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .sd-card-head { background: #111827; border-color: #374151; }
+
+.sd-card-no {
+    flex-shrink: 0;
+    min-width: 2.5rem;
+    padding: .35rem .5rem;
+    border-radius: .45rem;
+    background: #1e40af;
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.sd-card-title {
+    font-size: .95rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.3;
+}
+
+.dark .sd-card-title { color: #f9fafb; }
+
+.sd-card-title small {
+    display: block;
+    font-size: .74rem;
+    font-weight: 400;
+    color: #6b7280;
+    margin-top: .1rem;
+}
+
+.dark .sd-card-title small { color: #9ca3af; }
+
+.sd-card-body { padding: 1.25rem; }
+
+/* ── Sub-headings, notes, empty states ───────────────────────────────────── */
+.sd-card-body .sub {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: #1e40af;
+    padding-bottom: .4rem;
+    margin: 1.75rem 0 .75rem;
+    border-bottom: 2px solid #dbeafe;
+}
+
+.sd-card-body .sub:first-child { margin-top: 0; }
+.dark .sd-card-body .sub { color: #93c5fd; border-color: #1e3a5f; }
+
+.sd-card-body .note {
+    margin: .5rem 0 1rem;
+    font-size: .75rem;
+    line-height: 1.55;
+    color: #6b7280;
+}
+
+.dark .sd-card-body .note { color: #9ca3af; }
+
+.sd-card-body .empty {
+    padding: 1.75rem 1rem;
+    text-align: center;
+    font-size: .85rem;
+    font-style: italic;
+    color: #9ca3af;
+    background: #f9fafb;
+    border: 1px dashed #e5e7eb;
+    border-radius: .625rem;
+}
+
+.dark .sd-card-body .empty { background: #111827; border-color: #374151; }
+
+.sd-card-body .hint {
+    font-weight: 400;
+    font-size: .72rem;
+    color: #9ca3af;
+}
+
+.sd-card-body .hint.block { display: block; margin-top: .15rem; }
+
+/* ── Fact tables ─────────────────────────────────────────────────────────── */
+.sd-card-body table.kv {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: .5rem;
+}
+
+.sd-card-body table.kv td {
+    padding: .5rem .65rem;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: .8125rem;
+    vertical-align: top;
+    line-height: 1.5;
+}
+
+.dark .sd-card-body table.kv td { border-color: #374151; }
+.sd-card-body table.kv tr:last-child td { border-bottom: none; }
+
+.sd-card-body table.kv td.k {
+    width: 45%;
+    color: #6b7280;
+    background: #f9fafb;
+    border-right: 1px solid #f3f4f6;
+}
+
+.dark .sd-card-body table.kv td.k { color: #9ca3af; background: #111827; border-color: #374151; }
+
+.sd-card-body table.kv td.v {
+    color: #111827;
+    font-weight: 600;
+    /* Long rupiah figures and pasted addresses must wrap, never clip. */
+    overflow-wrap: anywhere;
+}
+
+.dark .sd-card-body table.kv td.v { color: #f3f4f6; }
+.sd-card-body table.kv td.v.wrap { white-space: pre-wrap; font-weight: 400; }
+.sd-card-body table.kv tr.r-total td { background: #f0fdf4; color: #065f46; font-weight: 700; }
+.dark .sd-card-body table.kv tr.r-total td { background: rgba(6, 78, 59, .3); color: #a7f3d0; }
+
+/* ── Data tables: own horizontal scroll box, never widen the page ─────────── */
+.sd-card-body .sx {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: .55rem;
+}
+
+.dark .sd-card-body .sx { border-color: #374151; }
+
+.sd-card-body table.dt {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .78rem;
+}
+
+.sd-card-body table.dt th,
+.sd-card-body table.dt td {
+    border: 1px solid #e5e7eb;
+    padding: .4rem .55rem;
+    text-align: center;
+    vertical-align: top;
+    line-height: 1.45;
+}
+
+.dark .sd-card-body table.dt th,
+.dark .sd-card-body table.dt td { border-color: #374151; }
+
+.sd-card-body table.dt thead th {
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.dark .sd-card-body table.dt thead th { background: #1e3a5f; color: #bfdbfe; }
+
+.sd-card-body table.dt td { color: #374151; }
+.dark .sd-card-body table.dt td { color: #d1d5db; }
+
+.sd-card-body table.dt .ta-l { text-align: left; }
+.sd-card-body table.dt .ta-c { text-align: center; }
+.sd-card-body table.dt .w-no { width: 3.25rem; }
+
+/* Figures: right-aligned, tabular, and allowed to keep their full width so a
+   14-digit rupiah value is never truncated. */
+.sd-card-body .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.sd-card-body table.dt tr.r-sub td {
+    background: #f0f9ff;
+    font-size: .73rem;
+    font-style: italic;
+    color: #1d4ed8;
+}
+
+.dark .sd-card-body table.dt tr.r-sub td { background: rgba(30, 58, 138, .25); color: #93c5fd; }
+
+.sd-card-body table.dt tr.r-alt td   { background: #fefce8; }
+.sd-card-body table.dt tr.r-total td { background: #f0fdf4; font-weight: 700; color: #065f46; }
+.dark .sd-card-body table.dt tr.r-alt td   { background: rgba(120, 53, 15, .2); }
+.dark .sd-card-body table.dt tr.r-total td { background: rgba(6, 78, 59, .3); color: #a7f3d0; }
+
+/* Dalam Negeri / Luar Negeri column tinting (Blok IIIC) */
+.sd-card-body table.dt th.th-dn { background: #fef9c3; color: #92400e; }
+.sd-card-body table.dt th.th-ln { background: #dbeafe; color: #1e40af; }
+.sd-card-body table.dt td.c-dn  { background: #fffdf2; }
+.sd-card-body table.dt td.c-ln  { background: #f5faff; }
+.dark .sd-card-body table.dt th.th-dn { background: #78350f; color: #fde68a; }
+.dark .sd-card-body table.dt th.th-ln { background: #1e3a5f; color: #bfdbfe; }
+.dark .sd-card-body table.dt td.c-dn  { background: rgba(120, 53, 15, .15); }
+.dark .sd-card-body table.dt td.c-ln  { background: rgba(30, 58, 138, .15); }
+
+/* Prospek column (Blok V) */
+.sd-card-body table.dt th.th-prospect { background: #e0f2fe; color: #0c4a6e; }
+.sd-card-body table.dt td.c-prospect  { background: #f7fbff; font-weight: 600; }
+.dark .sd-card-body table.dt th.th-prospect { background: #0c4a6e; color: #e0f2fe; }
+.dark .sd-card-body table.dt td.c-prospect  { background: rgba(12, 74, 110, .25); }
+
+.sd-card-body .badge {
+    display: inline-block;
+    margin-left: .4rem;
+    padding: .1rem .45rem;
+    border-radius: 9999px;
+    background: #dbeafe;
+    color: #1e40af;
+    font-size: .68rem;
+    font-weight: 700;
+}
+
+.dark .sd-card-body .badge { background: #1e3a5f; color: #bfdbfe; }
+
+/* ── Footer actions ──────────────────────────────────────────────────────── */
+.sd-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.25rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: .875rem;
+    margin-bottom: 1.5rem;
+}
+
+.dark .sd-foot { background: #111827; border-color: #374151; }
+
+/* ── TOC ─────────────────────────────────────────────────────────────────── */
+.sd-toc {
+    position: sticky;
+    top: 1.5rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: .875rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+    overflow: hidden;
+}
+
+.dark .sd-toc { background: #1f2937; border-color: #374151; }
+
+.sd-toc-head {
+    padding: .8rem 1.1rem;
+    background: #1e3a8a;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.sd-toc ul { list-style: none; margin: 0; padding: .4rem 0; }
+
+.sd-toc-link {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .55rem 1.1rem;
+    color: #4b5563;
+    text-decoration: none;
+    font-size: .78rem;
+    font-weight: 500;
+    line-height: 1.35;
+    border-left: 3px solid transparent;
+    transition: background .15s, color .15s, border-color .15s;
+}
+
+.sd-toc-link:hover { background: #f0f9ff; color: #1e40af; border-left-color: #93c5fd; }
+.dark .sd-toc-link { color: #9ca3af; }
+.dark .sd-toc-link:hover { background: rgba(30, 58, 138, .3); color: #bfdbfe; }
+
+.sd-toc-link.active {
+    background: #eff6ff;
+    color: #1e40af;
+    font-weight: 700;
+    border-left-color: #3b82f6;
+}
+
+.dark .sd-toc-link.active { background: rgba(30, 58, 138, .4); color: #bfdbfe; }
+
+.sd-toc-link .dot {
+    width: .45rem;
+    height: .45rem;
+    border-radius: 50%;
+    background: #d1d5db;
+    flex-shrink: 0;
+    transition: background .15s, box-shadow .15s;
+}
+
+.sd-toc-link.active .dot { background: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, .2); }
+
+/* ── Floating controls ───────────────────────────────────────────────────── */
+.sd-toc-fab,
+.sd-top {
+    position: fixed;
+    z-index: 100;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: transform .15s, background .15s;
+}
+
+.sd-toc-fab {
+    display: none;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 3.25rem;
+    height: 3.25rem;
+    background: #1e40af;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(30, 64, 175, .4);
+}
+
+.sd-toc-fab:hover { background: #1e3a8a; transform: scale(1.05); }
+.sd-toc-fab svg { width: 1.4rem; height: 1.4rem; }
+
+.sd-top {
+    display: none;
+    bottom: 1.5rem;
+    right: 5.5rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    background: #fff;
+    color: #1e40af;
+    border: 2px solid #1e40af;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+}
+
+.sd-top.show { display: flex; }
+.sd-top:hover { background: #1e40af; color: #fff; }
+.sd-top svg { width: 1.15rem; height: 1.15rem; }
+
+.sd-toc-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .35);
+    z-index: 199;
+}
+
+.sd-toc-overlay.active { display: block; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    .sd-layout { grid-template-columns: minmax(0, 1fr); }
+
+    .sd-toc {
+        display: none;
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 17rem;
+        border-radius: 0;
+        z-index: 200;
+        overflow-y: auto;
+    }
+
+    .sd-toc.open { display: block; }
+    .sd-toc-fab { display: flex; }
+    .sd-top { right: 5.5rem; }
+}
+
+@media (max-width: 640px) {
+    .sd-head { padding: 1.15rem; }
+    .sd-head h1 { font-size: 1.15rem; }
+    .sd-head-side { align-items: stretch; width: 100%; }
+    .sd-actions { justify-content: stretch; }
+    .sd-actions .sd-btn { flex: 1; justify-content: center; }
+    .sd-card-body { padding: 1rem; }
+    .sd-card-body table.kv td.k { width: 42%; }
+    .sd-foot { flex-direction: column; }
+    .sd-foot .sd-btn { justify-content: center; }
+}
+
+/* Very narrow: stack the fact tables so labels keep their words */
+@media (max-width: 480px) {
+    .sd-card-body table.kv,
+    .sd-card-body table.kv tbody,
+    .sd-card-body table.kv tr,
+    .sd-card-body table.kv td { display: block; width: 100%; }
+
+    .sd-card-body table.kv td.k {
+        width: 100%;
+        border-right: none;
+        border-bottom: none;
+        font-size: .74rem;
+        padding-bottom: .2rem;
+    }
+
+    .sd-card-body table.kv td.v { padding-top: .1rem; }
+    .sd-card-body .num { text-align: left; }
+}
+
+/* ── Print ───────────────────────────────────────────────────────────────── */
+@media print {
+    .sd-toc, .sd-toc-fab, .sd-top, .sd-toc-overlay,
+    .sd-actions, .sd-foot, .sd-viewnote { display: none !important; }
+
+    .sd-layout { grid-template-columns: 1fr; }
+    .sd-card { break-inside: avoid; page-break-inside: avoid; box-shadow: none; }
+    .sd-card-body .sx { overflow: visible; }
+}

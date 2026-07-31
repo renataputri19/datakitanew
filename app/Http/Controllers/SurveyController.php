@@ -166,7 +166,7 @@ class SurveyController extends Controller
             ->exists();
 
         if ($isCompleted) {
-            return redirect()->route('dashboard.surveys.sibstr.results');
+            return redirect()->route('survey.sibstr.entry');
         }
 
         return null;
@@ -210,7 +210,7 @@ class SurveyController extends Controller
      *
      * Block sequences by company type and period:
      *
-     *  Non-active company (any period):
+     *  Non-active company, or R202 = unit pembantu/penunjang (any period):
      *    blok1 → blok2 → blok6
      *
      *  Active + Industri (KBLI 10–33), tahunan:
@@ -254,8 +254,12 @@ class SurveyController extends Controller
             return 'blok2';
         }
 
-        // Non-active company: only blok6 follows blok2
-        if ($r->kondisi_perusahaan !== 'masih_aktif') {
+        // Short path — only blok6 follows blok2. Two cases, both of which
+        // survey-blok2.js already collapses to the "Lanjut ke Blok VI" button:
+        //   • the company is no longer active (tutup / pindah / dsb), and
+        //   • R202 = unit pembantu/penunjang, which has no production to report.
+        if ($r->kondisi_perusahaan !== 'masih_aktif'
+            || $r->jaringan_unit_kegiatan === 'unit_pembantu_penunjang') {
             return ($requestedBlock === 'blok6') ? null : 'blok6';
         }
 
@@ -319,7 +323,7 @@ class SurveyController extends Controller
      *
      * Sequences mirror resolveFirstIncompleteBlock:
      *
-     *   Non-active company (any period):
+     *   Non-active company, or R202 = unit pembantu/penunjang (any period):
      *     blok1 → blok2
      *
      *   Active + Industri (KBLI 10–33), tahunan:
@@ -368,8 +372,11 @@ class SurveyController extends Controller
             return $fail('blok2');
         }
 
-        // Non-active company: blok1 & blok2 are the only requirements
-        if ($r->kondisi_perusahaan !== 'masih_aktif') {
+        // Short path — blok1 & blok2 are the only requirements. Mirrors
+        // resolveFirstIncompleteBlock(): a company that is no longer active, and
+        // a unit pembantu/penunjang (R202), both skip straight to blok6.
+        if ($r->kondisi_perusahaan !== 'masih_aktif'
+            || $r->jaringan_unit_kegiatan === 'unit_pembantu_penunjang') {
             return null;
         }
 
@@ -476,6 +483,91 @@ class SurveyController extends Controller
             'triwulanYear'      => $triwulanYear,
             'availableTriwulan' => $availableTriwulan,
             'triwulanCards'     => $triwulanCards,
+            'arsipYears'        => $this->sibstrArsipForUser($user->id, [$annualYear, $triwulanYear]),
+        ]);
+    }
+
+    /**
+     * Every SIBSTR period this user has a row for, grouped by year — the archive
+     * that used to live on /dashboard/surveys/sibstr/results. Periods already
+     * shown as active cards on the landing page are excluded so the archive only
+     * carries what would otherwise be unreachable.
+     *
+     * @param  list<int>  $skipYears  Years already presented as active cards.
+     * @return array<int, list<array{period:string,label:string,tahun:int,triwulan:int,is_completed:bool,last_saved_at:?\Illuminate\Support\Carbon}>>
+     */
+    private function sibstrArsipForUser(int|string $userId, array $skipYears): array
+    {
+        $rows = SurveyResponse::where('user_id', $userId)
+            ->where('survey_type', 'sibstr')
+            ->whereNotIn('tahun', $skipYears)
+            ->orderByDesc('tahun')
+            ->orderBy('triwulan')
+            ->get();
+
+        $arsip = [];
+
+        foreach ($rows as $row) {
+            $tahun    = (int) $row->tahun;
+            $triwulan = (int) $row->triwulan;
+
+            $arsip[$tahun][] = [
+                'period'        => $triwulan === 0 ? 'tahunan' : (string) $triwulan,
+                'label'         => $triwulan === 0
+                                    ? 'Tahunan'
+                                    : SurveyResponse::triwulanLabel($triwulan),
+                'tahun'         => $tahun,
+                'triwulan'      => $triwulan,
+                'is_completed'  => (bool) $row->is_completed,
+                'last_saved_at' => $row->last_saved_at,
+            ];
+        }
+
+        return $arsip;
+    }
+
+    /**
+     * Re-render the blok navigation rail for the current period.
+     *
+     * The sidebar polls this after each autosave. A Blok II answer can change
+     * the shape of the path — not just tick a bubble — so the rail is rebuilt
+     * server-side from App\Support\SibstrBlokPath rather than being recomputed
+     * in JavaScript, which would fork the rule set.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function sibstrNav(Request $request)
+    {
+        $user = Auth::user();
+
+        ['tahun' => $tahun, 'triwulan' => $triwulan, 'period' => $period] = $this->getPeriod();
+
+        $response = SurveyResponse::where('user_id', $user->id)
+            ->where('survey_type', 'sibstr')
+            ->where('tahun', $tahun)
+            ->where('triwulan', $triwulan)
+            ->first();
+
+        $editMode   = $request->boolean('edit');
+        $currentKey = \App\Support\SibstrBlokPath::keyFromRouteName(
+            'survey.sibstr.' . $request->query('current', '')
+        );
+
+        $rows = \App\Support\SibstrBlokPath::rows(
+            $response,
+            $triwulan,
+            $editMode,
+            ['year' => $tahun, 'period' => $period],
+            $currentKey
+        );
+
+        return response()->json([
+            'success'        => true,
+            'completed'      => count(array_filter($rows, fn ($r) => $r['done'])),
+            'total'          => count($rows),
+            'blok2_complete' => \App\Support\SibstrBlokPath::isComplete($response, 'blok2'),
+            'rail'           => view('survey.sibstr.partials.sidebar-rows', ['rows' => $rows, 'size' => 'sm'])->render(),
+            'sheet'          => view('survey.sibstr.partials.sidebar-rows', ['rows' => $rows, 'size' => 'lg'])->render(),
         ]);
     }
 
@@ -1497,14 +1589,10 @@ class SurveyController extends Controller
             $fieldName = $request->input('field');
             $fieldValue = $request->input('value');
 
-            // JSON container for Blok 4
-            $current = $surveyResponse->blok4_data ?? [];
-
-            // Support nested fields like blok4[triwulan1]
+            // Support nested fields like blok4[triwulan1]. One locked leaf write —
+            // see SurveyResponse::autoSaveJsonLeaf().
             if (preg_match('/^blok4\[(.+)\]$/', $fieldName, $matches)) {
-                $key = $matches[1];
-                $current[$key] = $fieldValue;
-                $surveyResponse->updateWithAutoSave(['blok4_data' => $current]);
+                $surveyResponse->autoSaveJsonLeaf('blok4_data', [$matches[1]], $fieldValue);
             } else {
                 $surveyResponse->updateWithAutoSave([$fieldName => $fieldValue]);
             }
@@ -1550,26 +1638,15 @@ class SurveyController extends Controller
             $fieldName = $request->input('field');
             $fieldValue = $request->input('value');
 
-            // JSON container for Blok 5
-            $current = $surveyResponse->blok5_data ?? [];
-
-            // Support nested fields like blok5[501][p1]
+            // Support nested fields like blok5[501][p1]. One locked leaf write —
+            // see SurveyResponse::autoSaveJsonLeaf().
             if (preg_match('/^blok5\[(.+)\]$/', $fieldName)) {
                 // Extract bracketed keys
                 preg_match_all('/\[(.*?)\]/', $fieldName, $matches);
                 $keys = $matches[1] ?? [];
 
-                if (count($keys) === 2) {
-                    [$rowKey, $periodKey] = $keys;
-                    if (!isset($current[$rowKey]) || !is_array($current[$rowKey])) {
-                        $current[$rowKey] = [];
-                    }
-                    $current[$rowKey][$periodKey] = $fieldValue;
-                    $surveyResponse->updateWithAutoSave(['blok5_data' => $current]);
-                } elseif (count($keys) === 1) {
-                    $key = $keys[0];
-                    $current[$key] = $fieldValue;
-                    $surveyResponse->updateWithAutoSave(['blok5_data' => $current]);
+                if (count($keys) === 1 || count($keys) === 2) {
+                    $surveyResponse->autoSaveJsonLeaf('blok5_data', $keys, $fieldValue);
                 } else {
                     // Fallback to direct update
                     $surveyResponse->updateWithAutoSave([$fieldName => $fieldValue]);
@@ -1892,112 +1969,74 @@ class SurveyController extends Controller
             // Handle JSON fields for Blok IIIA
             if (str_starts_with($fieldName, 'blok3a_')) {
 
-                // Handle blok3a_products fields
+                // Handle blok3a_products fields.
+                // Each branch writes exactly one leaf under a row lock — see
+                // SurveyResponse::autoSaveJsonLeaf(). Reading the whole array here
+                // and writing it back lost data whenever two autosaves overlapped.
                 if (str_starts_with($fieldName, 'blok3a_products')) {
-                    $currentData = $surveyResponse->blok3a_products ?? [];
+                    $productDefaults = [
+                        'jenis_barang'  => '',
+                        'uraian'        => '',
+                        'satuan'        => '',
+                        'kbli_5digit'   => '',
+                        'persen_ekspor' => '',
+                        'negara_ekspor' => '',
+                        'banyaknya'     => [],
+                        'nilai'         => [],
+                        'harga_satuan'  => [],
+                    ];
 
                     // Pattern: blok3a_products[0][jenis_barang]
                     if (preg_match('/^blok3a_products\[(\d+)\]\[jenis_barang\]$/', $fieldName, $matches)) {
-                        $productIndex = (int) $matches[1];
-
-                        if (!isset($currentData[$productIndex])) {
-                            $currentData[$productIndex] = [
-                                'jenis_barang' => '',
-                                'uraian' => '',
-                                'satuan' => '',
-                                'kbli_5digit' => '',
-                                'persen_ekspor' => '',
-                                'negara_ekspor' => '',
-                                'banyaknya' => [],
-                                'nilai' => [],
-                                'harga_satuan' => [],
-                            ];
-                        }
-
-                        $currentData[$productIndex]['jenis_barang'] = $fieldValue;
-                        $surveyResponse->updateWithAutoSave(['blok3a_products' => $currentData]);
+                        $surveyResponse->autoSaveJsonLeaf(
+                            'blok3a_products',
+                            [(int) $matches[1], 'jenis_barang'],
+                            $fieldValue,
+                            $productDefaults
+                        );
                     }
                     // Pattern: blok3a_products[0][uraian] or blok3a_products[0][satuan]
                     elseif (preg_match('/^blok3a_products\[(\d+)\]\[(uraian|satuan|kbli_5digit|persen_ekspor|negara_ekspor)\]$/', $fieldName, $matches)) {
-                        $productIndex = (int) $matches[1];
-                        $fieldType = $matches[2]; // uraian, satuan, kbli_5digit, persen_ekspor, or negara_ekspor
-
-                        if (!isset($currentData[$productIndex])) {
-                            $currentData[$productIndex] = [
-                                'jenis_barang' => '',
-                                'uraian' => '',
-                                'satuan' => '',
-                                'kbli_5digit' => '',
-                                'persen_ekspor' => '',
-                                'negara_ekspor' => '',
-                                'banyaknya' => [],
-                                'nilai' => [],
-                                'harga_satuan' => [],
-                            ];
-                        }
-
-                        $currentData[$productIndex][$fieldType] = $fieldValue;
-                        $surveyResponse->updateWithAutoSave(['blok3a_products' => $currentData]);
+                        $surveyResponse->autoSaveJsonLeaf(
+                            'blok3a_products',
+                            [(int) $matches[1], $matches[2]],
+                            $fieldValue,
+                            $productDefaults
+                        );
                     }
                     // Pattern: blok3a_products[0][banyaknya][2024_des]
                     elseif (preg_match('/^blok3a_products\[(\d+)\]\[(\w+)\]\[(\w+)\]$/', $fieldName, $matches)) {
-                        $productIndex = (int) $matches[1];
-                        $fieldType = $matches[2]; // banyaknya, nilai, harga_satuan
-                        $month = $matches[3];
-
-                        if (!isset($currentData[$productIndex])) {
-                            $currentData[$productIndex] = [
-                                'jenis_barang' => '',
-                                'uraian' => '',
-                                'satuan' => '',
-                                'kbli_5digit' => '',
-                                'persen_ekspor' => '',
-                                'negara_ekspor' => '',
-                                'banyaknya' => [],
-                                'nilai' => [],
-                                'harga_satuan' => [],
-                            ];
-                        }
-
-                        $currentData[$productIndex][$fieldType][$month] = $fieldValue;
-                        $surveyResponse->updateWithAutoSave(['blok3a_products' => $currentData]);
+                        $surveyResponse->autoSaveJsonLeaf(
+                            'blok3a_products',
+                            [(int) $matches[1], $matches[2], $matches[3]],
+                            $fieldValue,
+                            $productDefaults
+                        );
                     }
                 }
                 // Handle blok3a_lainnya fields
                 elseif (str_starts_with($fieldName, 'blok3a_lainnya')) {
-                    $currentData = $surveyResponse->blok3a_lainnya ?? [];
-
                     // Pattern: blok3a_lainnya[nilai][2024_des]
                     if (preg_match('/^blok3a_lainnya\[nilai\]\[(\w+)\]$/', $fieldName, $matches)) {
-                        $month = $matches[1];
-
-                        if (!isset($currentData['nilai'])) {
-                            $currentData['nilai'] = [];
-                        }
-
-                        $currentData['nilai'][$month] = $fieldValue;
-                        $surveyResponse->updateWithAutoSave(['blok3a_lainnya' => $currentData]);
+                        $surveyResponse->autoSaveJsonLeaf(
+                            'blok3a_lainnya',
+                            ['nilai', $matches[1]],
+                            $fieldValue
+                        );
                     }
                 }
                 // Handle blok3a_totals fields
                 elseif (str_starts_with($fieldName, 'blok3a_totals')) {
-                    $currentData = $surveyResponse->blok3a_totals ?? [];
-
                     // Pattern: blok3a_totals[2024_des]
                     if (preg_match('/^blok3a_totals\[(\w+)\]$/', $fieldName, $matches)) {
-                        $month = $matches[1];
-                        $currentData[$month] = $fieldValue;
-                        $surveyResponse->updateWithAutoSave(['blok3a_totals' => $currentData]);
+                        $surveyResponse->autoSaveJsonLeaf('blok3a_totals', [$matches[1]], $fieldValue);
                     }
                 }
                 // Handle new blok3a_pendapatan_lainnya fields (Q302a-f)
                 elseif (str_starts_with($fieldName, 'blok3a_pendapatan_lainnya')) {
-                    $currentData = $surveyResponse->blok3a_pendapatan_lainnya ?? [];
                     // Pattern: blok3a_pendapatan_lainnya[q302a]
                     if (preg_match('/^blok3a_pendapatan_lainnya\[(\w+)\]$/', $fieldName, $matches)) {
-                        $subKey = $matches[1];
-                        $currentData[$subKey] = $fieldValue;
-                        $surveyResponse->updateWithAutoSave(['blok3a_pendapatan_lainnya' => $currentData]);
+                        $surveyResponse->autoSaveJsonLeaf('blok3a_pendapatan_lainnya', [$matches[1]], $fieldValue);
                     }
                 }
                 else {
@@ -2192,20 +2231,19 @@ class SurveyController extends Controller
             $fieldName  = $request->input('field');
             $fieldValue = $request->input('value');
 
+            // One locked leaf write — see SurveyResponse::autoSaveJsonLeaf().
             if (preg_match('/^blok3a2_materials\[(\d+)\]\[(\w+)\]$/', $fieldName, $matches)) {
-                $index   = (int) $matches[1];
-                $subField = $matches[2];
-                $current = $surveyResponse->blok3a2_materials ?? [];
-                if (!isset($current[$index])) {
-                    $current[$index] = [
+                $surveyResponse->autoSaveJsonLeaf(
+                    'blok3a2_materials',
+                    [(int) $matches[1], $matches[2]],
+                    $fieldValue,
+                    [
                         'nama_bahan'    => '', 'satuan_standar' => '',
                         'dn_banyaknya'  => '', 'dn_nilai'       => '',
                         'ln_banyaknya'  => '', 'ln_nilai'       => '',
                         'negara_asal'   => '',
-                    ];
-                }
-                $current[$index][$subField] = $fieldValue;
-                $surveyResponse->updateWithAutoSave(['blok3a2_materials' => $current]);
+                    ]
+                );
             } else {
                 $surveyResponse->updateWithAutoSave([$fieldName => $fieldValue]);
             }
@@ -2357,10 +2395,8 @@ class SurveyController extends Controller
                 $user = Auth::user();
                 ['tahun' => $tahun, 'triwulan' => $triwulan] = $this->getPeriod();
                 $surveyResponse = SurveyResponse::getOrCreateForUser($user->id, 'sibstr', 'blok3a2', $tahun, $triwulan);
-                $key = $matches[1];
-                $current = $surveyResponse->blok3b_industri_data ?? [];
-                $current[$key] = $request->input('value');
-                $surveyResponse->updateWithAutoSave(['blok3b_industri_data' => $current]);
+                // One locked leaf write — see SurveyResponse::autoSaveJsonLeaf().
+                $surveyResponse->autoSaveJsonLeaf('blok3b_industri_data', [$matches[1]], $request->input('value'));
                 return response()->json([
                     'success'       => true,
                     'message'       => 'Data auto-saved successfully',
@@ -2448,14 +2484,10 @@ class SurveyController extends Controller
             $fieldName = $request->input('field');
             $fieldValue = $request->input('value');
 
-            // JSON container for Blok 3B Industri
-            $current = $surveyResponse->blok3b_industri_data ?? [];
-
-            // Support nested fields like blok3b_industri[q306_awal]
+            // Support nested fields like blok3b_industri[q306_awal]. One locked leaf
+            // write — see SurveyResponse::autoSaveJsonLeaf().
             if (preg_match('/^blok3b_industri\[(.+)\]$/', $fieldName, $matches)) {
-                $key = $matches[1];
-                $current[$key] = $fieldValue;
-                $surveyResponse->updateWithAutoSave(['blok3b_industri_data' => $current]);
+                $surveyResponse->autoSaveJsonLeaf('blok3b_industri_data', [$matches[1]], $fieldValue);
             } else {
                 $surveyResponse->updateWithAutoSave([$fieldName => $fieldValue]);
             }
@@ -2712,14 +2744,10 @@ class SurveyController extends Controller
             $fieldName = $request->input('field');
             $fieldValue = $request->input('value');
 
-            // JSON container for Blok 3B Non-Industri
-            $current = $surveyResponse->blok3b_nonindustri_data ?? [];
-
-            // Support nested fields like blok3b_nonindustri[q306a]
+            // Support nested fields like blok3b_nonindustri[q306a]. One locked leaf
+            // write — see SurveyResponse::autoSaveJsonLeaf().
             if (preg_match('/^blok3b_nonindustri\[(.+)\]$/', $fieldName, $matches)) {
-                $key = $matches[1];
-                $current[$key] = $fieldValue;
-                $surveyResponse->updateWithAutoSave(['blok3b_nonindustri_data' => $current]);
+                $surveyResponse->autoSaveJsonLeaf('blok3b_nonindustri_data', [$matches[1]], $fieldValue);
             } else {
                 $surveyResponse->updateWithAutoSave([$fieldName => $fieldValue]);
             }

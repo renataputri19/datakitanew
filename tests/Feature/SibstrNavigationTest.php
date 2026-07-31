@@ -630,10 +630,10 @@ class SibstrNavigationTest extends TestCase
             'is_completed'       => true,
         ]);
 
-        // Completed surveys should redirect to results, not loop through guards
+        // Completed surveys land back on the SIBSTR page, not loop through guards
         $response = $this->actingAs($user)->get($this->blokUrl('blok2'));
 
-        $response->assertRedirect(route('dashboard.surveys.sibstr.results'));
+        $response->assertRedirect(route('survey.sibstr.entry'));
     }
 
     /** @test */

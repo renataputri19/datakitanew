@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers\BPS;
 
+use App\Exports\SibstrBlok1Export;
+use App\Http\Controllers\BPS\Concerns\ExportsSurveyMonitoring;
 use App\Http\Controllers\Controller;
 use App\Models\SurveyResponse;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SibstrController extends Controller
 {
+    use ExportsSurveyMonitoring;
+
     /**
      * Create a new controller instance.
      *
@@ -259,6 +264,112 @@ class SibstrController extends Controller
             'surveyResponses', 'stats', 'user',
             'year', 'type', 'isTahunan', 'triwulanFilter'
         ));
+    }
+
+    /**
+     * Export the SIBSTR submissions as a monitoring spreadsheet.
+     *
+     * Driven by the filter dialog on the index page rather than by the page's
+     * own filters, so BPS can pull a wider slice than the tab they are looking
+     * at — every filter here accepts "" for "semua", including the year and the
+     * Tahunan/Triwulanan split that the index always pins to one value.
+     */
+    public function export(Request $request)
+    {
+        $year      = $request->input('year');            // '' = semua tahun
+        $type      = $request->input('type');            // '' | tahunan | triwulanan
+        $triwulan  = $request->input('triwulan');        // '' | 1..4
+        $status    = $request->input('status');          // '' | completed | in_progress
+        $search    = $request->input('search');
+        $dateFrom  = $request->input('date_from');
+        $dateTo    = $request->input('date_to');
+        $writer    = $this->exportFormat($request->input('format'));
+
+        $query = SurveyResponse::where('survey_type', 'sibstr');
+
+        if ($year !== null && $year !== '') {
+            $query->where('tahun', (int) $year);
+        }
+
+        if ($type === 'tahunan') {
+            $query->where('triwulan', 0);
+        } elseif ($type === 'triwulanan') {
+            $query->where('triwulan', '>', 0);
+        }
+
+        // A quarter filter only makes sense once Tahunan rows are out of scope.
+        if ($type !== 'tahunan' && $triwulan !== null && $triwulan !== '') {
+            $query->where('triwulan', (int) $triwulan);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_perusahaan', 'like', "%{$search}%")
+                  ->orWhere('kip', 'like', "%{$search}%")
+                  ->orWhere('idsbr', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($uq) use ($search) {
+                      $uq->where('name', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Finished means FINISH_SURVEY for Tahunan rows but is_completed for
+        // Triwulanan ones, so an unscoped export has to test both per row.
+        if ($status === 'completed') {
+            $query->where(function ($q) {
+                $q->where(fn ($t) => $t->where('triwulan', 0)->where('annual_survey_status', 'FINISH_SURVEY'))
+                  ->orWhere(fn ($t) => $t->where('triwulan', '>', 0)->where('is_completed', true));
+            });
+        } elseif ($status === 'in_progress') {
+            $query->where(function ($q) {
+                $q->where(function ($t) {
+                    $t->where('triwulan', 0)
+                      ->where(function ($s) {
+                          $s->whereNull('annual_survey_status')
+                            ->orWhere('annual_survey_status', '!=', 'FINISH_SURVEY');
+                      });
+                })->orWhere(fn ($t) => $t->where('triwulan', '>', 0)->where('is_completed', false));
+            });
+        }
+
+        $this->applyUpdatedAtRange($query, $dateFrom, $dateTo);
+
+        // Same de-duplication as index(): one row per user × period.
+        $latestIds = (clone $query)
+            ->selectRaw('MAX(id) as id')
+            ->groupBy('user_id', 'tahun', 'triwulan')
+            ->pluck('id');
+
+        $records = SurveyResponse::with('user')
+            ->whereIn('id', $latestIds)
+            ->orderBy('tahun')
+            ->orderBy('triwulan')
+            ->orderBy('nama_perusahaan')
+            ->get();
+
+        $filename = 'Data_SIBSTR_' . $this->periodSlug($year, $type, $triwulan)
+            . '_' . $this->exportStamp() . $this->exportExtension($writer);
+
+        return Excel::download(new SibstrBlok1Export($records), $filename, $writer);
+    }
+
+    /** Filename fragment describing the exported slice. */
+    private function periodSlug(?string $year, ?string $type, ?string $triwulan): string
+    {
+        $parts = [];
+
+        if ($type === 'tahunan') {
+            $parts[] = 'Tahunan';
+        } elseif ($type === 'triwulanan') {
+            $parts[] = ($triwulan !== null && $triwulan !== '') ? 'TW' . (int) $triwulan : 'Triwulanan';
+        } else {
+            $parts[] = 'Semua';
+        }
+
+        $parts[] = ($year !== null && $year !== '') ? (string) (int) $year : 'SemuaTahun';
+
+        return implode('_', $parts);
     }
 
     /**

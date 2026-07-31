@@ -232,6 +232,27 @@ class ListrikSurveyResponse extends Model
         return (int) round(count(array_filter($blocks)) / count($blocks) * 100);
     }
 
+    /**
+     * How many of the available months carry at least one wilayah-tujuan row.
+     *
+     * Deliberately looser than isBlok2GridComplete(): this counts a month the
+     * responden has started, so the BPS monitoring export can show progress
+     * through the grid (e.g. "9/18") rather than only done/not-done.
+     */
+    public function filledMonthCount(): int
+    {
+        $data  = is_array($this->data_listrik) ? $this->data_listrik : [];
+        $count = 0;
+
+        foreach (self::availableMonthKeys() as $ym) {
+            if (self::normalizeMonthRows($data[$ym] ?? null) !== []) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
     /** Roman numeral for a quarter index, e.g. 3 => "III". */
     public static function romanQuarter(int $q): string
     {

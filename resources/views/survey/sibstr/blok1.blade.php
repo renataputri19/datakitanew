@@ -1,14 +1,15 @@
-@extends('layouts.app')
+@extends('layouts.user-dashboard')
 
-@section('title', 'SURVEI INDUSTRI BESAR DAN SEDANG TRIWULANAN (SIBSTR) - DataKita')
+@section('title', 'SIBSTR — Blok I: Keterangan Umum')
 @section('description', 'Survei Industri Besar dan Sedang Triwulanan - Blok I: Keterangan Umum')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/survey.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-validation.css') }}">
+<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}">
 @endpush
 
-@section('content')
+@section('dashboard-content')
 @php
     $currentTriwulan = $triwulan ?? $surveyResponse->triwulan ?? 0;
     $currentTahun    = $tahun    ?? $surveyResponse->tahun    ?? 2025;
@@ -18,7 +19,7 @@
 
 @if($isReadOnlyMode)
 {{-- ── READ-ONLY MODE: historical quarterly data (triwulan > 0) ── --}}
-@include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
+@include('survey.partials.edit-mode-banner', ['exitUrl' => route('survey.sibstr.entry')])
 
 <div class="period-indicator mb-4 px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-700 text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">
     <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -32,7 +33,7 @@
 
 <div style="padding: 1rem 1.5rem 2rem;">
     <div class="flex items-center gap-4">
-        <a href="{{ route('dashboard.surveys.sibstr.results') }}" class="btn btn-secondary">
+        <a href="{{ route('survey.sibstr.entry') }}" class="btn btn-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                 <polyline points="9,22 9,12 15,12 15,22"></polyline>
@@ -50,52 +51,12 @@
 
 @else
 {{-- ── ACTIVE FORM MODE ── --}}
+@include('survey.sibstr.partials.page-head', [
+    'blokTitle' => 'Blok I — Keterangan Umum',
+    'blokSub'   => 'Identitas & legalisasi perusahaan',
+])
 <div class="survey-container">
-    @if(!empty($isEditMode))
-    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
-    @endif
-
-    @if(isset($triwulan) && $triwulan > 0)
-    <div class="period-indicator mb-4 px-4 py-2 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-700 text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-        <span>Mengisi untuk: <strong>{{ \App\Models\SurveyResponse::triwulanLabel($triwulan) }} {{ $tahun }}</strong></span>
-    </div>
-    @endif
-
-    <!-- Survey Header -->
-    <div class="survey-header" data-aos="fade-up">
-        <h1 class="survey-title">
-            SURVEI INDUSTRI BESAR DAN SEDANG TRIWULANAN (SIBSTR)
-        </h1>
-        <h2 class="survey-subtitle">
-            I. KETERANGAN UMUM
-        </h2>
-        <p class="survey-description">
-            Formulir survei untuk pengumpulan data industri besar dan sedang triwulanan sesuai standar BPS
-        </p>
-
-        @if(isset($referenceResponse) && $referenceResponse)
-        <div style="margin-top:1rem;">
-            <button type="button"
-                    onclick="openRefDrawer()"
-                    style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
-                           border-radius:0.625rem;border:2px solid #fbbf24;
-                           background:rgba(254,243,199,0.85);color:#92400e;
-                           font-size:0.8125rem;font-weight:700;cursor:pointer;
-                           transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;
-                           box-shadow:0 1px 4px rgba(251,191,36,0.25);"
-                    aria-label="Buka panel data referensi untuk perbandingan">
-                <svg style="width:1rem;height:1rem;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                Lihat Data Referensi
-            </button>
-        </div>
-        @endif
-    </div>
+    @include('survey.sibstr.partials.blok-toolbar')
 
     <!-- Auto-save Status -->
     <div id="autosave-status" class="autosave-status hidden">
@@ -575,6 +536,7 @@
     ])
     @endif
 </div>
+@include('survey.sibstr.partials.page-foot')
 @endif
 {{-- end active form / read-only gate --}}
 

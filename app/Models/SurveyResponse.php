@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class SurveyResponse extends Model
 {
@@ -230,13 +231,15 @@ class SurveyResponse extends Model
     }
 
     /**
-     * Return true when Block I (identity) has all required fields filled.
-     * Mirrors the required-field rules in SurveyController::saveAll().
-     * Used by the sequential block access guard.
+     * The Block I fields a responden must fill before the block counts as done.
+     * Mirrors the required-field rules in SurveyController::saveAll(); shared
+     * with the BPS monitoring export so both report the same "n of 12 filled".
+     *
+     * @return list<string>
      */
-    public function isBlok1Complete(): bool
+    public static function blok1RequiredFields(): array
     {
-        $required = [
+        return [
             'nama_perusahaan',
             'alamat_pabrik',
             'kabupaten_kota',
@@ -250,14 +253,34 @@ class SurveyResponse extends Model
             'legalisasi_nama',
             'legalisasi_jabatan',
         ];
+    }
 
-        foreach ($required as $field) {
+    /**
+     * Return true when Block I (identity) has all required fields filled.
+     * Used by the sequential block access guard.
+     */
+    public function isBlok1Complete(): bool
+    {
+        foreach (static::blok1RequiredFields() as $field) {
             if (empty($this->{$field})) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /** How many of the Block I required fields carry a value (for monitoring). */
+    public function blok1FilledCount(): int
+    {
+        $filled = 0;
+        foreach (static::blok1RequiredFields() as $field) {
+            if (!empty($this->{$field})) {
+                $filled++;
+            }
+        }
+
+        return $filled;
     }
 
     /**
@@ -666,6 +689,73 @@ class SurveyResponse extends Model
         }
 
         $this->save();
+        return $this;
+    }
+
+    /**
+     * Atomically set ONE leaf inside a JSON column.
+     *
+     * Autosave writes a single field at a time, but the array-shaped bloks
+     * (IIIA products, IIIB/IIIC data, IV, V) live in one JSON column each. Doing
+     * that as read-modify-write in the controller loses data: two autosaves that
+     * overlap both read the same snapshot and the later write discards the
+     * earlier one's cell. Reading under a row lock inside a transaction makes the
+     * whole read-modify-write atomic, so concurrent field saves compose instead
+     * of clobbering.
+     *
+     * Only the addressed leaf is touched — everything else in the column comes
+     * from the freshly locked row, never from the caller's stale copy.
+     *
+     * @param  string  $column    JSON column, e.g. 'blok3a_products'
+     * @param  array   $keys      Path to the leaf, e.g. [0, 'banyaknya', '2026_jan']
+     * @param  mixed   $value     Value to store at that leaf
+     * @param  array   $defaults  Shape to seed a missing first-level container with
+     */
+    public function autoSaveJsonLeaf(string $column, array $keys, mixed $value, array $defaults = []): self
+    {
+        if ($keys === []) {
+            return $this->updateWithAutoSave([$column => $value]);
+        }
+
+        DB::transaction(function () use ($column, $keys, $value, $defaults) {
+            /** @var static $fresh */
+            $fresh = static::query()->whereKey($this->getKey())->lockForUpdate()->first();
+
+            if (!$fresh) {
+                // Row vanished (hard delete); fall back to a plain write.
+                $this->updateWithAutoSave([$column => $value]);
+                return;
+            }
+
+            $data = $fresh->{$column};
+            if (!is_array($data)) {
+                $data = [];
+            }
+
+            // Seed a brand-new first-level container with the expected shape so
+            // partially-filled entries still carry every key the views expect.
+            $first = $keys[0];
+            if ($defaults !== [] && !isset($data[$first])) {
+                $data[$first] = $defaults;
+            }
+
+            $leaf = array_pop($keys);
+            $ref  = &$data;
+            foreach ($keys as $key) {
+                if (!isset($ref[$key]) || !is_array($ref[$key])) {
+                    $ref[$key] = [];
+                }
+                $ref = &$ref[$key];
+            }
+            $ref[$leaf] = $value;
+            unset($ref);
+
+            $fresh->updateWithAutoSave([$column => $data]);
+
+            // Keep the caller's instance in step (it reads last_saved_at afterwards).
+            $this->setRawAttributes($fresh->getAttributes(), true);
+        });
+
         return $this;
     }
 

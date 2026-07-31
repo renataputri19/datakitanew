@@ -100,124 +100,12 @@ class UserDashboardController extends Controller
         return view('user-dashboard.settings', compact('user'));
     }
 
-    /**
-     * SIBSTR year-picker landing page.
-     * Shows all years the user has data for, plus the current year.
+    /*
+     * NOTE: sibstrResults() and sibstrResultsYear() were removed. Both pages
+     * duplicated the SIBSTR landing page at /survei/sibstr, which is now the
+     * single entry point (it carries the active periods plus an "Arsip Survei"
+     * section for older years). Their old URLs redirect there — see routes/web.php.
      */
-    public function sibstrResults()
-    {
-        $user = Auth::user();
-
-        // Collect distinct years from existing rows
-        $existingYears = SurveyResponse::where('user_id', $user->id)
-            ->where('survey_type', 'sibstr')
-            ->distinct()
-            ->pluck('tahun')
-            ->map(fn($y) => (int) $y)
-            ->toArray();
-
-        $currentYear = (int) now()->format('Y');
-        $allYears = array_unique(array_merge($existingYears, [$currentYear]));
-        rsort($allYears);
-
-        // Per-year summary: count completed triwulan (triwulan > 0) + whether annual exists
-        $yearSummaries = [];
-        foreach ($allYears as $yr) {
-            $rows = SurveyResponse::where('user_id', $user->id)
-                ->where('survey_type', 'sibstr')
-                ->where('tahun', $yr)
-                ->get();
-
-            $annualRow    = $rows->firstWhere('triwulan', 0);
-            $twRows       = $rows->where('triwulan', '>', 0);
-            $twCompleted  = $twRows->where('is_completed', true)->count();
-            $twTotal      = $twRows->count();
-            $available    = SurveyResponse::availableTriwulan($yr);
-
-            $yearSummaries[$yr] = [
-                'has_annual'    => $annualRow !== null,
-                'annual_done'   => $annualRow ? (bool) $annualRow->is_completed : false,
-                'tw_completed'  => $twCompleted,
-                'tw_total'      => $twTotal,
-                'tw_available'  => count($available),
-                'has_any'       => $rows->isNotEmpty(),
-            ];
-        }
-
-        return view('user-dashboard.sibstr-results', [
-            'user'          => $user,
-            'allYears'      => $allYears,
-            'yearSummaries' => $yearSummaries,
-            'currentYear'   => $currentYear,
-        ]);
-    }
-
-    /**
-     * SIBSTR year-detail page — shows ringkasan, triwulan cards, edit/bukti buttons.
-     */
-    public function sibstrResultsYear(int $tahun)
-    {
-        $user = Auth::user();
-
-        // Fetch all rows for this user+year
-        $rows = SurveyResponse::where('user_id', $user->id)
-            ->where('survey_type', 'sibstr')
-            ->where('tahun', $tahun)
-            ->get();
-
-        // Annual / legacy row (triwulan = 0)
-        $annualResponse = $rows->firstWhere('triwulan', 0);
-
-        // Quarterly rows keyed by triwulan number
-        $triwulanResponses = $rows->where('triwulan', '>', 0)->keyBy('triwulan');
-
-        // Which triwulan are available for entry this year?
-        $availableTriwulan = SurveyResponse::availableTriwulan($tahun);
-
-        // Build triwulan card data (1–4)
-        $triwulanCards = [];
-        for ($tw = 1; $tw <= 4; $tw++) {
-            $resp          = $triwulanResponses->get($tw);
-            $isAvailable   = in_array($tw, $availableTriwulan, true);
-            $isCompleted   = $resp ? (bool) $resp->is_completed : false;
-            $isInProgress  = $resp && !$isCompleted;
-
-            // A quarter that hasn't opened yet stays locked even if a draft row
-            // already exists (e.g. created before its launch date) — nothing is
-            // actionable until it opens.
-            if (!$isAvailable) {
-                $isCompleted  = false;
-                $isInProgress = false;
-            }
-
-            $triwulanCards[$tw] = [
-                'triwulan'    => $tw,
-                'label'       => SurveyResponse::triwulanLabel($tw),
-                'response'    => $resp,
-                'is_available'   => $isAvailable,
-                'is_completed'   => $isCompleted,
-                'is_in_progress' => $isInProgress,
-                'is_locked'      => !$isAvailable,
-            ];
-        }
-
-        // Use annual row as the source for the Ringkasan if present; else latest quarterly
-        $ringkasanResponse = $annualResponse
-            ?? $triwulanResponses->sortByDesc('updated_at')->first();
-
-        // Seed session so any navigation from this page defaults to this year's annual period.
-        // Explicit ?tahun=&triwulan= params on edit links will override this correctly.
-        session(['sibstr.tahun' => $tahun, 'sibstr.triwulan' => 0]);
-
-        return view('user-dashboard.sibstr-results-year', [
-            'user'                  => $user,
-            'tahun'                 => $tahun,
-            'annualResponse'        => $annualResponse,
-            'triwulanCards'         => $triwulanCards,
-            'ringkasanResponse'     => $ringkasanResponse,
-            'availableTriwulan'     => $availableTriwulan,
-        ]);
-    }
 
     /**
      * Generate and download SIBSTR survey completion certificate.
@@ -239,13 +127,13 @@ class UserDashboardController extends Controller
 
         if (!$response) {
             $periodLabel = $triwulan > 0 ? 'triwulan ' . $triwulan : 'tahunan';
-            return redirect()->route('dashboard.surveys.sibstr.results.year', $tahun)
+            return redirect()->route('survey.sibstr.entry')
                 ->with('error', 'Data survei ' . $periodLabel . ' untuk tahun ' . $tahun . ' tidak ditemukan.');
         }
 
         // Check if completed. If not, redirect back with error.
         if (!$response->is_completed) {
-            return redirect()->route('dashboard.surveys.sibstr.results.year', $tahun)
+            return redirect()->route('survey.sibstr.entry')
                 ->with('error', 'Survei belum selesai.');
         }
 

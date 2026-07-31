@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers\BPS;
 
+use App\Exports\UbBlok1Export;
+use App\Http\Controllers\BPS\Concerns\ExportsSurveyMonitoring;
 use App\Http\Controllers\Controller;
 use App\Models\UbSurveyResponse;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class UbController extends Controller
 {
+    use ExportsSurveyMonitoring;
+
     public function __construct()
     {
         $this->middleware(['auth', 'is_bps']);
@@ -59,7 +64,91 @@ class UbController extends Controller
             'in_progress' => UbSurveyResponse::where('is_completed', false)->count(),
         ];
 
-        return view('bps.ub.index', compact('surveyResponses', 'stats', 'user'));
+        // Choices for the export dialog's dropdowns, taken from the data itself
+        // so BPS only ever sees regions and years that exist.
+        $kabkotaOptions = UbSurveyResponse::query()
+            ->whereNotNull('kabupaten_kota')
+            ->where('kabupaten_kota', '!=', '')
+            ->distinct()
+            ->orderBy('kabupaten_kota')
+            ->pluck('kabupaten_kota');
+
+        $tahunOptions = UbSurveyResponse::query()
+            ->whereNotNull('tahun')
+            ->distinct()
+            ->orderBy('tahun')
+            ->pluck('tahun');
+
+        return view('bps.ub.index', compact(
+            'surveyResponses', 'stats', 'user', 'kabkotaOptions', 'tahunOptions'
+        ));
+    }
+
+    /**
+     * Export the UB submissions as a monitoring spreadsheet.
+     *
+     * The dialog filters independently of the page's own filters so BPS can
+     * pull a different slice than the one on screen; every filter accepts ""
+     * for "semua".
+     */
+    public function export(Request $request)
+    {
+        $status   = $request->input('status');       // '' | completed | in_progress
+        $blok1    = $request->input('blok1');        // '' | complete | incomplete
+        $tahun    = $request->input('tahun');
+        $kabkota  = $request->input('kabupaten_kota');
+        $search   = $request->input('search');
+        $writer   = $this->exportFormat($request->input('format'));
+
+        $query = UbSurveyResponse::with('user');
+
+        if ($status === 'completed') {
+            $query->where('is_completed', true);
+        } elseif ($status === 'in_progress') {
+            $query->where('is_completed', false);
+        }
+
+        // Blok 1 spans four sub-blocks; "lengkap" means all four are done.
+        $blok1Flags = ['blok1a_completed', 'blok1b_completed', 'blok1c_completed', 'blok1d_completed'];
+        if ($blok1 === 'complete') {
+            foreach ($blok1Flags as $flag) {
+                $query->where($flag, true);
+            }
+        } elseif ($blok1 === 'incomplete') {
+            $query->where(function ($q) use ($blok1Flags) {
+                foreach ($blok1Flags as $flag) {
+                    $q->orWhere($flag, false)->orWhereNull($flag);
+                }
+            });
+        }
+
+        if ($tahun !== null && $tahun !== '') {
+            $query->where('tahun', (int) $tahun);
+        }
+
+        if ($kabkota !== null && $kabkota !== '') {
+            $query->where('kabupaten_kota', $kabkota);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_perusahaan', 'like', "%{$search}%")
+                  ->orWhere('nama_komersial', 'like', "%{$search}%")
+                  ->orWhere('kabupaten_kota', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($uq) use ($search) {
+                      $uq->where('name', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $this->applyUpdatedAtRange($query, $request->input('date_from'), $request->input('date_to'));
+
+        $records = $query->orderBy('kabupaten_kota')->orderBy('nama_perusahaan')->get();
+
+        $filename = 'Data_Survei_UB_' . $this->exportStamp() . $this->exportExtension($writer);
+
+        return Excel::download(new UbBlok1Export($records), $filename, $writer);
     }
 
     /**

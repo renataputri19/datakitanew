@@ -1,0 +1,745 @@
+/* ============================================================================
+   SIBSTR form reskin
+   ----------------------------------------------------------------------------
+   Loaded AFTER survey.css on the SIBSTR blok pages only. Re-dresses the legacy
+   survey.css chrome so SIBSTR matches the Survei UB / Survei Listrik pages:
+   one card per form-section, small-caps blue section titles, softer inputs,
+   and no page-wide gray bands.
+
+   Nothing here changes markup or behaviour — it is purely visual, so the
+   existing block JS (ids, .form-row visibility toggles, validation classes)
+   keeps working untouched.
+   ========================================================================== */
+
+/* ── Container: the dashboard column already provides width + padding ─────── */
+.sibstr-page .survey-container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── The form is a stack of cards, not one big boxed sheet ────────────────── */
+.sibstr-page .survey-form {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
+}
+
+.sibstr-page .form-section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .sibstr-page .form-section {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+.sibstr-page .form-section:last-child {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .sibstr-page .form-section:last-child {
+    border-color: #374151;
+}
+
+/* ── Section header: UB-style small caps title with a blue underline ──────── */
+.sibstr-page .section-header {
+    background: transparent;
+    margin: 0 0 1.15rem;
+    padding: 0 0 .5rem;
+    border-bottom: 2px solid #dbeafe;
+    border-left: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+}
+
+.dark .sibstr-page .section-header {
+    border-color: #1e3a5f;
+}
+
+.sibstr-page .section-title {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #2563eb;
+    margin: 0;
+}
+
+.dark .sibstr-page .section-title {
+    color: #93c5fd;
+}
+
+.sibstr-page .section-subtitle {
+    font-size: .75rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #6b7280;
+    margin: 0;
+}
+
+.dark .sibstr-page .section-subtitle {
+    color: #9ca3af;
+}
+
+/* ── Rows: give the answer column more room, drop the heavy rules ─────────── */
+.sibstr-page .form-grid {
+    gap: 1rem;
+}
+
+/* Label column is capped rather than a plain fr ratio: on a laptop a 2fr/3fr
+   split hands a long question 40% of the row and starves the answer. minmax(0,1fr)
+   on the answer track lets it shrink instead of forcing the row to overflow. */
+.sibstr-page .form-row {
+    grid-template-columns: minmax(11rem, 20rem) minmax(0, 1fr);
+    gap: 1rem 1.25rem;
+    padding: .75rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.dark .sibstr-page .form-row {
+    border-color: #374151;
+}
+
+.sibstr-page .form-row:last-child {
+    border-bottom: none;
+}
+
+.sibstr-page .form-subrow {
+    grid-template-columns: minmax(10rem, 16rem) minmax(0, 1fr);
+    gap: .5rem 1rem;
+    padding: .3rem 0;
+}
+
+.sibstr-page .form-label {
+    font-size: .8125rem;
+    font-weight: 600;
+    color: #374151;
+    padding-top: .5rem;
+}
+
+.dark .sibstr-page .form-label {
+    color: #d1d5db;
+}
+
+.sibstr-page .form-sublabel {
+    font-size: .78rem;
+    color: #4b5563;
+    padding-top: .55rem;
+}
+
+.dark .sibstr-page .form-sublabel {
+    color: #9ca3af;
+}
+
+.sibstr-page .question-number {
+    font-weight: 700;
+    color: #2563eb;
+    min-width: 2.25rem;
+}
+
+.dark .sibstr-page .question-number {
+    color: #60a5fa;
+}
+
+/* ============================================================================
+   Multi-part questions (Q207, Q209–213, the 3B/3C money groups)
+   ----------------------------------------------------------------------------
+   These render as nested grids: .form-row [label | .form-subgrid], and a
+   sub-field may itself hold another .form-subgrid. With the plain 2-column rule
+   above, each level took ~60% of its parent, so a third-level input was left
+   with ~130px on a laptop — enough to show "Mas…" and nothing else.
+
+   Fix: as soon as a question's answer is a GROUP, drop the side-by-side split.
+   The question text becomes a full-width heading, the group spans the card, and
+   every leaf field puts its label above its control so the control always gets
+   the full width of its cell. Nesting depth no longer shrinks anything.
+
+   Guarded by @supports so browsers without :has() keep the previous layout
+   rather than a half-applied one.
+   ========================================================================== */
+@supports selector(:has(*)) {
+
+    /* A question whose answer is a group: stack, don't split. */
+    .sibstr-page .form-row:has(> .form-subgrid) {
+        grid-template-columns: 1fr;
+        gap: .6rem;
+    }
+
+    .sibstr-page .form-row:has(> .form-subgrid) > .form-label {
+        padding-top: 0;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .dark .sibstr-page .form-row:has(> .form-subgrid) > .form-label {
+        color: #e5e7eb;
+    }
+
+    /* The group itself: as many columns as comfortably fit, never narrower than
+       17rem so a field is always wide enough to read its own value. */
+    .sibstr-page .form-subgrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+        gap: .85rem 1.5rem;
+        align-items: start;
+        padding: .9rem 1rem;
+        border: 1px solid #eef2f7;
+        border-radius: .75rem;
+        background: #fafbfc;
+    }
+
+    .dark .sibstr-page .form-subgrid {
+        border-color: #374151;
+        background: rgba(17, 24, 39, .45);
+    }
+
+    /* Nested groups sit flush inside their parent — no double frame. */
+    .sibstr-page .form-subgrid .form-subgrid {
+        padding: 0;
+        border: none;
+        background: transparent;
+    }
+
+    /* A sub-field that is itself a group: span the row and act as a heading. */
+    .sibstr-page .form-subrow:has(> .form-subgrid) {
+        grid-column: 1 / -1;
+        grid-template-columns: 1fr;
+        gap: .45rem;
+        padding: .1rem 0 0;
+    }
+
+    .sibstr-page .form-subrow:has(> .form-subgrid) > .form-sublabel {
+        padding-top: 0;
+        font-size: .8rem;
+        font-weight: 700;
+        color: #374151;
+        border-left: 3px solid #bfdbfe;
+        padding-left: .6rem;
+    }
+
+    .dark .sibstr-page .form-subrow:has(> .form-subgrid) > .form-sublabel {
+        color: #d1d5db;
+        border-left-color: #1e40af;
+    }
+
+    /* Leaf sub-field: label above control, control gets the whole cell. */
+    .sibstr-page .form-subrow:not(:has(> .form-subgrid)) {
+        grid-template-columns: 1fr;
+        gap: .3rem;
+        padding: 0;
+    }
+
+    .sibstr-page .form-subrow:not(:has(> .form-subgrid)) > .form-sublabel {
+        padding-top: 0;
+        line-height: 1.4;
+    }
+
+    /* Grid children must be allowed to shrink, or a long placeholder forces the
+       column wider than its track and the row overflows. */
+    .sibstr-page .form-subrow > * {
+        min-width: 0;
+    }
+
+    /* ── Validation messages must SPAN, never sit in a phantom column ──────
+       survey-validation.css pins `.form-row .field-error-message` to
+       `grid-column: 2`. That is correct for a two-column question row, but a
+       grouped row is single-column, so column 2 was an *implicit* track: it took
+       the message's width and crushed the group heading into a ~55px sliver that
+       overlapped its own sub-fields (Q207 b. and d.). Span the row instead. */
+    .sibstr-page .form-row:has(> .form-subgrid) .field-error-message,
+    .sibstr-page .form-row:has(> .form-subgrid) .error-message,
+    .sibstr-page .form-row:has(> .form-subgrid) > .field-error,
+    .sibstr-page .form-row:has(> .form-subgrid) .form-errors {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Same span rule for every nesting level, no :has() needed here. */
+.sibstr-page .form-subrow .field-error-message,
+.sibstr-page .form-subrow .error-message,
+.sibstr-page .form-subrow > div.field-error,
+.sibstr-page .form-subrow .form-errors,
+.sibstr-page .form-subgrid > .field-error-message,
+.sibstr-page .form-subgrid > div.field-error {
+    grid-column: 1 / -1;
+}
+
+/* An empty error container must not eat a grid gap. */
+.sibstr-page .form-errors:empty {
+    display: none;
+}
+
+/* ── Inputs: match .ub-input from the UB / Listrik pages ──────────────────── */
+.sibstr-page .form-control {
+    padding: .55rem .85rem;
+    border: 1px solid #d1d5db;
+    border-radius: .625rem;
+    font-size: .875rem;
+    background: #fff;
+    color: #111827;
+}
+
+.dark .sibstr-page .form-control {
+    background: #111827;
+    border-color: #4b5563;
+    color: #f9fafb;
+}
+
+.sibstr-page .form-control:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+}
+
+.sibstr-page .form-control.textarea {
+    min-height: 5.5rem;
+}
+
+/* Numeric fields stay LEFT-aligned, like every other input on the page.
+   Right-alignment is a table convention: it earns its keep when you scan a
+   column of comparable figures and want units under units. A form is the other
+   task — the user is producing a value, not comparing values, so the caret
+   belongs where the eye already is, next to the label. Flushing a two-digit
+   answer to the far edge of a full-width field (and a sentence-length
+   placeholder with it) costs readability and buys nothing.
+   Tabular figures are kept: they stop digits jittering as you type.
+   The read-only tables in the BPS view and the PDF DO right-align (.num) —
+   there the columns are real. */
+.sibstr-page .form-control[inputmode="numeric"],
+.sibstr-page input.form-control[type="number"] {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Radios: pill rows instead of stacked plain rows ──────────────────────── */
+.sibstr-page .radio-option {
+    padding: .4rem .55rem;
+    border-radius: .5rem;
+}
+
+.sibstr-page .radio-label {
+    font-size: .82rem;
+}
+
+/* ── Actions: no gray band; the buttons carry the emphasis ────────────────── */
+.sibstr-page .form-actions {
+    background: transparent;
+    padding: .5rem 0 2rem;
+    border-top: 1px solid #e5e7eb;
+    margin-top: .25rem;
+}
+
+.dark .sibstr-page .form-actions {
+    background: transparent;
+    border-color: #374151;
+}
+
+.sibstr-page .btn {
+    padding: .625rem 1.25rem;
+    border-radius: .75rem;
+    font-weight: 600;
+    min-height: 2.5rem;
+}
+
+.sibstr-page .btn-primary {
+    background-color: #2563eb;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, .3);
+}
+
+.sibstr-page .btn-primary:hover {
+    background-color: #1d4ed8;
+}
+
+.sibstr-page .btn:hover {
+    transform: none;
+}
+
+/* ── Wide tables never widen the page; they scroll inside their own box ───── */
+.sibstr-page .table-responsive,
+.sibstr-page .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+}
+
+.sibstr-page .form-section > table,
+.sibstr-page .special-section > table {
+    max-width: 100%;
+}
+
+/* ── Autosave pill sits above the first card ──────────────────────────────── */
+.sibstr-page .autosave-status {
+    margin-bottom: .75rem;
+    border-radius: .625rem;
+    font-size: .8125rem;
+}
+
+/* ── Toolbar row that replaces the old blue gradient survey-header ────────── */
+.sibstr-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.sibstr-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .5rem 1rem;
+    border-radius: .625rem;
+    border: 1px solid #fcd34d;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: .8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+
+.sibstr-toolbar-btn:hover {
+    background: #fef3c7;
+    border-color: #f59e0b;
+}
+
+.dark .sibstr-toolbar-btn {
+    background: rgba(120, 53, 15, .3);
+    border-color: #92400e;
+    color: #fcd34d;
+}
+
+.sibstr-toolbar-btn svg {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+}
+
+/* ── Period chip ("Mengisi untuk: Triwulan II 2026") ─────────────────────── */
+.sibstr-period-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .3rem .7rem;
+    border-radius: 9999px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: .75rem;
+    font-weight: 600;
+}
+
+.dark .sibstr-period-chip {
+    background: rgba(30, 58, 138, .3);
+    border-color: #1e40af;
+    color: #bfdbfe;
+}
+
+.sibstr-period-chip svg {
+    width: .85rem;
+    height: .85rem;
+    flex-shrink: 0;
+}
+
+/* ============================================================================
+   Validation messages — one visual language
+   ----------------------------------------------------------------------------
+   The forms had four different error classes with four different (or no) looks:
+
+     .error-message        Blade @error output — had NO styles on the survey pages
+                           at all, so a server-side error rendered as plain black
+                           body text that did not read as an error
+     .field-error-message  small red text (JS, per field)
+     .form-errors          empty container the block JS fills — never styled
+     .field-error          two jobs at once: a red state class the JS puts on an
+                           INPUT, and a message <div> in the Blade. survey.css
+                           also gave it a ⚠️ emoji ::before, which renders
+                           inconsistently across platforms.
+
+   Now there are exactly two presentations:
+     · field level — a compact red line with a drawn icon, under its own control
+     · group level — an alert block for cross-field rules (R207 consistency,
+                     radio groups, Q210/Q211), spanning the whole group
+
+   The icon is a masked SVG so it follows `currentColor` and needs no separate
+   dark-mode asset.
+   ========================================================================== */
+.sibstr-page {
+    --sibstr-warn-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+}
+
+/* ── Field level ─────────────────────────────────────────────────────────── */
+.sibstr-page .error-message,
+.sibstr-page .field-error-message {
+    display: flex;
+    align-items: flex-start;
+    gap: .35rem;
+    margin-top: .3rem;
+    font-size: .72rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #dc2626;
+}
+
+.dark .sibstr-page .error-message,
+.dark .sibstr-page .field-error-message {
+    color: #fca5a5;
+}
+
+.sibstr-page .error-message::before,
+.sibstr-page .field-error-message::before {
+    content: '';
+    flex: 0 0 auto;
+    width: .8rem;
+    height: .8rem;
+    margin-top: .08rem;
+    background-color: currentColor;
+    -webkit-mask: var(--sibstr-warn-icon) center / contain no-repeat;
+            mask: var(--sibstr-warn-icon) center / contain no-repeat;
+}
+
+/* ── Group level: cross-field rules get a real alert block ───────────────── */
+.sibstr-page div.field-error,
+.sibstr-page .r207-consistency-error,
+.sibstr-page .radio-group-error,
+.sibstr-page .q210-group-error,
+.sibstr-page .q211-group-error {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    margin-top: .5rem;
+    padding: .55rem .75rem;
+    font-size: .75rem;
+    font-weight: 500;
+    line-height: 1.45;
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 3px solid #ef4444;
+    border-radius: .2rem .5rem .5rem .2rem;
+    animation: none;
+}
+
+.dark .sibstr-page div.field-error,
+.dark .sibstr-page .r207-consistency-error,
+.dark .sibstr-page .radio-group-error,
+.dark .sibstr-page .q210-group-error,
+.dark .sibstr-page .q211-group-error {
+    color: #fca5a5;
+    background: rgba(127, 29, 29, .35);
+    border-color: rgba(220, 38, 38, .45);
+    border-left-color: #dc2626;
+}
+
+/* Replaces survey.css's ⚠️ emoji with the same drawn icon as the field level. */
+.sibstr-page div.field-error::before,
+.sibstr-page .r207-consistency-error::before,
+.sibstr-page .radio-group-error::before,
+.sibstr-page .q210-group-error::before,
+.sibstr-page .q211-group-error::before {
+    content: '';
+    flex: 0 0 auto;
+    width: .95rem;
+    height: .95rem;
+    margin-top: .1rem;
+    background-color: currentColor;
+    -webkit-mask: var(--sibstr-warn-icon) center / contain no-repeat;
+            mask: var(--sibstr-warn-icon) center / contain no-repeat;
+}
+
+/* Guidance is not an error — keep it blue so red means "fix this". */
+.sibstr-page .form-guidance-message {
+    color: #1e40af;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    border-left-color: #3b82f6;
+}
+
+.dark .sibstr-page .form-guidance-message {
+    color: #bfdbfe;
+    background: rgba(30, 58, 138, .3);
+    border-color: rgba(59, 130, 246, .4);
+    border-left-color: #3b82f6;
+}
+
+.sibstr-page .form-guidance-message::before {
+    display: none;
+}
+
+/* ── Invalid controls stay controls ──────────────────────────────────────── */
+/* survey.css styles `.field-error` as a message block (flex + padding + emoji),
+   but the block JS also puts that class on the INPUT to mark it invalid. Without
+   this, a flagged field inherits message padding and layout. */
+.sibstr-page input.field-error,
+.sibstr-page select.field-error,
+.sibstr-page textarea.field-error {
+    display: block;
+    gap: 0;
+    padding: .55rem .85rem;
+    background: #fffbfb;
+    animation: none;
+}
+
+.dark .sibstr-page input.field-error,
+.dark .sibstr-page select.field-error,
+.dark .sibstr-page textarea.field-error {
+    background: rgba(239, 68, 68, .1);
+}
+
+.sibstr-page textarea.field-error {
+    min-height: 5.5rem;
+}
+
+/* ── Blok VI completeness checklist ──────────────────────────────────────── */
+.sibstr-check-list {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.sibstr-check {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .7rem .9rem;
+    border-radius: .75rem;
+    border: 1px solid #e5e7eb;
+}
+
+.dark .sibstr-check {
+    border-color: #374151;
+}
+
+.sibstr-check .ic {
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sibstr-check .ic svg {
+    width: .9rem;
+    height: .9rem;
+}
+
+.sibstr-check.ok .ic  { background: #dcfce7; color: #16a34a; }
+.sibstr-check.bad .ic { background: #fee2e2; color: #dc2626; }
+.dark .sibstr-check.ok .ic  { background: #14532d; color: #86efac; }
+.dark .sibstr-check.bad .ic { background: #7f1d1d; color: #fca5a5; }
+
+.sibstr-check p {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: .8125rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.dark .sibstr-check p {
+    color: #d1d5db;
+}
+
+.sibstr-check small {
+    display: block;
+    font-size: .7rem;
+    font-weight: 400;
+    color: #9ca3af;
+    margin-top: .1rem;
+}
+
+.sibstr-check .fix {
+    flex-shrink: 0;
+    font-size: .75rem;
+    font-weight: 700;
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.sibstr-check .fix:hover {
+    text-decoration: underline;
+}
+
+.dark .sibstr-check .fix {
+    color: #60a5fa;
+}
+
+.sibstr-check-note {
+    margin-top: .75rem;
+    padding: .65rem .9rem;
+    border-radius: .75rem;
+    font-size: .75rem;
+    line-height: 1.55;
+}
+
+.sibstr-check-note.ok {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+.sibstr-check-note.bad {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+}
+
+.dark .sibstr-check-note.ok {
+    background: rgba(20, 83, 45, .3);
+    border-color: #166534;
+    color: #bbf7d0;
+}
+
+.dark .sibstr-check-note.bad {
+    background: rgba(120, 53, 15, .3);
+    border-color: #92400e;
+    color: #fde68a;
+}
+
+/* ── Narrow screens ──────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .sibstr-page .form-row,
+    .sibstr-page .form-subrow {
+        grid-template-columns: 1fr;
+        gap: .35rem;
+    }
+
+    .sibstr-page .form-label,
+    .sibstr-page .form-sublabel {
+        padding-top: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .sibstr-page .form-section {
+        padding: 1.15rem 1rem;
+        border-radius: .875rem;
+    }
+
+    /* One field per row, and less inner padding so the group frame never pushes
+       a control past the card edge on a phone. */
+    .sibstr-page .form-subgrid {
+        grid-template-columns: 1fr;
+        gap: .75rem;
+        padding: .75rem .8rem;
+    }
+
+    .sibstr-page .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+        padding-bottom: 5rem; /* clear the mobile blok-nav FAB */
+    }
+}

@@ -16,7 +16,9 @@ class SurveyManager {
             ...options
         };
 
-        this.autoSaveTimeout = null;
+        this.autoSaveTimers   = new Map();   // fieldName -> debounce timer
+        this._lastSavedValues = new Map();   // fieldName -> value the server confirmed
+        this._saveChain       = Promise.resolve(); // serialises autosave requests
         this.isInitialized = false;
         this.csrfToken = null;
 
@@ -425,6 +427,18 @@ class SurveyManager {
      * Setup auto-save functionality
      */
     setupAutoSave() {
+        // A reload or navigation while an edit is still inside its debounce window
+        // used to drop that edit. 'pagehide' and the hidden visibility state are the
+        // two events that reliably fire on mobile too ('beforeunload' does not).
+        if (!this._flushBound) {
+            this._flushBound = true;
+            const flush = () => this.flushPendingAutoSaves();
+            window.addEventListener('pagehide', flush);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') flush();
+            });
+        }
+
         const formInputs = this.form.querySelectorAll('input, textarea, select');
 
         formInputs.forEach(input => {
@@ -474,16 +488,28 @@ class SurveyManager {
     }
 
     /**
-     * Schedule auto-save with debouncing
+     * Schedule auto-save with debouncing.
+     *
+     * Debounce is PER FIELD. A single shared timer used to be cleared by every
+     * keystroke anywhere on the form, so typing in a second field silently
+     * cancelled the first field's pending save — on a grid like Blok IIIA that
+     * dropped everything except the last cell touched.
      */
     scheduleAutoSave(fieldName, fieldValue, immediate = false) {
         // Guard: skip invalid field names (e.g., display inputs without name)
         if (typeof fieldName !== 'string' || fieldName.trim() === '') {
             return;
         }
-        // Clear existing timeout
-        if (this.autoSaveTimeout) {
-            clearTimeout(this.autoSaveTimeout);
+
+        if (!this.autoSaveTimers) {
+            this.autoSaveTimers = new Map();
+        }
+
+        // Only supersede a pending save for THIS field.
+        const pending = this.autoSaveTimers.get(fieldName);
+        if (pending) {
+            clearTimeout(pending);
+            this.autoSaveTimers.delete(fieldName);
         }
 
         // If immediate save is requested, save right away
@@ -493,19 +519,65 @@ class SurveyManager {
         }
 
         // Schedule new auto-save with delay
-        this.autoSaveTimeout = setTimeout(() => {
+        const timer = setTimeout(() => {
+            this.autoSaveTimers.delete(fieldName);
             this.performAutoSave(fieldName, fieldValue);
         }, this.options.autoSaveDelay);
+
+        this.autoSaveTimers.set(fieldName, timer);
     }
 
     /**
-     * Perform auto-save operation
+     * Fire every pending debounced save immediately.
+     *
+     * Called when the page is being hidden or unloaded so an edit that is still
+     * inside its debounce window is not lost on reload/navigation.
      */
-    async performAutoSave(fieldName, fieldValue) {
-        // Guard against invalid field names
-        if (typeof fieldName !== 'string' || fieldName.trim() === '') {
+    flushPendingAutoSaves() {
+        if (!this.autoSaveTimers || this.autoSaveTimers.size === 0) {
             return;
         }
+
+        // Only the fields that still have a debounce timer pending — never a sweep
+        // of the whole form, or a tab switch on Blok II would fire ~100 requests.
+        const pendingFields = Array.from(this.autoSaveTimers.keys());
+        this.autoSaveTimers.forEach((timer) => clearTimeout(timer));
+        this.autoSaveTimers.clear();
+
+        pendingFields.forEach((name) => {
+            // Re-read the live value from the DOM: it is the source of truth and may
+            // have changed since the timer was scheduled.
+            const el = this.form.querySelector(`[name="${name}"]`);
+            if (!el) return;
+            if (this._lastSavedValues && this._lastSavedValues.get(name) === el.value) return;
+            this.performAutoSave(name, el.value);
+        });
+    }
+
+    /**
+     * Perform auto-save operation.
+     *
+     * Requests are serialised through a FIFO queue: only one autosave is ever in
+     * flight. The SIBSTR endpoints save array-shaped bloks (IIIA products, IIIB/IIIC
+     * data) by reading the whole JSON column, changing one key and writing it back,
+     * so two overlapping requests both read the same snapshot and the later write
+     * discards the earlier one's cell. Serialising removes that overlap; the server
+     * also takes a row lock for the multi-tab case.
+     */
+    performAutoSave(fieldName, fieldValue) {
+        // Guard against invalid field names
+        if (typeof fieldName !== 'string' || fieldName.trim() === '') {
+            return Promise.resolve();
+        }
+
+        this._saveChain = (this._saveChain || Promise.resolve())
+            .catch(() => {})
+            .then(() => this._performAutoSaveNow(fieldName, fieldValue));
+
+        return this._saveChain;
+    }
+
+    async _performAutoSaveNow(fieldName, fieldValue) {
         const field = this.form.querySelector(`[name="${fieldName}"]`);
 
         try {
@@ -523,6 +595,10 @@ class SurveyManager {
                     'X-CSRF-TOKEN': this.csrfToken,
                     'Accept': 'application/json'
                 },
+                // keepalive lets a save that starts as the page is unloading still
+                // reach the server. Payloads here are a single field, far under the
+                // 64 KB keepalive budget.
+                keepalive: true,
                 body: JSON.stringify({
                     field: fieldName,
                     value: fieldValue
@@ -533,6 +609,11 @@ class SurveyManager {
 
             if (response.ok && data.success) {
                 this.showStatus('Tersimpan otomatis', 'success');
+
+                // Remember what the server now holds, so a flush on unload can skip
+                // fields that are already persisted.
+                if (!this._lastSavedValues) this._lastSavedValues = new Map();
+                this._lastSavedValues.set(fieldName, fieldValue);
 
                 // Only show visual feedback after successful save
                 let valueStr = '';
@@ -555,6 +636,15 @@ class SurveyManager {
                         }
                     }));
                 }
+
+                // Generic "a field was saved" signal. Unlike 'ub:autosave' above this
+                // fires for every survey, including the SIBSTR endpoints, which do not
+                // return blok_completed — the SIBSTR blok rail listens for it and
+                // re-fetches itself. Kept as a separate event name so the UB and
+                // Listrik sidebars, which key off blok_completed, are unaffected.
+                document.dispatchEvent(new CustomEvent('survey:autosaved', {
+                    detail: { field: fieldName, value: fieldValue, response: data }
+                }));
 
                 console.log('Auto-save successful:', data);
             } else {
@@ -1092,8 +1182,9 @@ class SurveyManager {
      * Destroy the survey manager
      */
     destroy() {
-        if (this.autoSaveTimeout) {
-            clearTimeout(this.autoSaveTimeout);
+        if (this.autoSaveTimers) {
+            this.autoSaveTimers.forEach((timer) => clearTimeout(timer));
+            this.autoSaveTimers.clear();
         }
 
         this.isInitialized = false;

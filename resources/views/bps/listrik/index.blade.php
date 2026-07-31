@@ -112,12 +112,20 @@
                 Daftar respons Survei Produksi &amp; Nilai Produksi Listrik Bulanan dari seluruh pengguna
             </p>
         </div>
-        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-            </svg>
-            SURVEI LISTRIK
-        </span>
+        <div class="flex items-center gap-2 flex-wrap">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                SURVEI LISTRIK
+            </span>
+            <button type="button" class="btn-export-excel" onclick="bpsOpenExportModal()">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                Export Excel
+            </button>
+        </div>
     </div>
 
     {{-- Statistics Cards --}}
@@ -369,4 +377,65 @@
 </div>
 
 @include('bps.partials.delete-survey-modal')
+
+{{--
+  Export dialog. Listrik's Blok II is a monthly grid, so it gets its own
+  completeness filter alongside the Blok I one and the plant-type filter.
+--}}
+@include('bps.partials.export-excel-modal', [
+    'exportAction'   => route('bps.listrik.export'),
+    'exportTitle'    => 'Ekspor Data Survei Listrik',
+    'exportSubtitle' => 'Satu baris per responden berisi identitas Blok I, jumlah bulan yang sudah diisi pada grid bulanan dan status survei. Kosongkan filter untuk mengunduh semua data.',
+    'exportFields'   => [
+        [
+            'type'    => 'select',
+            'name'    => 'status',
+            'label'   => 'Status Survei',
+            'value'   => request('status'),
+            'options' => ['' => 'Semua Status', 'completed' => 'Selesai', 'in_progress' => 'Dalam Proses'],
+        ],
+        [
+            'type'    => 'select',
+            'name'    => 'blok1',
+            'label'   => 'Kelengkapan Blok I',
+            'options' => ['' => 'Semua', 'complete' => 'Blok I lengkap', 'incomplete' => 'Blok I belum lengkap'],
+        ],
+        [
+            'type'    => 'select',
+            'name'    => 'grid',
+            'label'   => 'Grid Bulanan (Blok II)',
+            'options' => ['' => 'Semua', 'complete' => 'Sudah lengkap', 'incomplete' => 'Belum lengkap'],
+        ],
+        [
+            'type'    => 'select',
+            'name'    => 'jenis_pembangkit',
+            'label'   => 'Jenis Pembangkit',
+            'options' => ['' => 'Semua Jenis'] + $pembangkitOptions->mapWithKeys(fn ($p) => [$p => $p])->all(),
+        ],
+        [
+            'type'    => 'select',
+            'name'    => 'kabupaten_kota',
+            'label'   => 'Kabupaten/Kota',
+            'options' => ['' => 'Semua Kabupaten/Kota'] + $kabkotaOptions->mapWithKeys(fn ($k) => [$k => $k])->all(),
+        ],
+        [
+            'type'  => 'date',
+            'name'  => 'date_from',
+            'label' => 'Diperbarui Dari',
+        ],
+        [
+            'type'  => 'date',
+            'name'  => 'date_to',
+            'label' => 'Diperbarui Sampai',
+        ],
+        [
+            'type'        => 'text',
+            'name'        => 'search',
+            'label'       => 'Pencarian',
+            'value'       => request('search'),
+            'placeholder' => 'Nama perusahaan, lokasi, pengguna...',
+            'full'        => true,
+        ],
+    ],
+])
 @endsection

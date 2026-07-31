@@ -1,11 +1,12 @@
-@extends('layouts.app')
+@extends('layouts.user-dashboard')
 
-@section('title', 'SIBSTR - Blok IIIA')
+@section('title', 'SIBSTR — Blok IIIA: Barang yang Diproduksi')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/survey.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-validation.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-blok3a.css') }}">
+<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}">
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 <style>
 .ekspor-row {
@@ -75,7 +76,7 @@
 </style>
 @endpush
 
-@section('content')
+@section('dashboard-content')
 {{-- ══ Delete Confirmation Modal ══════════════════════════════ --}}
 <div id="delete-confirm-overlay" class="delete-overlay" role="dialog" aria-modal="true" aria-labelledby="del-modal-title">
     <div class="delete-modal-card">
@@ -96,50 +97,14 @@
     </div>
 </div>
 
+@include('survey.sibstr.partials.page-head', [
+    'blokTitle' => 'Blok IIIA — Barang yang Diproduksi',
+    'blokSub'   => 'Produksi & pendapatan per bulan',
+])
 <div class="survey-container">
-    @if(!empty($isEditMode))
-    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
-    @endif
-
-    <!-- Survey Header -->
-    <div class="survey-header" data-aos="fade-up">
-        <h1 class="survey-title">
-            SURVEI INDUSTRI BESAR DAN SEDANG TRIWULANAN (SIBSTR)
-        </h1>
-        <h2 class="survey-subtitle">
-            BLOK IIIA. KONDISI PEREKONOMIAN (PELAKU USAHA)
-        </h2>
-        <p class="survey-description">
-            Barang-barang yang diproduksi dan pendapatan perusahaan per bulan
-        </p>
-        <p class="survey-instruction">
-            <strong>Petunjuk:</strong> Mencatat semua pendapatan dari hasil produksi. Klik tombol "Tambah Produk" untuk menambahkan jenis barang.
-        </p>
-
-        @if(!empty($historicalResponses) && $historicalResponses->isNotEmpty() && !(isset($triwulan) && $triwulan === 1))
-        <div style="margin-top:1rem;">
-            <button type="button"
-                    onclick="openHistDrawer()"
-                    style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
-                           border-radius:0.625rem;border:2px solid #fbbf24;
-                           background:rgba(254,243,199,0.85);color:#92400e;
-                           font-size:0.8125rem;font-weight:700;cursor:pointer;
-                           transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;
-                           box-shadow:0 1px 4px rgba(251,191,36,0.25);"
-                    aria-label="Buka panel data historis untuk referensi">
-                <svg style="width:1rem;height:1rem;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Lihat Data Historis
-                <span style="display:inline-flex;align-items:center;justify-content:center;width:1.2rem;height:1.2rem;
-                             border-radius:9999px;background:#fbbf24;color:#7c2d12;font-size:0.7rem;font-weight:800;">
-                    {{ $historicalResponses->count() }}
-                </span>
-            </button>
-        </div>
-        @endif
-    </div>
+    @include('survey.sibstr.partials.blok-toolbar', [
+        'instruction' => '<strong>Petunjuk:</strong> Catat semua pendapatan dari hasil produksi. Gunakan tombol <strong>"Tambah Produk"</strong> untuk menambahkan jenis barang.',
+    ])
 
     <!-- Auto-save Status -->
     <div id="autosave-status" class="autosave-status hidden">
@@ -513,7 +478,6 @@
             </div>
         </div>
     </form>
-</div>
 
 @if(!empty($historicalResponses) && !(isset($triwulan) && $triwulan === 1))
 @include('survey.sibstr.partials.historical-drawer', [
@@ -521,6 +485,8 @@
     'blockKey'            => 'blok3a',
 ])
 @endif
+</div>
+@include('survey.sibstr.partials.page-foot')
 
 <!-- Scripts -->
 @push('scripts')

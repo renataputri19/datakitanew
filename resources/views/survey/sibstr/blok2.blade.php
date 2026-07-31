@@ -1,14 +1,15 @@
-@extends('layouts.app')
+@extends('layouts.user-dashboard')
 
-@section('title', 'SURVEI INDUSTRI BESAR DAN SEDANG TRIWULANAN (SIBSTR) - Blok II - DataKita')
+@section('title', 'SIBSTR — Blok II: Keterangan Perusahaan')
 @section('description', 'Survei Industri Besar dan Sedang Triwulanan - Blok II: Pendahuluan')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/survey.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-validation.css') }}">
+<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}">
 @endpush
 
-@section('content')
+@section('dashboard-content')
 @php
     $currentTriwulan = $triwulan ?? $surveyResponse->triwulan ?? 0;
     $currentTahun    = $tahun    ?? $surveyResponse->tahun    ?? 2025;
@@ -18,7 +19,7 @@
 
 @if($isReadOnlyMode)
 {{-- ── READ-ONLY MODE: historical quarterly data (triwulan > 0) ── --}}
-@include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
+@include('survey.partials.edit-mode-banner', ['exitUrl' => route('survey.sibstr.entry')])
 
 <div class="period-indicator mb-4 px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-700 text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">
     <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -49,19 +50,14 @@
 
 @else
 {{-- ── ACTIVE FORM MODE ── --}}
+@include('survey.sibstr.partials.page-head', [
+    'blokTitle' => 'Blok II — Keterangan Perusahaan',
+    'blokSub'   => 'Kondisi, jaringan unit, KBLI & tenaga kerja',
+])
 <div class="survey-container">
-    @if(!empty($isEditMode))
-    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
-    @endif
-
-    @if(isset($triwulan) && $triwulan > 0)
-    <div class="period-indicator mb-4 px-4 py-2 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-700 text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2">
-        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-        <span>Mengisi untuk: <strong>{{ \App\Models\SurveyResponse::triwulanLabel($triwulan) }} {{ $tahun }}</strong></span>
-    </div>
-    @endif
+    @include('survey.sibstr.partials.blok-toolbar', [
+        'instruction' => 'Jawaban pada blok ini menentukan blok berikutnya. Jika perusahaan <strong>tidak lagi aktif</strong> atau merupakan <strong>unit pembantu/penunjang</strong>, survei langsung lanjut ke Blok VI. Untuk perusahaan aktif, <strong>KBLI 10–33</strong> masuk alur Industri, selain itu alur Non-Industri.',
+    ])
 
     @if(session('q207_required'))
     <div class="mb-4 px-4 py-3 rounded-lg bg-amber-50 border border-amber-300 dark:bg-amber-900/20 dark:border-amber-700 text-sm text-amber-800 dark:text-amber-300 flex items-start gap-3">
@@ -71,39 +67,6 @@
         <span>Sebelum memulai survei triwulanan 2026, mohon lengkapi <strong>Pertanyaan 209 (Jumlah Pekerja Selama Tahun 2025)</strong> pada formulir ini terlebih dahulu.</span>
     </div>
     @endif
-
-    <!-- Survey Header -->
-    <div class="survey-header" data-aos="fade-up">
-        <h1 class="survey-title">
-            SURVEI INDUSTRI BESAR DAN SEDANG TRIWULANAN (SIBSTR)
-        </h1>
-        <h2 class="survey-subtitle">
-            II. PENDAHULUAN
-        </h2>
-        <p class="survey-description">
-            Formulir survei untuk pengumpulan data industri besar dan sedang triwulanan sesuai standar BPS
-        </p>
-
-        @if(isset($referenceResponse) && $referenceResponse && !(isset($triwulan) && $triwulan === 1))
-        <div style="margin-top:1rem;">
-            <button type="button"
-                    onclick="openRefDrawer()"
-                    style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
-                           border-radius:0.625rem;border:2px solid #fbbf24;
-                           background:rgba(254,243,199,0.85);color:#92400e;
-                           font-size:0.8125rem;font-weight:700;cursor:pointer;
-                           transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;
-                           box-shadow:0 1px 4px rgba(251,191,36,0.25);"
-                    aria-label="Buka panel data referensi untuk perbandingan">
-                <svg style="width:1rem;height:1rem;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                Lihat Data Referensi
-            </button>
-        </div>
-        @endif
-    </div>
 
     <!-- Auto-save Status -->
     <div id="autosave-status" class="autosave-status hidden">
@@ -241,7 +204,7 @@
                     <input type="number" name="jumlah_cabang_dan_unit_usaha" id="jumlah_cabang_dan_unit_usaha"
                            value="{{ $surveyResponse->jumlah_cabang_dan_unit_usaha ?? '' }}"
                            class="form-control" required min="0" step="1"
-                           placeholder="Masukkan jumlah kantor cabang dan unit usaha">
+                           placeholder="Jumlah unit">
                     @error('jumlah_cabang_dan_unit_usaha')
                         <div class="error-message">{{ $message }}</div>
                     @enderror
@@ -322,7 +285,7 @@
                     <input type="number" name="jumlah_bulan_aktif_2025" id="jumlah_bulan_aktif_2025"
                            value="{{ $surveyResponse->jumlah_bulan_aktif_2025 ?? '' }}"
                            class="form-control" required min="0" max="12" step="1"
-                           placeholder="Masukkan jumlah bulan (0-12)">
+                           placeholder="0–12 bulan">
                     @error('jumlah_bulan_aktif_2025')
                         <div class="error-message">{{ $message }}</div>
                     @enderror
@@ -340,7 +303,7 @@
                             <input type="number" name="rata_hari_kerja_bulanan_2025" id="rata_hari_kerja_bulanan_2025"
                                    value="{{ $surveyResponse->rata_hari_kerja_bulanan_2025 ?? '' }}"
                                    class="form-control" required min="0" max="31" step="1"
-                                   placeholder="Masukkan rata-rata hari kerja per bulan (0-31)">
+                                   placeholder="0–31 hari">
                             @error('rata_hari_kerja_bulanan_2025')
                                 <div class="error-message">{{ $message }}</div>
                             @enderror
@@ -350,7 +313,7 @@
                             <input type="number" name="rata_jam_kerja_per_hari_2025" id="rata_jam_kerja_per_hari_2025"
                                    value="{{ $surveyResponse->rata_jam_kerja_per_hari_2025 ?? '' }}"
                                    class="form-control" required min="0" max="24" step="1"
-                                   placeholder="Masukkan rata-rata jam kerja per hari (0-24)">
+                                   placeholder="0–24 jam">
                             @error('rata_jam_kerja_per_hari_2025')
                                 <div class="error-message">{{ $message }}</div>
                             @enderror
@@ -360,7 +323,7 @@
                             <input type="number" name="rata_shift_per_hari_2025" id="rata_shift_per_hari_2025"
                                    value="{{ $surveyResponse->rata_shift_per_hari_2025 ?? '' }}"
                                    class="form-control" required min="0" max="3" step="1"
-                                   placeholder="Masukkan rata-rata jumlah shift per hari (0-3)">
+                                   placeholder="0–3 shift">
                             @error('rata_shift_per_hari_2025')
                                 <div class="error-message">{{ $message }}</div>
                             @enderror
@@ -382,7 +345,7 @@
                             <input type="number" name="jumlah_seluruh_pekerja" id="jumlah_seluruh_pekerja"
                                    value="{{ $surveyResponse->jumlah_seluruh_pekerja ?? '' }}"
                                    class="form-control" required min="0" step="1"
-                                   placeholder="Masukkan jumlah seluruh pekerja">
+                                   placeholder="Jumlah orang">
                             @error('jumlah_seluruh_pekerja')
                                 <div class="error-message">{{ $message }}</div>
                             @enderror
@@ -395,7 +358,7 @@
                                     <input type="number" name="tenaga_kerja_laki_laki" id="tenaga_kerja_laki_laki"
                                            value="{{ $surveyResponse->tenaga_kerja_laki_laki ?? '' }}"
                                            class="form-control" required min="0" step="1"
-                                           placeholder="Masukkan jumlah pekerja laki-laki">
+                                           placeholder="Jumlah orang">
                                     @error('tenaga_kerja_laki_laki')
                                         <div class="error-message">{{ $message }}</div>
                                     @enderror
@@ -405,7 +368,7 @@
                                     <input type="number" name="tenaga_kerja_perempuan" id="tenaga_kerja_perempuan"
                                            value="{{ $surveyResponse->tenaga_kerja_perempuan ?? '' }}"
                                            class="form-control" required min="0" step="1"
-                                           placeholder="Masukkan jumlah pekerja perempuan">
+                                           placeholder="Jumlah orang">
                                     @error('tenaga_kerja_perempuan')
                                         <div class="error-message">{{ $message }}</div>
                                     @enderror
@@ -420,7 +383,7 @@
                                     <input type="number" name="pekerja_bukan_outsourcing_produksi" id="pekerja_bukan_outsourcing_produksi"
                                            value="{{ $surveyResponse->pekerja_bukan_outsourcing_produksi ?? '' }}"
                                            class="form-control" required min="0" step="1"
-                                           placeholder="Masukkan jumlah pekerja bukan outsourcing produksi">
+                                           placeholder="Jumlah orang">
                                     @error('pekerja_bukan_outsourcing_produksi')
                                         <div class="error-message">{{ $message }}</div>
                                     @enderror
@@ -430,7 +393,7 @@
                                     <input type="number" name="pekerja_bukan_outsourcing_lainnya" id="pekerja_bukan_outsourcing_lainnya"
                                            value="{{ $surveyResponse->pekerja_bukan_outsourcing_lainnya ?? '' }}"
                                            class="form-control" required min="0" step="1"
-                                           placeholder="Masukkan jumlah pekerja bukan outsourcing lainnya">
+                                           placeholder="Jumlah orang">
                                     @error('pekerja_bukan_outsourcing_lainnya')
                                         <div class="error-message">{{ $message }}</div>
                                     @enderror
@@ -445,7 +408,7 @@
                                     <input type="number" name="pekerja_outsourcing_produksi" id="pekerja_outsourcing_produksi"
                                            value="{{ $surveyResponse->pekerja_outsourcing_produksi ?? '' }}"
                                            class="form-control" required min="0" step="1"
-                                           placeholder="Masukkan jumlah pekerja outsourcing produksi">
+                                           placeholder="Jumlah orang">
                                     @error('pekerja_outsourcing_produksi')
                                         <div class="error-message">{{ $message }}</div>
                                     @enderror
@@ -455,7 +418,7 @@
                                     <input type="number" name="pekerja_outsourcing_lainnya" id="pekerja_outsourcing_lainnya"
                                            value="{{ $surveyResponse->pekerja_outsourcing_lainnya ?? '' }}"
                                            class="form-control" required min="0" step="1"
-                                           placeholder="Masukkan jumlah pekerja outsourcing lainnya">
+                                           placeholder="Jumlah orang">
                                     @error('pekerja_outsourcing_lainnya')
                                         <div class="error-message">{{ $message }}</div>
                                     @enderror
@@ -467,7 +430,7 @@
                             <input type="number" name="tenaga_kerja_asing" id="tenaga_kerja_asing"
                                    value="{{ $surveyResponse->tenaga_kerja_asing ?? '' }}"
                                    class="form-control" required min="0" step="1"
-                                   placeholder="Masukkan jumlah pekerja asing">
+                                   placeholder="Jumlah orang">
                             @error('tenaga_kerja_asing')
                                 <div class="error-message">{{ $message }}</div>
                             @enderror
@@ -898,6 +861,7 @@
     ])
     @endif
 </div>
+@include('survey.sibstr.partials.page-foot')
 @endif
 {{-- end active form / read-only gate --}}
 

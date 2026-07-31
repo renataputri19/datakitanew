@@ -112,12 +112,20 @@
                 Daftar respons Survei Unit Bisnis/Usaha Baru (SE2026-L.UB) dari seluruh pengguna
             </p>
         </div>
-        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            SE2026-L.UB
-        </span>
+        <div class="flex items-center gap-2 flex-wrap">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                SE2026-L.UB
+            </span>
+            <button type="button" class="btn-export-excel" onclick="bpsOpenExportModal()">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                Export Excel
+            </button>
+        </div>
     </div>
 
     {{-- Statistics Cards --}}
@@ -360,4 +368,63 @@
 </div>
 
 @include('bps.partials.delete-survey-modal')
+
+{{--
+  Export dialog. UB's Blok 1 spans 1A–1D, so the sheet carries the Blok 1-A
+  identity answers in full and the other blocks as completion flags.
+--}}
+@include('bps.partials.export-excel-modal', [
+    'exportAction'   => route('bps.ub.export'),
+    'exportTitle'    => 'Ekspor Data Survei UB',
+    'exportSubtitle' => 'Satu baris per responden berisi identitas Blok 1-A, kelengkapan tiap blok dan status survei. Kosongkan filter untuk mengunduh semua data.',
+    'exportFields'   => [
+        [
+            'type'    => 'select',
+            'name'    => 'status',
+            'label'   => 'Status Survei',
+            'value'   => request('status'),
+            'options' => ['' => 'Semua Status', 'completed' => 'Selesai', 'in_progress' => 'Dalam Proses'],
+        ],
+        [
+            'type'    => 'select',
+            'name'    => 'blok1',
+            'label'   => 'Kelengkapan Blok 1',
+            'options' => [
+                ''           => 'Semua',
+                'complete'   => 'Blok 1-A s.d. 1-D lengkap',
+                'incomplete' => 'Masih ada Blok 1 yang kosong',
+            ],
+        ],
+        [
+            'type'    => 'select',
+            'name'    => 'tahun',
+            'label'   => 'Tahun',
+            'options' => ['' => 'Semua Tahun'] + $tahunOptions->mapWithKeys(fn ($t) => [(string) $t => (string) $t])->all(),
+        ],
+        [
+            'type'    => 'select',
+            'name'    => 'kabupaten_kota',
+            'label'   => 'Kabupaten/Kota',
+            'options' => ['' => 'Semua Kabupaten/Kota'] + $kabkotaOptions->mapWithKeys(fn ($k) => [$k => $k])->all(),
+        ],
+        [
+            'type'  => 'date',
+            'name'  => 'date_from',
+            'label' => 'Diperbarui Dari',
+        ],
+        [
+            'type'  => 'date',
+            'name'  => 'date_to',
+            'label' => 'Diperbarui Sampai',
+        ],
+        [
+            'type'        => 'text',
+            'name'        => 'search',
+            'label'       => 'Pencarian',
+            'value'       => request('search'),
+            'placeholder' => 'Nama perusahaan, lokasi, pengguna...',
+            'full'        => true,
+        ],
+    ],
+])
 @endsection

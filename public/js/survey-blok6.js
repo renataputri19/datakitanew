@@ -182,7 +182,7 @@ class SurveyBlok6Manager {
                             title: 'Survei Tahunan 2025 Selesai!',
                             body: 'Data Survei Tahunan 2025 Anda telah berhasil disimpan. Anda akan diarahkan ke halaman dashboard.',
                             confirmText: 'Ke Dashboard',
-                            redirectUrl: '/dashboard/surveys/sibstr/results',
+                            redirectUrl: '/survei/sibstr',
                             redirectDelay: 4000,
                         });
                     } else {
@@ -191,7 +191,7 @@ class SurveyBlok6Manager {
                             title: 'Survei Selesai!',
                             body: 'Data survei Triwulanan Anda telah berhasil disimpan. Anda akan diarahkan ke halaman dashboard.',
                             confirmText: 'Ke Dashboard',
-                            redirectUrl: '/dashboard/surveys/sibstr/results',
+                            redirectUrl: '/survei/sibstr',
                             redirectDelay: 3000,
                         });
                     }

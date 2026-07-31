@@ -186,7 +186,7 @@
 
 <div class="survey-container">
     @if(!empty($isEditMode))
-    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
+    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('survey.sibstr.entry')])
     @endif
 
     {{-- ── Survey Header ──────────────────────────────────── --}}

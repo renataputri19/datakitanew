@@ -1,54 +1,22 @@
-@extends('layouts.app')
+@extends('layouts.user-dashboard')
 
-@section('title', 'SIBSTR - Blok IIIB Industri')
+@section('title', 'SIBSTR — Blok IIIB: Pendapatan & Pengeluaran (Industri)')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/survey.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-validation.css') }}">
+<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}">
 @endpush
 
-@section('content')
+@section('dashboard-content')
+@include('survey.sibstr.partials.page-head', [
+    'blokTitle' => 'Blok IIIB — Pendapatan & Pengeluaran',
+    'blokSub'   => 'Alur Industri (KBLI 10–33)',
+])
 <div class="survey-container">
-    @if(!empty($isEditMode))
-    @include('survey.partials.edit-mode-banner', ['exitUrl' => route('dashboard.surveys.sibstr.results')])
-    @endif
-
-    <!-- Survey Header -->
-    <div class="survey-header" data-aos="fade-up">
-        <h1 class="survey-title">
-            SURVEI INDUSTRI BESAR DAN SEDANG TRIWULANAN (SIBSTR)
-        </h1>
-        <h2 class="survey-subtitle">
-            BLOK IIIB. INDUSTRI
-        </h2>
-        <p class="survey-description">
-            Persediaan stok, barang modal, dan pengeluaran perusahaan tahun 2025
-        </p>
-
-        @if(!empty($historicalResponses) && $historicalResponses->isNotEmpty() && !(isset($triwulan) && $triwulan === 1))
-        <div style="margin-top:1rem;">
-            <button type="button"
-                    onclick="openHistDrawer()"
-                    style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;
-                           border-radius:0.625rem;border:2px solid #fbbf24;
-                           background:rgba(254,243,199,0.85);color:#92400e;
-                           font-size:0.8125rem;font-weight:700;cursor:pointer;
-                           transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;
-                           box-shadow:0 1px 4px rgba(251,191,36,0.25);"
-                    aria-label="Buka panel data historis untuk referensi">
-                <svg style="width:1rem;height:1rem;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Lihat Data Historis
-                <span style="display:inline-flex;align-items:center;justify-content:center;width:1.2rem;height:1.2rem;
-                             border-radius:9999px;background:#fbbf24;color:#7c2d12;font-size:0.7rem;font-weight:800;">
-                    {{ $historicalResponses->count() }}
-                </span>
-            </button>
-        </div>
-        @endif
-    </div>
+    @include('survey.sibstr.partials.blok-toolbar', [
+        'instruction' => 'Persediaan stok, barang modal, dan pengeluaran perusahaan. Isi <strong>0</strong> untuk komponen yang tidak ada — nilai tidak boleh negatif.',
+    ])
 
     <!-- Auto-save Status -->
     <div id="autosave-status" class="autosave-status hidden">
@@ -897,7 +865,6 @@
             </div>
         </div>
     </form>
-</div>
 
 @if(!empty($historicalResponses) && !(isset($triwulan) && $triwulan === 1))
 @include('survey.sibstr.partials.historical-drawer', [
@@ -905,6 +872,8 @@
     'blockKey'            => 'blok3b_industri',
 ])
 @endif
+</div>
+@include('survey.sibstr.partials.page-foot')
 
 @push('scripts')
 <script>
