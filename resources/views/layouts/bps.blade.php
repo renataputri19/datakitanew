@@ -82,6 +82,14 @@
                             Statistik Listrik
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('bps.statistik.ub') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.statistik.ub') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            Statistik UB
+                        </a>
+                    </li>
                     <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:1.1rem 1rem 0.35rem;">Data Survei</li>
                     <li>
                         <a href="{{ route('bps.sibstr.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.sibstr.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
@@ -239,6 +247,14 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
                                 Statistik Listrik
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('bps.statistik.ub') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.statistik.ub') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                Statistik UB
                             </a>
                         </li>
                         <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.9rem 1rem 0.1rem;">Data Survei</li>

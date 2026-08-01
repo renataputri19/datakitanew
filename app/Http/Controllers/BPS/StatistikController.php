@@ -239,6 +239,8 @@ class StatistikController extends Controller
             'kondisi'    => $r->kondisi_perusahaan,
             'selesai'    => (bool) $r->is_completed,
             'updatedAt'  => optional($r->updated_at)->locale('id')->translatedFormat('j M Y'),
+            // sortable twin of updatedAt — the formatted string sorts wrong
+            'updatedTs'  => optional($r->updated_at)->getTimestamp(),
 
             'tenagaKerja' => $r->rata_rata_tenaga_kerja !== null ? (int) $r->rata_rata_tenaga_kerja : null,
 

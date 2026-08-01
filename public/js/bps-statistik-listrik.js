@@ -239,6 +239,13 @@
             activePop = null;
         }
     }
+    /**
+     * Anchor the panel to its button. The sort control sits in the last card,
+     * so a panel that always dropped downward would run off the bottom edge
+     * with no way back — it is position:fixed, and page scroll closes it.
+     * Flip above the button when that side has more room, and clamp the option
+     * list so the panel always fits on screen.
+     */
     function togglePop(wrapper, btn, build) {
         if (activePop && activePop.btn === btn) { closePop(); return; }
         closePop();
@@ -246,11 +253,26 @@
         panel.setAttribute('role', 'dialog');
         build(panel);
         popLayer.appendChild(panel);
-        var r = btn.getBoundingClientRect();
         panel.style.position = 'fixed';
-        panel.style.top = Math.round(r.bottom + 8) + 'px';
-        var pw = panel.getBoundingClientRect().width;
-        panel.style.left = Math.round(Math.max(8, Math.min(r.left, window.innerWidth - pw - 8))) + 'px';
+
+        var r = btn.getBoundingClientRect();
+        var GAP = 8, EDGE = 10;
+        var below = window.innerHeight - r.bottom - GAP - EDGE;
+        var above = r.top - GAP - EDGE;
+        var rect = panel.getBoundingClientRect();
+        var up = rect.height > below && above > below;
+        var room = Math.max(160, up ? above : below);
+
+        var list = panel.querySelector('.stx-pop-list');
+        if (list && rect.height > room) {
+            // shrink the scrollable list only — the head and footer stay visible
+            var chrome = rect.height - list.getBoundingClientRect().height;
+            list.style.maxHeight = Math.max(96, room - chrome) + 'px';
+            rect = panel.getBoundingClientRect();
+        }
+
+        panel.style.top = Math.round(up ? Math.max(EDGE, r.top - GAP - rect.height) : r.bottom + GAP) + 'px';
+        panel.style.left = Math.round(Math.max(8, Math.min(r.left, window.innerWidth - rect.width - 8))) + 'px';
         btn.setAttribute('aria-expanded', 'true');
         activePop = { panel: panel, btn: btn };
     }
@@ -1381,6 +1403,99 @@
 
     /* ═══════════════ TABLE — per company ═══════════════ */
 
+    /**
+     * Everything the detail table can be ranked by. Every entry is also a
+     * standing column, so the explicit control and a column-heading click are
+     * two doors into the same state.
+     */
+    var SORT_OPTS = [
+        { key: 'perusahaan', label: 'Nama perusahaan',      num: false, sub: 'urut abjad' },
+        { key: 'kwh',        label: 'Produksi listrik',     num: true,  sub: 'total KWH pada irisan filter' },
+        { key: 'rp',         label: 'Nilai produksi',       num: true,  sub: 'total rupiah pada irisan filter' },
+        { key: 'harga',      label: 'Harga rata-rata/KWH',  num: true,  sub: 'nilai ÷ produksi' },
+        { key: 'nBulan',     label: 'Jumlah bulan terisi',  num: true,  sub: 'kelengkapan pengisian' },
+        { key: 'pembangkit', label: 'Jenis pembangkit',     num: false, sub: 'urut abjad' },
+        { key: 'selesai',    label: 'Status pengisian',     num: true,  sub: 'draf lebih dulu / selesai lebih dulu' },
+        { key: 'updated',    label: 'Terakhir diperbarui',  num: true,  sub: 'tanggal simpan terakhir' }
+    ];
+    function sortOpt(key) {
+        for (var i = 0; i < SORT_OPTS.length; i++) if (SORT_OPTS[i].key === key) return SORT_OPTS[i];
+        return null;
+    }
+    // Direction wording follows the metric — "Terbesar" is nonsense for a name.
+    function dirLabels(key) {
+        if (key === 'updated') return ['Terbaru', 'Terlama'];
+        if (key === 'selesai') return ['Selesai dulu', 'Draf dulu'];
+        var o = sortOpt(key);
+        return (o && !o.num) ? ['Z → A', 'A → Z'] : ['Terbesar', 'Terkecil'];
+    }
+    function setSort(key) {
+        if (state.sortKey === key) { state.sortDir *= -1; }
+        else {
+            var o = sortOpt(key);
+            state.sortKey = key;
+            state.sortDir = (o && !o.num) ? 1 : -1;
+        }
+        renderTable();
+    }
+
+    /** Sort picker + direction toggle, mounted in the table card header. */
+    function sortTools(container) {
+        var tools = el('div', 'stx-sorttools');
+        tools.appendChild(el('span', 'stx-filter-label', 'Urutkan'));
+
+        var wrapEl = el('div', 'stx-popwrap');
+        var btn = el('button', 'stx-popbtn active');
+        btn.type = 'button';
+        var cur = sortOpt(state.sortKey);
+        btn.appendChild(el('span', null, cur ? cur.label : state.sortKey));
+        btn.appendChild(el('span', 'caret', '▼'));
+        btn.setAttribute('aria-label', 'Pilih kolom pengurutan');
+        btn.addEventListener('click', function () {
+            togglePop(wrapEl, btn, function (panel) {
+                panel.style.width = 'min(20rem, 90vw)';
+                var head = el('div', 'stx-pop-head');
+                head.appendChild(el('div', 'stx-pop-title', 'Urutkan perusahaan menurut'));
+                head.appendChild(el('div', 'stx-pop-sub', 'Nilai dihitung pada irisan filter yang sedang aktif.'));
+                panel.appendChild(head);
+                var list = el('div', 'stx-pop-list');
+                SORT_OPTS.forEach(function (o) {
+                    var on = o.key === state.sortKey;
+                    var row = el('button', 'stx-pop-row' + (on ? ' on' : ''));
+                    row.type = 'button';
+                    row.appendChild(el('span', 'p-check', on ? '✓' : ''));
+                    var main = el('div', 'p-main');
+                    main.appendChild(el('div', 'p-name', o.label));
+                    if (o.sub) main.appendChild(el('div', 'p-meta', o.sub));
+                    row.appendChild(main);
+                    row.addEventListener('click', function () {
+                        closePop();
+                        if (state.sortKey !== o.key) setSort(o.key); else renderTable();
+                    });
+                    list.appendChild(row);
+                });
+                panel.appendChild(list);
+            });
+        });
+        wrapEl.appendChild(btn);
+        tools.appendChild(wrapEl);
+
+        var labels = dirLabels(state.sortKey);
+        var toggle = el('div', 'stx-toggle');
+        [[-1, labels[0]], [1, labels[1]]].forEach(function (d) {
+            var b = el('button', state.sortDir === d[0] ? 'on' : null, d[1]);
+            b.type = 'button';
+            b.addEventListener('click', function () {
+                if (state.sortDir === d[0]) return;
+                state.sortDir = d[0];
+                renderTable();
+            });
+            toggle.appendChild(b);
+        });
+        tools.appendChild(toggle);
+        container.appendChild(tools);
+    }
+
     var TABLE_PAGE = 10;
 
     // Paged footer: keeps the card short by default instead of one endless scroll.
@@ -1421,8 +1536,9 @@
         var head = el('div', 'stx-chart-head');
         var titles = el('div');
         titles.appendChild(el('div', 'stx-chart-title', 'Rincian per perusahaan'));
-        titles.appendChild(el('div', 'stx-chart-sub', 'Klik baris untuk detail per bulan — klik judul kolom untuk mengurutkan'));
+        titles.appendChild(el('div', 'stx-chart-sub', 'Klik baris untuk detail per bulan — pakai Urutkan atau klik judul kolom untuk memeringkat'));
         head.appendChild(titles);
+        sortTools(head);
         card.appendChild(head);
 
         var rows = filteredRows();
@@ -1438,11 +1554,18 @@
             return { r: r, kwh: kwh, rp: rp, harga: (kwh && rp !== null) ? rp / kwh : null, nBulan: filledMonths };
         });
 
+        // Companies with nothing reported for the sort metric always sink to the
+        // bottom — in either direction "terkecil" must not mean "belum mengisi".
+        function sortValue(x, key) {
+            if (key === 'perusahaan') return x.r.perusahaan;
+            if (key === 'pembangkit') return x.r.jenisPembangkit || null;
+            if (key === 'selesai') return x.r.selesai ? 1 : 0;
+            if (key === 'updated') return x.r.updatedTs === undefined ? null : x.r.updatedTs;
+            var v = x[key];
+            return v === undefined ? null : v;
+        }
         enriched.sort(function (a, b) {
-            var key = state.sortKey, av, bv;
-            if (key === 'perusahaan') { av = a.r.perusahaan; bv = b.r.perusahaan; }
-            else if (key === 'selesai') { av = a.r.selesai ? 1 : 0; bv = b.r.selesai ? 1 : 0; }
-            else { av = a[key]; bv = b[key]; }
+            var av = sortValue(a, state.sortKey), bv = sortValue(b, state.sortKey);
             if (av === null || av === undefined) return 1;
             if (bv === null || bv === undefined) return -1;
             if (typeof av === 'string') return state.sortDir * av.localeCompare(bv, 'id');
@@ -1456,19 +1579,13 @@
         [['perusahaan', 'Perusahaan', false], ['pembangkit', 'Pembangkit', false], ['selesai', 'Status', false],
          ['kwh', 'Produksi (KWH)', true], ['rp', 'Nilai (Rp)', true], ['harga', 'Rp/KWH', true],
          ['nBulan', 'Bulan terisi', true], ['updated', 'Diperbarui', false]].forEach(function (c) {
-            var th = el('th', c[2] ? 'num' : null, c[1]);
-            if (c[0] === 'pembangkit' || c[0] === 'updated') { th.style.cursor = 'default'; }
-            else {
-                if (state.sortKey === c[0]) {
-                    th.setAttribute('aria-sort', state.sortDir === 1 ? 'ascending' : 'descending');
-                    th.appendChild(el('span', 'arrow', state.sortDir === 1 ? '▲' : '▼'));
-                }
-                th.addEventListener('click', function () {
-                    if (state.sortKey === c[0]) state.sortDir *= -1;
-                    else { state.sortKey = c[0]; state.sortDir = c[2] ? -1 : 1; }
-                    renderTable();
-                });
+            var sorted = state.sortKey === c[0];
+            var th = el('th', (c[2] ? 'num' : '') + (sorted ? ' sorted' : '') || null, c[1]);
+            if (sorted) {
+                th.setAttribute('aria-sort', state.sortDir === 1 ? 'ascending' : 'descending');
+                th.appendChild(el('span', 'arrow', state.sortDir === 1 ? '▲' : '▼'));
             }
+            th.addEventListener('click', function () { setSort(c[0]); });
             trh.appendChild(th);
         });
         thead.appendChild(trh);

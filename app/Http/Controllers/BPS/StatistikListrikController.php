@@ -88,6 +88,8 @@ class StatistikListrikController extends Controller
             'dayaKw'          => $r->daya_terpasang_kw !== null ? (float) $r->daya_terpasang_kw : null,
             'selesai'         => (bool) $r->is_completed,
             'updatedAt'       => optional($r->updated_at)->locale('id')->translatedFormat('j M Y'),
+            // sortable twin of updatedAt — the formatted string sorts wrong
+            'updatedTs'       => optional($r->updated_at)->getTimestamp(),
             'catatan'         => $r->catatan,
             'monthly'         => $monthly,
             'wilayahMonthly'  => $wilayahMonthly,

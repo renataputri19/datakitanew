@@ -267,6 +267,13 @@
             activePop = null;
         }
     }
+    /**
+     * Anchor the panel to its button. The sort control sits in the last card,
+     * so a panel that always dropped downward would run off the bottom edge
+     * with no way back — it is position:fixed, and page scroll closes it.
+     * Flip above the button when that side has more room, and clamp the option
+     * list so the panel always fits on screen.
+     */
     function togglePop(wrapper, btn, build) {
         if (activePop && activePop.btn === btn) { closePop(); return; }
         closePop();
@@ -274,11 +281,26 @@
         panel.setAttribute('role', 'dialog');
         build(panel);
         popLayer.appendChild(panel);
-        var r = btn.getBoundingClientRect();
         panel.style.position = 'fixed';
-        panel.style.top = Math.round(r.bottom + 8) + 'px';
-        var pw = panel.getBoundingClientRect().width;
-        panel.style.left = Math.round(Math.max(8, Math.min(r.left, window.innerWidth - pw - 8))) + 'px';
+
+        var r = btn.getBoundingClientRect();
+        var GAP = 8, EDGE = 10;
+        var below = window.innerHeight - r.bottom - GAP - EDGE;
+        var above = r.top - GAP - EDGE;
+        var rect = panel.getBoundingClientRect();
+        var up = rect.height > below && above > below;
+        var room = Math.max(160, up ? above : below);
+
+        var list = panel.querySelector('.stx-pop-list');
+        if (list && rect.height > room) {
+            // shrink the scrollable list only — the head and footer stay visible
+            var chrome = rect.height - list.getBoundingClientRect().height;
+            list.style.maxHeight = Math.max(96, room - chrome) + 'px';
+            rect = panel.getBoundingClientRect();
+        }
+
+        panel.style.top = Math.round(up ? Math.max(EDGE, r.top - GAP - rect.height) : r.bottom + GAP) + 'px';
+        panel.style.left = Math.round(Math.max(8, Math.min(r.left, window.innerWidth - rect.width - 8))) + 'px';
         btn.setAttribute('aria-expanded', 'true');
         activePop = { panel: panel, btn: btn };
     }
@@ -1865,6 +1887,160 @@
         { key: 'updatedAt', label: 'Diperbarui', num: false }
     ];
 
+    /**
+     * Everything the detail table can be ranked by — a superset of the fixed
+     * columns, so an analyst can ask "perusahaan mana yang nilai tambahnya
+     * terbesar?" even though Nilai Tambah is not one of the standing columns.
+     * Picking such a metric adds its own column (see activeCols), otherwise the
+     * ordering would be invisible.
+     */
+    var SORT_OPTS = [
+        { key: 'perusahaan',       label: 'Nama perusahaan',    num: false, sub: 'urut abjad' },
+        { key: 'pendapatanTotal',  label: 'Pendapatan total',   num: true,  sub: 'produk + lainnya + royalti' },
+        { key: 'pengeluaranTotal', label: 'Pengeluaran total',  num: true,  sub: 'upah + biaya produksi + operasional' },
+        { key: 'surplus',          label: 'Perkiraan surplus',  num: true,  sub: 'pendapatan − pengeluaran' },
+        { key: 'nilaiProduksi',    label: 'Nilai produksi',     num: true,  sub: 'output Blok IIIA (301 + 302)' },
+        { key: 'biayaTotal',       label: 'Biaya produksi',     num: true,  sub: 'termasuk pembelian aset' },
+        { key: 'nilaiTambah',      label: 'Nilai tambah',       num: true,  sub: 'nilai produksi − biaya produksi' },
+        { key: 'upah',             label: 'Upah & gaji',        num: true },
+        { key: 'capex',            label: 'Pembelian aset',     num: true },
+        { key: 'tenagaKerja',      label: 'Tenaga kerja',       num: true,  sub: 'rata-rata pekerja' },
+        { key: 'eksporPct',        label: 'Porsi ekspor',       num: true,  sub: '% dari penjualan' },
+        { key: 'imporPct',         label: 'Porsi impor',        num: true,  sub: '% dari bahan baku' },
+        { key: 'updatedAt',        label: 'Terakhir diperbarui', num: true, sub: 'tanggal simpan terakhir' }
+    ];
+    function sortOpt(key) {
+        for (var i = 0; i < SORT_OPTS.length; i++) if (SORT_OPTS[i].key === key) return SORT_OPTS[i];
+        return null;
+    }
+    // Column headings can set a sort key the picker does not list (TW, Status);
+    // the collapsed button still has to name it in words.
+    function sortLabel(key) {
+        var o = sortOpt(key);
+        if (o) return o.label;
+        for (var i = 0; i < TABLE_COLS.length; i++) if (TABLE_COLS[i].key === key) return TABLE_COLS[i].label;
+        return key;
+    }
+    // Direction wording follows the metric — "Terbesar" is nonsense for a name.
+    function dirLabels(key) {
+        if (key === 'updatedAt') return ['Terbaru', 'Terlama'];
+        if (key === 'selesai') return ['Selesai dulu', 'Draf dulu'];
+        if (key === 'triwulan') return ['TW terakhir', 'TW pertama'];
+        var o = sortOpt(key);
+        if ((o && !o.num) || key === 'kbliGroup') return ['Z → A', 'A → Z'];
+        return ['Terbesar', 'Terkecil'];
+    }
+    // updatedAt is displayed as "12 Mei 2026" — rank on the timestamp twin.
+    function sortValue(r, key) {
+        if (key === 'updatedAt') return r.updatedTs === undefined ? null : r.updatedTs;
+        if (key === 'selesai') return r.selesai ? 1 : 0;
+        var v = r[key];
+        return v === undefined ? null : v;
+    }
+    function setSort(key) {
+        if (state.sortKey === key) { state.sortDir *= -1; }
+        else {
+            var o = sortOpt(key);
+            state.sortKey = key;
+            state.sortDir = (o ? o.num : key !== 'perusahaan' && key !== 'kbliGroup') ? -1 : 1;
+        }
+        renderTable();
+    }
+
+    /** Sort picker + direction toggle, mounted in the table card header. */
+    function sortTools(container) {
+        var tools = el('div', 'stx-sorttools');
+        tools.appendChild(el('span', 'stx-filter-label', 'Urutkan'));
+
+        var wrapEl = el('div', 'stx-popwrap');
+        var btn = el('button', 'stx-popbtn active');
+        btn.type = 'button';
+        btn.appendChild(el('span', null, sortLabel(state.sortKey)));
+        btn.appendChild(el('span', 'caret', '▼'));
+        btn.setAttribute('aria-label', 'Pilih kolom pengurutan');
+        btn.addEventListener('click', function () {
+            togglePop(wrapEl, btn, function (panel) {
+                panel.style.width = 'min(20rem, 90vw)';
+                var head = el('div', 'stx-pop-head');
+                head.appendChild(el('div', 'stx-pop-title', 'Urutkan perusahaan menurut'));
+                head.appendChild(el('div', 'stx-pop-sub', 'Metrik di luar kolom tetap akan ditambahkan sebagai kolom sendiri.'));
+                panel.appendChild(head);
+                var list = el('div', 'stx-pop-list');
+                SORT_OPTS.forEach(function (o) {
+                    var on = o.key === state.sortKey;
+                    var row = el('button', 'stx-pop-row' + (on ? ' on' : ''));
+                    row.type = 'button';
+                    row.appendChild(el('span', 'p-check', on ? '✓' : ''));
+                    var main = el('div', 'p-main');
+                    main.appendChild(el('div', 'p-name', o.label));
+                    if (o.sub) main.appendChild(el('div', 'p-meta', o.sub));
+                    row.appendChild(main);
+                    row.addEventListener('click', function () {
+                        closePop();
+                        if (state.sortKey !== o.key) setSort(o.key); else renderTable();
+                    });
+                    list.appendChild(row);
+                });
+                panel.appendChild(list);
+            });
+        });
+        wrapEl.appendChild(btn);
+        tools.appendChild(wrapEl);
+
+        var labels = dirLabels(state.sortKey);
+        var toggle = el('div', 'stx-toggle');
+        [[-1, labels[0]], [1, labels[1]]].forEach(function (d) {
+            var b = el('button', state.sortDir === d[0] ? 'on' : null, d[1]);
+            b.type = 'button';
+            b.addEventListener('click', function () {
+                if (state.sortDir === d[0]) return;
+                state.sortDir = d[0];
+                renderTable();
+            });
+            toggle.appendChild(b);
+        });
+        tools.appendChild(toggle);
+        container.appendChild(tools);
+    }
+
+    /** Fixed columns, plus a column for the sort metric when it has none. */
+    function activeCols() {
+        var cols = TABLE_COLS.slice();
+        for (var i = 0; i < cols.length; i++) if (cols[i].key === state.sortKey) return cols;
+        var o = sortOpt(state.sortKey);
+        if (o) cols.splice(4, 0, { key: o.key, label: o.label, num: true, extra: true });
+        return cols;
+    }
+
+    function cellFor(r, col) {
+        var td;
+        switch (col.key) {
+            case 'perusahaan':
+                return el('td', 'strong', r.perusahaan);
+            case 'kbliGroup':
+                td = el('td', null, r.kbli ? r.kbli : '—');
+                td.title = r.kbliGroup;
+                return td;
+            case 'triwulan':
+                return el('td', null, TW_ROMAN[r.triwulan]);
+            case 'selesai':
+                td = el('td');
+                td.appendChild(el('span', 'stx-badge ' + (r.selesai ? 'ok' : 'draft'), r.selesai ? 'Selesai' : 'Draf'));
+                return td;
+            case 'updatedAt':
+                return el('td', null, r.updatedAt || '—');
+            case 'tenagaKerja':
+                return el('td', 'num', fmtN(r.tenagaKerja));
+            case 'eksporPct':
+            case 'imporPct':
+                return el('td', 'num', fmtPct(r[col.key]));
+            default:
+                td = el('td', 'num', fmtRp(r[col.key]));
+                td.title = fmtRpFull(r[col.key]);
+                return td;
+        }
+    }
+
     var TABLE_PAGE = 10;
 
     // Paged footer: keeps the card short by default instead of one endless scroll.
@@ -1905,16 +2081,20 @@
         var head = el('div', 'stx-chart-head');
         var titles = el('div');
         titles.appendChild(el('div', 'stx-chart-title', 'Rincian per perusahaan'));
-        titles.appendChild(el('div', 'stx-chart-sub', 'Klik baris untuk membuka detail lengkap isian — klik judul kolom untuk mengurutkan'));
+        titles.appendChild(el('div', 'stx-chart-sub', 'Klik baris untuk membuka detail lengkap isian — pakai Urutkan atau klik judul kolom untuk memeringkat'));
         head.appendChild(titles);
+        sortTools(head);
         card.appendChild(head);
 
         var rows = filteredRows().slice();
+        var cols = activeCols();
         var wrapT = el('div', 'stx-tablewrap');
         wrapT.style.padding = '0 0.5rem 0.75rem';
 
+        // Rows with nothing reported for the sort metric always sink to the
+        // bottom — in either direction "terkecil" must not mean "belum mengisi".
         rows.sort(function (a, b) {
-            var av = a[state.sortKey], bv = b[state.sortKey];
+            var av = sortValue(a, state.sortKey), bv = sortValue(b, state.sortKey);
             if (av === null || av === undefined) return 1;
             if (bv === null || bv === undefined) return -1;
             if (typeof av === 'string') return state.sortDir * av.localeCompare(bv, 'id');
@@ -1923,17 +2103,14 @@
 
         var table = el('table', 'stx-table');
         var thead = el('thead'), trh = el('tr');
-        TABLE_COLS.forEach(function (c) {
-            var th = el('th', c.num ? 'num' : null, c.label);
-            if (state.sortKey === c.key) {
+        cols.forEach(function (c) {
+            var sorted = state.sortKey === c.key;
+            var th = el('th', (c.num ? 'num' : '') + (sorted ? ' sorted' : '') || null, c.label);
+            if (sorted) {
                 th.setAttribute('aria-sort', state.sortDir === 1 ? 'ascending' : 'descending');
                 th.appendChild(el('span', 'arrow', state.sortDir === 1 ? '▲' : '▼'));
             }
-            th.addEventListener('click', function () {
-                if (state.sortKey === c.key) state.sortDir *= -1;
-                else { state.sortKey = c.key; state.sortDir = c.num ? -1 : 1; }
-                renderTable();
-            });
+            th.addEventListener('click', function () { setSort(c.key); });
             trh.appendChild(th);
         });
         thead.appendChild(trh);
@@ -1942,7 +2119,7 @@
         var tb = el('tbody');
         if (!rows.length) {
             var tr0 = el('tr'), td0 = el('td', null, 'Tidak ada data pada irisan filter ini.');
-            td0.colSpan = TABLE_COLS.length;
+            td0.colSpan = cols.length;
             td0.style.textAlign = 'center';
             td0.style.padding = '2rem';
             tr0.appendChild(td0); tb.appendChild(tr0);
@@ -1951,20 +2128,7 @@
         rows.slice(0, limit).forEach(function (r) {
             var tr = el('tr');
             tr.setAttribute('tabindex', 0);
-            tr.appendChild(el('td', 'strong', r.perusahaan));
-            var tdK = el('td', null, r.kbli ? r.kbli : '—');
-            tdK.title = r.kbliGroup;
-            tr.appendChild(tdK);
-            tr.appendChild(el('td', null, TW_ROMAN[r.triwulan]));
-            var tdS = el('td');
-            tdS.appendChild(el('span', 'stx-badge ' + (r.selesai ? 'ok' : 'draft'), r.selesai ? 'Selesai' : 'Draf'));
-            tr.appendChild(tdS);
-            [['pendapatanTotal', fmtRp], ['pengeluaranTotal', fmtRp], ['surplus', fmtRp], ['tenagaKerja', fmtN], ['eksporPct', fmtPct]].forEach(function (cdef) {
-                var td = el('td', 'num', cdef[1](r[cdef[0]]));
-                if (cdef[0] !== 'tenagaKerja' && cdef[0] !== 'eksporPct') td.title = fmtRpFull(r[cdef[0]]);
-                tr.appendChild(td);
-            });
-            tr.appendChild(el('td', null, r.updatedAt || '—'));
+            cols.forEach(function (c) { tr.appendChild(cellFor(r, c)); });
             function openCompany() { companyModal(r); }
             tr.addEventListener('click', openCompany);
             tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') openCompany(); });
@@ -2061,7 +2225,9 @@
             var thead = el('thead'); var trh = el('tr');
             ['Komponen', 'Kondisi', 'Prospek'].forEach(function (h) { var th = el('th', null, h); th.style.cursor = 'default'; trh.appendChild(th); });
             thead.appendChild(trh);
-            tt.insertBefore(thead, tb);
+            // insertBefore(thead, tb) would throw here — tb is not a child of
+            // tt yet, and the exception aborted openModal before it opened.
+            tt.appendChild(thead);
             tt.appendChild(tb);
             wrap6.appendChild(tt);
             s6.appendChild(wrap6);

@@ -79,6 +79,9 @@
 
 .stx-card { background: var(--stx-surface); border: 1px solid var(--stx-border); border-radius: var(--stx-radius); box-shadow: var(--stx-shadow); }
 .stx-grid { display: grid; gap: 1rem; }
+/* the last card carries the sort control, whose popover opens right beside it —
+   keep it off the page bottom so the panel has somewhere to sit */
+.stx-root > .stx-grid { margin-bottom: 1.5rem; }
 @media (min-width: 1024px) { .stx-grid-2 { grid-template-columns: 1fr 1fr; } .stx-span-2 { grid-column: span 2; } }
 
 /* ═══════════════════ Filter bar ═══════════════════ */
@@ -203,6 +206,13 @@ table.stx-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; 
 .stx-badge.draft { background: rgba(237, 161, 0, 0.14); color: #8a5a00; }
 .dark .stx-badge.draft { color: #ffc862; }
 .stx-badge.neutral { background: var(--stx-plane); color: var(--stx-ink-2); }
+
+/* explicit sort control in the detail-table header — the twin of clicking a
+   column heading, kept visible so ranking is a control and not a hidden trick */
+.stx-sorttools { display: flex; align-items: center; flex-wrap: wrap; gap: 0.45rem; flex-shrink: 0; }
+.stx-sorttools .stx-filter-label { margin-right: 0; }
+.stx-sorttools .stx-toggle button { padding: 0.32rem 0.65rem; }
+.stx-table thead th.sorted { color: var(--stx-ink); }
 
 /* paging footer — tables open on a short page instead of scrolling forever */
 .stx-more { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.75rem 1.15rem 1rem; border-top: 1px solid var(--stx-grid); }

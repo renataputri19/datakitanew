@@ -433,6 +433,9 @@ Route::middleware(['auth'])->group(function () {
         // Listrik Statistics Dashboard (monthly electricity production viz)
         Route::get('/statistik-listrik', [App\Http\Controllers\BPS\StatistikListrikController::class, 'index'])->name('statistik.listrik');
 
+        // UB Statistics Dashboard (annual business census viz)
+        Route::get('/statistik-ub', [App\Http\Controllers\BPS\StatistikUbController::class, 'index'])->name('statistik.ub');
+
         // News Management
         Route::resource('news', BPSNewsController::class);
 
