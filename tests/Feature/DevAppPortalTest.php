@@ -221,6 +221,28 @@ class DevAppPortalTest extends TestCase
         $this->assertNull($app->fresh()->allowed_roles);
     }
 
+    public function test_allowlist_grants_only_the_selected_user(): void
+    {
+        // Regression: ids were cast to int, and UUID-to-int gives the leading
+        // digits, so MySQL type-juggling attached whichever other users
+        // coerced to the same number. Only reproduced when the random UUIDs
+        // happened to collide, which made it look like flaky test.
+        $user = $this->bpsUser();
+
+        $granted = User::factory()->create();
+        User::factory()->count(5)->create();   // decoys
+
+        $this->actingAs($user)->post('/develop', $this->validPayload([
+            'auth_mode'     => DevApp::AUTH_ALLOWLIST,
+            'allowed_users' => [$granted->id],
+        ]));
+
+        $allowed = DevApp::firstOrFail()->allowedUsers;
+
+        $this->assertCount(1, $allowed);
+        $this->assertSame($granted->id, $allowed->first()->id);
+    }
+
     public function test_switching_away_from_allowlist_mode_clears_the_explicit_grants(): void
     {
         $user    = $this->bpsUser();

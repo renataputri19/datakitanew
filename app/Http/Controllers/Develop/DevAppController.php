@@ -333,9 +333,13 @@ class DevAppController extends Controller
             return;
         }
 
+        // Keep the ids as strings. User keys are UUIDs, and casting one to int
+        // yields its leading digits — MySQL then type-juggles the uuid column
+        // against that number and matches whichever rows happen to coerce to
+        // it, silently granting access to the wrong people.
         $ids = collect($request->input('allowed_users', []))
             ->filter()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn ($id) => (string) $id)
             ->all();
 
         // Only real users — a stale id from a tampered form must not create

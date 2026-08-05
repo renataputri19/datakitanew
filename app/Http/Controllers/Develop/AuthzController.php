@@ -95,17 +95,51 @@ class AuthzController extends Controller
     /**
      * Bounce an anonymous visitor to the datakita login, remembering where
      * they were headed.
+     *
+     * The intended URL is deliberately NOT written to the session here. This
+     * method runs inside Traefik's forwardAuth subrequest, so any session
+     * cookie we set would have to be relayed back to the browser through a
+     * non-2xx auth response — behaviour that varies between Traefik versions.
+     * When it isn't relayed, the browser reaches /login on a different session
+     * with no url.intended and Fortify drops it on /dashboard instead.
+     *
+     * Instead we send the browser to a normal datakita URL carrying the target,
+     * and {@see self::rememberAndLogin()} does the session write in a request
+     * the browser actually made.
      */
     private function redirectToLogin(Request $request, DevApp $app): Response
     {
         $target = $this->originalUrl($request) ?: $app->publicUrl();
 
-        // Set the intended URL by hand and use a plain redirect. Not
-        // redirect()->guest(): that helper overwrites url.intended with the
-        // *current* request's URL, which here is this authz endpoint — so the
-        // user would land back on a blank 200 after logging in instead of on
-        // the app they asked for.
-        $request->session()->put('url.intended', $target);
+        // Relative, deliberately. route() builds absolute URLs from the
+        // current request's host, and this application trusts X-Forwarded-Host
+        // — so an absolute redirect here could be pointed at an attacker's
+        // domain by spoofing that header on a direct call to this endpoint.
+        // A relative Location is resolved by the browser against the real
+        // origin, which no header can influence.
+        //
+        // away() rather than to(): to() puts the path back through the URL
+        // generator, which re-absolutises it against that same spoofable host.
+        // away() emits the string as given.
+        return redirect()->away(route('develop.masuk', ['next' => $target], false));
+    }
+
+    /**
+     * Landing step between the auth gate and the login form.
+     *
+     * Runs as an ordinary browser request, so the session it writes is the
+     * session the browser carries into /login.
+     */
+    public function rememberAndLogin(Request $request): Response
+    {
+        $next = (string) $request->query('next', '');
+
+        // Only ever remember a URL on our own host — `next` is attacker-
+        // supplied in the general case, and an unchecked value here would
+        // turn the login page into an open redirect.
+        if ($next !== '' && $this->isOwnHost($next)) {
+            $request->session()->put('url.intended', $next);
+        }
 
         return redirect()->to(route('login'));
     }
@@ -137,6 +171,17 @@ class AuthzController extends Controller
         }
 
         return $proto . '://' . $host . $uri;
+    }
+
+    /**
+     * Whether an absolute URL points at the host datakita serves.
+     */
+    private function isOwnHost(string $url): bool
+    {
+        $host     = parse_url($url, PHP_URL_HOST);
+        $expected = parse_url((string) (config('devapps.public_host_url') ?: config('app.url')), PHP_URL_HOST);
+
+        return $host && $expected && hash_equals((string) $expected, (string) $host);
     }
 
     /**

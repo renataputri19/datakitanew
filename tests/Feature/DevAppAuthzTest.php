@@ -80,11 +80,18 @@ class DevAppAuthzTest extends TestCase
 
     // ── Login-gated apps ────────────────────────────────────────────────
 
-    public function test_anonymous_visitor_is_redirected_to_login(): void
+    public function test_anonymous_visitor_is_redirected_towards_login(): void
     {
+        // Via /develop/masuk rather than straight to /login: the gate runs
+        // inside Traefik's forwardAuth subrequest and cannot reliably set a
+        // session cookie on the browser, so the intended URL is carried in the
+        // URL and recorded by that landing step instead.
         $app = $this->makeApp(['auth_mode' => DevApp::AUTH_LOGIN_REQUIRED]);
 
-        $this->authz($app)->assertRedirect(route('login'));
+        $this->assertSame(
+            route('develop.masuk', ['next' => $app->publicUrl()], false),
+            (string) $this->authz($app)->headers->get('Location'),
+        );
     }
 
     public function test_authenticated_user_is_allowed_and_gets_identity_headers(): void
@@ -224,33 +231,77 @@ class DevAppAuthzTest extends TestCase
     {
         $app = $this->makeApp(['auth_mode' => DevApp::AUTH_LOGIN_REQUIRED]);
 
-        $this->get("/develop/authz/{$app->slug}", [
+        $response = $this->get("/develop/authz/{$app->slug}", [
             'X-Forwarded-Host'  => 'attacker.example.com',
-            'X-Forwarded-Uri'   => '/survei-listrik',
+            'X-Forwarded-Uri'   => '/uji',
             'X-Forwarded-Proto' => 'https',
-        ])->assertRedirect(route('login'));
+        ]);
 
-        // The attacker-controlled host must never be what we send the user
-        // back to after login.
-        $this->assertNotSame(
-            'https://attacker.example.com/survei-listrik',
-            session('url.intended'),
+        // Neither the return URL nor the redirect's own base may carry the
+        // spoofed host. The Location is checked raw — going through the URL
+        // generator would re-introduce the request host on both sides and
+        // hide exactly the bug this guards against.
+        $location = (string) $response->headers->get('Location');
+
+        $this->assertStringNotContainsString('attacker.example.com', $location);
+        $this->assertSame(
+            route('develop.masuk', ['next' => $app->publicUrl()], false),
+            $location,
         );
     }
 
-    public function test_forwarded_uri_on_our_own_host_is_remembered_for_after_login(): void
+    public function test_forwarded_host_cannot_control_the_redirect_base(): void
+    {
+        // route() builds absolute URLs from the request host and this app
+        // trusts X-Forwarded-Host, so the gate must emit a relative Location.
+        $app = $this->makeApp(['auth_mode' => DevApp::AUTH_LOGIN_REQUIRED]);
+
+        $location = (string) $this->get("/develop/authz/{$app->slug}", [
+            'X-Forwarded-Host' => 'attacker.example.com',
+        ])->headers->get('Location');
+
+        $this->assertStringStartsWith('/develop/masuk', $location);
+    }
+
+    public function test_forwarded_uri_on_our_own_host_is_carried_through_to_login(): void
     {
         $app = $this->makeApp(['auth_mode' => DevApp::AUTH_LOGIN_REQUIRED]);
 
+        $target = 'https://datakita.test/uji-pengembang/laporan?bulan=3';
+
         $this->get("/develop/authz/{$app->slug}", [
             'X-Forwarded-Host'  => 'datakita.test',
-            'X-Forwarded-Uri'   => '/survei-listrik/laporan?bulan=3',
+            'X-Forwarded-Uri'   => '/uji-pengembang/laporan?bulan=3',
             'X-Forwarded-Proto' => 'https',
-        ])->assertRedirect(route('login'));
+        ])->assertRedirect(route('develop.masuk', ['next' => $target]));
+    }
 
-        $this->assertSame(
-            'https://datakita.test/survei-listrik/laporan?bulan=3',
-            session('url.intended'),
-        );
+    // ── The landing step that records the return URL ────────────────────
+
+    public function test_landing_step_remembers_the_target_and_sends_you_to_login(): void
+    {
+        $target = 'https://datakita.test/uji-pengembang/laporan?bulan=3';
+
+        $this->get(route('develop.masuk', ['next' => $target]))
+            ->assertRedirect(route('login'));
+
+        // This is the write that has to happen in a real browser request —
+        // Fortify's LoginResponse reads it via redirect()->intended().
+        $this->assertSame($target, session('url.intended'));
+    }
+
+    public function test_landing_step_refuses_a_target_on_another_host(): void
+    {
+        $this->get(route('develop.masuk', ['next' => 'https://attacker.example.com/steal']))
+            ->assertRedirect(route('login'));
+
+        $this->assertNull(session('url.intended'));
+    }
+
+    public function test_landing_step_without_a_target_still_reaches_login(): void
+    {
+        $this->get(route('develop.masuk'))->assertRedirect(route('login'));
+
+        $this->assertNull(session('url.intended'));
     }
 }

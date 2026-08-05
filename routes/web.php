@@ -529,6 +529,13 @@ Route::get('/develop/authz/{slug}', DevelopAuthzController::class)
     ->where('slug', '[a-z0-9-]+')
     ->name('develop.authz');
 
+// Landing step between the gate and the login form. The gate cannot write the
+// session itself — it runs inside Traefik's forwardAuth subrequest, whose
+// Set-Cookie is not reliably relayed to the browser — so it sends the visitor
+// here, and this records where they were headed. Guest-accessible by design.
+Route::get('/develop/masuk', [DevelopAuthzController::class, 'rememberAndLogin'])
+    ->name('develop.masuk');
+
 Route::middleware(['auth', 'is_bps'])->prefix('develop')->name('develop.')->group(function () {
     Route::get('/',        [DevAppController::class, 'index'])->name('index');
     Route::get('/create',  [DevAppController::class, 'create'])->name('create');
