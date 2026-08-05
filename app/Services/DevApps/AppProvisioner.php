@@ -122,7 +122,11 @@ class AppProvisioner
                 env: $this->environmentBlock($app),
             );
 
-            $result = $this->dokploy->deploy($app->dokploy_application_id);
+            $result = $this->dokploy->deploy(
+                applicationId: $app->dokploy_application_id,
+                title: 'Deploy dari DataKita',
+                description: 'Dipicu oleh ' . ($triggeredBy?->name ?? 'sistem') . ' melalui /develop.',
+            );
 
             $attempt->update([
                 'status'                => DevAppDeployment::STATUS_RUNNING,

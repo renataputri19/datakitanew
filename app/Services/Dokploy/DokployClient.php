@@ -130,11 +130,23 @@ class DokployClient
      */
     public function saveBuildType(string $applicationId, string $buildType, ?string $dockerfilePath = null): void
     {
-        $this->post('save_build_type', array_filter([
-            'applicationId' => $applicationId,
-            'buildType'     => $buildType,
-            'dockerfile'    => $buildType === 'dockerfile' ? ($dockerfilePath ?: 'Dockerfile') : null,
-        ], fn ($v) => $v !== null && $v !== ''));
+        // Same nonoptional treatment as saveGitProvider/saveEnvironment: send
+        // every field the form has, empty where we don't use it. Zod strips
+        // keys it doesn't know, so listing one Dokploy dropped is harmless —
+        // omitting one it requires is a 400.
+        //
+        // Field list verified against 0.29.2's /swagger request schema.
+        $this->post('save_build_type', [
+            'applicationId'     => $applicationId,
+            'buildType'         => $buildType,
+            'dockerfile'        => $buildType === 'dockerfile' ? ($dockerfilePath ?: 'Dockerfile') : '',
+            'dockerContextPath' => '',
+            'dockerBuildStage'  => '',
+            'herokuVersion'     => '',
+            'railpackVersion'   => '',
+            'publishDirectory'  => '',
+            'isStaticSpa'       => false,
+        ]);
     }
 
     /**
@@ -147,12 +159,29 @@ class DokployClient
         $this->post('save_environment', [
             'applicationId' => $applicationId,
             'env'           => $env,
+            // Nonoptional on 0.29 even though the portal never sets them.
+            // Empty strings rather than null: an empty string satisfies both
+            // z.string() and z.string().nullable(), null only the latter.
+            'buildArgs'     => '',
+            'buildSecrets'  => '',
+            'createEnvFile' => false,
         ]);
     }
 
-    public function deploy(string $applicationId): array
+    /**
+     * Queue a build + deploy.
+     *
+     * title/description show up in Dokploy's deployment list, so they're worth
+     * filling in — someone looking at Dokploy directly can tell a portal
+     * deploy from a manual one, and see who triggered it.
+     */
+    public function deploy(string $applicationId, string $title = 'Deploy', string $description = ''): array
     {
-        return (array) $this->post('application_deploy', ['applicationId' => $applicationId]);
+        return (array) $this->post('application_deploy', [
+            'applicationId' => $applicationId,
+            'title'         => $title,
+            'description'   => $description,
+        ]);
     }
 
     public function stop(string $applicationId): void
