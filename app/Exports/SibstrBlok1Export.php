@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
  * One row per SIBSTR submission (a user × year × period), carrying the full
  * Blok I identity answers plus the period and completion columns BPS monitors.
  *
+ * KBLI Utama (208f) comes from Blok II rather than Blok I, but it rides along
+ * next to the other identity codes because BPS classifies respondents by it.
+ *
  * "Selesai" means different columns per period type: a Tahunan record is only
  * finished once Blok VI sets annual_survey_status = FINISH_SURVEY, while a
  * Triwulanan record uses is_completed — the same rule the index page shows.
@@ -36,6 +39,7 @@ class SibstrBlok1Export extends SurveyMonitoringExport
             'Triwulan',
             'KIP',
             'IDSBR',
+            'KBLI Utama',
             'Alamat Pabrik',
             'Kabupaten/Kota',
             'Telepon/Fax',
@@ -82,6 +86,7 @@ class SibstrBlok1Export extends SurveyMonitoringExport
             $isTahunan ? '' : $triwulan,
             $this->val($record->kip),
             $this->val($record->idsbr),
+            $this->val($record->kbli_utama),
             $this->val($record->alamat_pabrik),
             $this->val($record->kabupaten_kota),
             $this->val($record->telepon_fax),

@@ -99,6 +99,18 @@
     @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;
 }
 
+.bps-badge-red {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300;
+}
+
+.bps-badge-amber {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300;
+}
+
+.bps-badge-gray {
+    @apply bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300;
+}
+
 /* Video card */
 .bps-video-card {
     @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;

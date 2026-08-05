@@ -376,7 +376,7 @@
 @include('bps.partials.export-excel-modal', [
     'exportAction'   => route('bps.ub.export'),
     'exportTitle'    => 'Ekspor Data Survei UB',
-    'exportSubtitle' => 'Satu baris per responden berisi identitas Blok 1-A, kelengkapan tiap blok dan status survei. Kosongkan filter untuk mengunduh semua data.',
+    'exportSubtitle' => 'Satu baris per responden berisi identitas Blok 1-A, kode KBLI, kelengkapan tiap blok dan status survei. Kosongkan filter untuk mengunduh semua data.',
     'exportFields'   => [
         [
             'type'    => 'select',

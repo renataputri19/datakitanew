@@ -12,7 +12,9 @@
     if (!DATA || !document.getElementById('stx-kpis')) return;
 
     var MONTH_SHORT = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    var TW_ROMAN = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV' };
     var CATS = Object.keys(DATA.categories);
+    function monthQuarter(m) { return Math.ceil(m / 3); }
 
     /* ═══════════════ tiny DOM helpers ═══════════════ */
 
@@ -36,6 +38,7 @@
             ink: cssVar('--stx-ink'), ink2: cssVar('--stx-ink-2'), muted: cssVar('--stx-muted'),
             grid: cssVar('--stx-grid'), axis: cssVar('--stx-axis'), surface: cssVar('--stx-surface'),
             s1: cssVar('--stx-s1'), s2: cssVar('--stx-s2'), s3: cssVar('--stx-s3'), s4: cssVar('--stx-s4'),
+            good: cssVar('--stx-good'), bad: cssVar('--stx-bad'),
             wash: cssVar('--stx-wash')
         };
     }
@@ -64,8 +67,15 @@
 
     /* ═══════════════ state + filtering ═══════════════ */
 
-    // katSel: checkbox multi-select (empty = semua). Status defaults to Selesai.
-    var state = { tahun: 'all', bulan: 'all', katSel: {}, status: 'done', excluded: {}, sortKey: 'kwh', sortDir: -1, tableLimit: 10 };
+    // katSel / bulanSel: checkbox multi-select (empty = semua). Status defaults
+    // to Selesai.
+    // Triwulan and Bulan stack: the quarter picks the window and ticks its own
+    // months in Bulan, which can then be unticked one at a time. So "TW I" is
+    // visibly "Jan + Feb + Mar", not an opaque mode.
+    // qoq holds the key of the *current* quarter of the growth pair (the previous
+    // one is whatever sits before it chronologically); qoqTouched records that
+    // the user picked it by hand, after which Triwulan stops moving it.
+    var state = { tahun: 'all', triwulan: 'all', bulanSel: {}, qoq: null, qoqTouched: false, katSel: {}, status: 'done', excluded: {}, sortKey: 'kwh', sortDir: -1, tableLimit: 10 };
     function katSelCount() { return Object.keys(state.katSel).length; }
     function katSelected(cat) { return !katSelCount() || !!state.katSel[cat]; }
 
@@ -112,12 +122,51 @@
     function nWithData(rows, months, cats) {
         return rows.filter(function (r) { return rowSum(r, months, cats, 'kwh') !== null; }).length;
     }
-    function activeMonths() {
+    /** Months the Tahun + Triwulan window admits — the pool the Bulan picker lists. */
+    function scopedMonths() {
         return DATA.months.filter(function (m) {
             if (state.tahun !== 'all' && m.year !== state.tahun) return false;
-            if (state.bulan !== 'all' && m.key !== state.bulan) return false;
+            if (state.triwulan !== 'all' && monthQuarter(m.month) !== state.triwulan) return false;
             return true;
-        }).map(function (m) { return m.key; });
+        });
+    }
+    function bulanSelCount() { return Object.keys(state.bulanSel).length; }
+    function activeMonths() {
+        return scopedMonths()
+            .filter(function (m) { return !bulanSelCount() || state.bulanSel[m.key]; })
+            .map(function (m) { return m.key; });
+    }
+    /**
+     * Names the months a total actually covers. "Seluruh bulan pada irisan
+     * filter" described the machinery, not the period: the reader still could
+     * not tell whether a figure was one month or twenty. A contiguous run reads
+     * as a range; a broken one (TW II of two different years, or a month the
+     * user unticked) can only be counted, so the full list goes in the tooltip.
+     */
+    function monthWindowLabel() {
+        var ms = activeMonths();
+        if (!ms.length) return { text: 'tidak ada bulan terpilih', title: '' };
+        if (ms.length === 1) return { text: monthLabel(ms[0]), title: 'Total untuk ' + monthLabel(ms[0]) };
+        var all = DATA.months.map(function (m) { return m.key; });
+        var contiguous = (all.indexOf(ms[ms.length - 1]) - all.indexOf(ms[0]) + 1) === ms.length;
+        return {
+            text: contiguous
+                ? ms.length + ' bulan · ' + monthShort(ms[0]) + '–' + monthShort(ms[ms.length - 1])
+                : ms.length + ' bulan terpilih',
+            title: 'Total mencakup ' + ms.length + ' bulan: ' + ms.map(monthLabel).join(', ')
+        };
+    }
+
+    /** Ticks every month of the current window — how a quarter shows its months. */
+    function checkAllScopedMonths() {
+        state.bulanSel = {};
+        scopedMonths().forEach(function (m) { state.bulanSel[m.key] = true; });
+    }
+    /** Drops ticks that the new Tahun/Triwulan window no longer contains. */
+    function pruneBulanSel() {
+        var inScope = {};
+        scopedMonths().forEach(function (m) { inScope[m.key] = true; });
+        Object.keys(state.bulanSel).forEach(function (k) { if (!inScope[k]) delete state.bulanSel[k]; });
     }
     function activeCats() {
         return katSelCount() ? CATS.filter(function (c) { return state.katSel[c]; }) : CATS;
@@ -141,6 +190,166 @@
             if (v !== null) { any = true; total += v; }
         });
         return any ? total : null;
+    }
+
+    /* ═══════════════ quarters + q-to-q growth ═══════════════ */
+
+    /**
+     * Every quarter the payload covers, chronologically, each holding its month
+     * keys. Built from all months regardless of the Tahun/Triwulan/Bulan
+     * pickers: the baseline of a q-to-q figure routinely sits outside the window
+     * being viewed — TW I is measured against TW IV of the year before.
+     */
+    var ALL_QUARTERS = (function () {
+        var byKey = {}, list = [];
+        DATA.months.forEach(function (m) {
+            var q = monthQuarter(m.month), key = m.year + 'Q' + q;
+            if (!byKey[key]) {
+                byKey[key] = { key: key, year: m.year, q: q, months: [] };
+                list.push(byKey[key]);
+            }
+            byKey[key].months.push(m.key);
+        });
+        list.sort(function (a, b) { return a.year - b.year || a.q - b.q; });
+        return list;
+    })();
+    function quarterLabel(qd) { return 'TW ' + TW_ROMAN[qd.q] + ' ' + qd.year; }
+
+    /**
+     * Every quarter transition the payload can report, oldest first. The
+     * baseline is the quarter immediately before, so TW I 2026 pairs with
+     * TW IV 2025 — the transition does not stop at a year boundary.
+     *
+     * The option list is scoped to the active Tahun by the *current* quarter
+     * only: a 2026 transition stays offered even though its baseline is 2025.
+     */
+    function qoqPairs() {
+        var out = [];
+        for (var i = 1; i < ALL_QUARTERS.length; i++) {
+            if (state.tahun !== 'all' && ALL_QUARTERS[i].year !== state.tahun) continue;
+            out.push({ cur: ALL_QUARTERS[i], prev: ALL_QUARTERS[i - 1] });
+        }
+        return out;
+    }
+    /**
+     * The dashboard opens on TW II vs TW I — the most recent one when several
+     * years are in scope. With no TW II transition available the newest
+     * transition stands in, so the picker is never empty-but-shown.
+     */
+    function defaultQoqKey() {
+        var pairs = qoqPairs();
+        if (!pairs.length) return null;
+        for (var i = pairs.length - 1; i >= 0; i--) if (pairs[i].cur.q === 2) return pairs[i].cur.key;
+        return pairs[pairs.length - 1].cur.key;
+    }
+    /** The two quarters every q-to-q figure compares — whatever the picker holds. */
+    function qoqPair() {
+        for (var i = 1; i < ALL_QUARTERS.length; i++) {
+            if (ALL_QUARTERS[i].key === state.qoq) return { cur: ALL_QUARTERS[i], prev: ALL_QUARTERS[i - 1] };
+        }
+        return null;
+    }
+    /**
+     * Keeps the growth pair legal after Tahun/Triwulan move. An explicit choice
+     * is only overridden when it has fallen out of the Tahun scope entirely —
+     * otherwise the picker would silently undo the user.
+     */
+    function syncQoq() {
+        var pairs = qoqPairs();
+        var stillValid = pairs.some(function (p) { return p.cur.key === state.qoq; });
+        if (!stillValid) { state.qoq = defaultQoqKey(); return; }
+        if (state.qoqTouched || state.triwulan === 'all') return;
+        // untouched: follow the focused quarter, newest year first
+        for (var i = pairs.length - 1; i >= 0; i--) {
+            if (pairs[i].cur.q === state.triwulan) { state.qoq = pairs[i].cur.key; return; }
+        }
+    }
+    function qoqPairLabel(pair) { return quarterLabel(pair.cur) + ' vs ' + quarterLabel(pair.prev); }
+    // KPI tiles are a sixth of the row wide — the label has to survive there
+    // without wrapping onto a third line, so the year is stated once when both
+    // quarters share it
+    function qoqPairLabelShort(pair) {
+        return pair.cur.year === pair.prev.year
+            ? 'TW ' + TW_ROMAN[pair.cur.q] + ' vs ' + TW_ROMAN[pair.prev.q] + ' ' + pair.cur.year
+            : quarterLabel(pair.cur) + ' vs ' + quarterLabel(pair.prev);
+    }
+    /**
+     * The newest quarter is usually still running — Agustus is 2 of the 3 months
+     * of TW III. Its total is then compared against a complete quarter, which
+     * reads as a collapse unless the reader is told. Every place that prints a
+     * q-to-q figure carries this warning.
+     */
+    function qoqPartial(pair) {
+        return pair.cur.months.length < 3
+            ? quarterLabel(pair.cur) + ' masih berjalan (' + pair.cur.months.length + ' dari 3 bulan), sehingga pertumbuhannya belum sebanding dengan triwulan penuh.'
+            : '';
+    }
+
+    /**
+     * Growth against the previous quarter, in percent. null whenever either side
+     * is unreported or the base is 0 — a rate off nothing is not a rate, and
+     * printing 0% there would read as "tidak berubah".
+     */
+    function pctChange(cur, prev) {
+        if (cur === null || cur === undefined || prev === null || prev === undefined || prev === 0) return null;
+        return (cur - prev) / Math.abs(prev) * 100;
+    }
+    function fmtSigned(pct) {
+        if (pct === null) return '—';
+        var sign = pct > 0.05 ? '+' : (pct < -0.05 ? '−' : '±');
+        return sign + nfPct.format(Math.abs(pct)) + '%';
+    }
+    function qoqClass(pct) {
+        if (pct === null) return 'na';
+        return pct > 0.05 ? 'up' : (pct < -0.05 ? 'down' : 'flat');
+    }
+    function qoqArrow(pct) {
+        if (pct === null) return '';
+        return pct > 0.05 ? '▲ ' : (pct < -0.05 ? '▼ ' : '• ');
+    }
+    /**
+     * Heading for a q-to-q column. Every one of them names the two quarters it
+     * compares: these tables get screenshotted and pasted into reports, where a
+     * bare "q-to-q" leaves no way to tell which transition the Pertumbuhan
+     * filter was on.
+     */
+    function qoqHead(unit, pair) {
+        return 'q-to-q' + (unit ? ' ' + unit : '') + (pair ? ' (' + qoqPairLabelShort(pair) + ')' : '');
+    }
+    function qoqColor(t, pct) {
+        if (pct === null) return t.muted;
+        return pct > 0.05 ? t.good : (pct < -0.05 ? t.bad : t.muted);
+    }
+    // q-to-q of a whole slice (rows × categories) for one field
+    function groupQoq(rows, cats, f, pair) {
+        pair = pair || qoqPair();
+        if (!pair) return null;
+        return pctChange(groupSum(rows, pair.cur.months, cats, f), groupSum(rows, pair.prev.months, cats, f));
+    }
+    // q-to-q of a single respondent for one field
+    function rowQoq(r, cats, f, pair) {
+        pair = pair || qoqPair();
+        if (!pair) return null;
+        return pctChange(rowSum(r, pair.cur.months, cats, f), rowSum(r, pair.prev.months, cats, f));
+    }
+    state.qoq = defaultQoqKey();
+
+    /** Plain-text q-to-q line for a KPI tile. */
+    function qoqLine(rows, cats, f) {
+        var pair = qoqPair();
+        var line = el('div', 'stx-qoq');
+        if (!pair) {
+            line.className = 'stx-qoq na';
+            line.textContent = 'q-to-q — belum ada triwulan pembanding';
+            return line;
+        }
+        var pct = groupQoq(rows, cats, f, pair);
+        var partial = qoqPartial(pair);
+        line.className = 'stx-qoq ' + qoqClass(pct);
+        line.textContent = qoqArrow(pct) + fmtSigned(pct) + ' q-to-q (' + qoqPairLabelShort(pair) + (partial ? '*' : '') + ')';
+        line.title = 'Pertumbuhan triwulanan ' + qoqPairLabel(pair) + ' — dihitung dari total triwulan penuh pada irisan filter aktif'
+            + (partial ? '. ' + partial : '');
+        return line;
     }
 
     /* ═══════════════ tooltip ═══════════════ */
@@ -506,8 +715,13 @@
 
     // Always wrapped in .stx-tablewrap: cells are nowrap, so an unwrapped table
     // overflows its container (visibly spilling outside the modal card).
+    //
+    // Replaces only a table this helper mounted earlier, never the whole node:
+    // most callers pass a .stx-sect that already holds its heading, and a blanket
+    // clear() silently deleted the very title labelling the table.
     function simpleTable(pane, headers, rows, numericFrom) {
-        clear(pane);
+        var old = pane.querySelector('.stx-tablewrap');
+        if (old && old.parentNode === pane) pane.removeChild(old);
         var wrap = el('div', 'stx-tablewrap');
         var t = el('table', 'stx-table');
         var thead = el('thead'); var trh = el('tr');
@@ -577,27 +791,78 @@
             return opts;
         }, state.tahun, function (v) {
             state.tahun = v;
-            // keep the bulan filter only when it still fits the chosen year
-            if (state.bulan !== 'all') {
-                var y = parseInt(state.bulan.split('_')[0], 10);
-                if (v !== 'all' && y !== v) state.bulan = 'all';
-            }
+            // A focused quarter keeps every one of its months ticked in the new
+            // year; otherwise just drop the months this year no longer contains.
+            if (state.triwulan !== 'all') checkAllScopedMonths(); else pruneBulanSel();
+            syncQoq();
             rerender();
         });
 
-        // Bulan — scoped to the chosen year, counted against the rest
-        ddSingle(bar, 'Bulan', function () {
+        // Triwulan — the quarter window, scoped to the chosen year. Bulan is not
+        // replaced by it: the two stack, so a quarter can still be drilled into
+        // one of its months.
+        ddSingle(bar, 'Triwulan', function () {
             var rows = filteredRows(), cats = activeCats();
             var ms = DATA.months.filter(function (m) { return state.tahun === 'all' || m.year === state.tahun; });
-            var opts = [{ v: 'all', t: 'Semua bulan', sub: dataSub(nWithData(rows, ms.map(mKey), cats)) }];
-            ms.forEach(function (m) {
-                var n = nWithData(rows, [m.key], cats);
-                opts.push({ v: m.key, t: monthLabel(m.key), disabled: state.bulan !== m.key && !n, sub: dataSub(n) });
+            var opts = [{ v: 'all', t: 'Semua triwulan', sub: dataSub(nWithData(rows, ms.map(mKey), cats)) }];
+            [1, 2, 3, 4].forEach(function (q) {
+                var qm = ms.filter(function (m) { return monthQuarter(m.month) === q; });
+                var n = qm.length ? nWithData(rows, qm.map(mKey), cats) : 0;
+                opts.push({
+                    v: q,
+                    t: 'Triwulan ' + TW_ROMAN[q],
+                    // never disable the active option — it stays the way back out
+                    disabled: state.triwulan !== q && !qm.length,
+                    sub: !qm.length ? 'Di luar periode survei' : dataSub(n)
+                });
             });
             return opts;
-        }, state.bulan, function (v) { state.bulan = v; rerender(); });
+        }, state.triwulan, function (v) {
+            state.triwulan = v;
+            // Picking a quarter ticks its months in Bulan, so the window it
+            // opened is visible and can be narrowed further; "Semua triwulan"
+            // hands the choice back to Bulan untouched.
+            if (v !== 'all') checkAllScopedMonths(); else state.bulanSel = {};
+            syncQoq();
+            rerender();
+        });
+
+        // Bulan — scoped to the chosen year and quarter, counted against the rest.
+        // Multi-select, so a quarter can show its own months ticked and the user
+        // can drop one without leaving the quarter.
+        ddMulti(bar, 'Bulan', function () {
+            var rows = filteredRows(), cats = activeCats();
+            return scopedMonths().map(function (m) {
+                var n = nWithData(rows, [m.key], cats);
+                return { v: m.key, t: monthLabel(m.key), n: n, sub: dataSub(n), disabled: !n };
+            });
+        }, state.bulanSel, 'Semua bulan',
+            function () { rerenderData(); refreshFilterBar(); });
 
         bar.appendChild(el('div', 'stx-filter-sep'));
+
+        // Pertumbuhan q-to-q — which quarter transition every growth figure
+        // reports. Independent of the Tahun/Triwulan/Bulan window above: those
+        // choose the levels shown, this one chooses the growth.
+        var pairs = qoqPairs();
+        if (pairs.length) {
+            ddSingle(bar, 'Pertumbuhan', function () {
+                var rows = filteredRows(), cats = activeCats();
+                return pairs.map(function (p) {
+                    var n = rows.filter(function (r) {
+                        return rowSum(r, p.cur.months, cats, 'kwh') !== null && rowSum(r, p.prev.months, cats, 'kwh') !== null;
+                    }).length;
+                    return {
+                        v: p.cur.key,
+                        t: qoqPairLabelShort(p),
+                        sub: (n ? n + ' perusahaan punya data di kedua triwulan' : 'Kosong pada filter lain')
+                            + (p.cur.months.length < 3 ? ' · triwulan berjalan' : '')
+                    };
+                });
+            }, state.qoq, function (v) { state.qoq = v; state.qoqTouched = true; rerender(); });
+
+            bar.appendChild(el('div', 'stx-filter-sep'));
+        }
 
         // Kategori — counted against the active month window + Status + Perusahaan
         ddMulti(bar, 'Kategori', function () {
@@ -753,10 +1018,18 @@
     function filterPills() {
         var pills = [];
         pills.push(state.tahun === 'all' ? 'Semua tahun' : 'Tahun ' + state.tahun);
-        if (state.bulan !== 'all') pills.push('Bulan ' + monthLabel(state.bulan));
+        if (state.triwulan !== 'all') pills.push('Triwulan ' + TW_ROMAN[state.triwulan]);
+        // Only worth a pill when it says something Tahun+Triwulan does not: a
+        // fully ticked quarter is already described by its own pill.
+        var bulanKeys = Object.keys(state.bulanSel);
+        if (bulanKeys.length && bulanKeys.length < scopedMonths().length) {
+            pills.push(bulanKeys.length === 1 ? 'Bulan ' + monthLabel(bulanKeys[0]) : bulanKeys.length + ' bulan dipilih');
+        }
         var katKeys = Object.keys(state.katSel);
         if (katKeys.length === 1) pills.push(DATA.categories[katKeys[0]]);
         else if (katKeys.length > 1) pills.push(katKeys.length + ' kategori');
+        var pair = qoqPair();
+        if (pair) pills.push('q-to-q ' + qoqPairLabelShort(pair));
         if (state.status === 'done') pills.push('Hanya selesai');
         if (state.status === 'draft') pills.push('Hanya draf');
         if (excludedEligible()) pills.push(excludedEligible() + ' perusahaan dikecualikan');
@@ -807,19 +1080,6 @@
         return svg;
     }
 
-    function deltaBadge(cur, prev, upIsGood) {
-        if (cur === null || prev === null || prev === 0) return null;
-        var pct = (cur - prev) / Math.abs(prev) * 100;
-        var span = el('span', 'k-delta');
-        var dir = pct > 0.05 ? 'up' : (pct < -0.05 ? 'down' : 'flat');
-        if (upIsGood === null) span.classList.add('flat');
-        else span.classList.add(dir === 'flat' ? 'flat' : ((dir === 'up') === upIsGood ? 'up' : 'down'));
-        var arrow = dir === 'up' ? '▲' : (dir === 'down' ? '▼' : '•');
-        span.textContent = arrow + ' ' + nfPct.format(Math.abs(pct)) + '%';
-        span.title = 'Dibanding bulan sebelumnya';
-        return span;
-    }
-
     function kpiTile(container, def) {
         var tile = el('button', 'stx-card stx-kpi');
         tile.type = 'button';
@@ -828,14 +1088,17 @@
         if (def.icon) top.appendChild(kpiIcon(def.icon));
         tile.appendChild(top);
         tile.appendChild(el('div', 'k-value', def.value));
+        if (def.qoq) tile.appendChild(def.qoq);
         var foot = el('div', 'k-foot');
         var left = el('div');
-        if (def.delta) left.appendChild(def.delta);
-        else if (def.sub) left.appendChild(el('span', 'k-sub', def.sub));
+        if (def.sub) {
+            var subEl = el('span', 'k-sub', def.sub);
+            if (def.subTitle) subEl.title = def.subTitle;
+            left.appendChild(subEl);
+        }
         foot.appendChild(left);
         if (def.spark) foot.appendChild(def.spark);
         tile.appendChild(foot);
-        if (def.sub && def.delta) tile.appendChild(el('div', 'k-sub', def.sub));
         tile.title = def.tooltip || 'Klik untuk rincian';
         tile.addEventListener('click', def.onClick);
         container.appendChild(tile);
@@ -846,20 +1109,31 @@
             return groupSum(rows, [ym], cats, f);
         });
     }
-    function lastTwo(values) {
-        var idx = [];
-        for (var i = values.length - 1; i >= 0 && idx.length < 2; i--) {
-            if (values[i] !== null) idx.push(values[i]);
-        }
-        return idx; // [last, prev]
-    }
+    // Monthly totals feed the KPI sparklines; the growth figure itself is
+    // quarterly only — a monthly rate beside it was one number too many.
 
-    function companyBreakdownModal(title, rows, valueFn, fmt) {
+
+    /**
+     * `qoqField` ('kwh' | 'rp') adds a per-company q-to-q column. Metrics with
+     * no single underlying field (harga = Rp ÷ KWH) pass none and keep the
+     * plain three-column table.
+     */
+    function companyBreakdownModal(title, rows, valueFn, fmt, qoqField) {
         openModal(title, filterPills(), function (body) {
             var s = sect(body, 'Rincian per perusahaan');
+            var pair = qoqField ? qoqPair() : null;
+            var cats = activeCats();
             var sorted = rows.slice().sort(function (a, b) { return (valueFn(b) || 0) - (valueFn(a) || 0); });
-            simpleTable(s, ['Perusahaan', 'Pembangkit', 'Nilai'],
-                sorted.map(function (r) { return [r.perusahaan, r.jenisPembangkit || '—', fmt(valueFn(r))]; }), 2);
+            simpleTable(s, pair ? ['Perusahaan', 'Pembangkit', 'Nilai', qoqHead('', pair)] : ['Perusahaan', 'Pembangkit', 'Nilai'],
+                sorted.map(function (r) {
+                    var cells = [r.perusahaan, r.jenisPembangkit || '—', fmt(valueFn(r))];
+                    if (pair) cells.push(fmtSigned(rowQoq(r, cats, qoqField, pair)));
+                    return cells;
+                }), 2);
+            if (pair) {
+                s.appendChild(el('p', 'stx-note', 'Kolom q-to-q membandingkan total ' + quarterLabel(pair.cur) + ' dengan ' + quarterLabel(pair.prev)
+                    + ' untuk perusahaan yang sama — selalu triwulan penuh, terlepas dari filter Bulan. "—" berarti triwulan pembanding kosong atau bernilai nol. ' + qoqPartial(pair)));
+            }
         });
     }
 
@@ -869,6 +1143,7 @@
         var rows = filteredRows();
         var months = activeMonths();
         var cats = activeCats();
+        var win = monthWindowLabel();
 
         // 1 — companies reporting
         var done = rows.filter(function (r) { return r.selesai; }).length;
@@ -889,36 +1164,36 @@
         // 2 — total KWH
         var kwhSeries = monthlyTotals(rows, cats, 'kwh');
         var totKwh = groupSum(rows, months, cats, 'kwh');
-        var lk = lastTwo(kwhSeries);
         kpiTile(wrap, {
             label: 'Total produksi listrik',
             icon: 'kwh',
             value: totKwh === null ? '—' : nfCompact.format(totKwh) + ' KWH',
             tooltip: fmtKwhFull(totKwh),
-            delta: lk.length === 2 ? deltaBadge(lk[0], lk[1], true) : null,
-            sub: 'seluruh bulan pada irisan filter',
+            qoq: qoqLine(rows, cats, 'kwh'),
+            sub: win.text,
+            subTitle: win.title,
             spark: sparkline(kwhSeries, 64, 26),
             onClick: function () {
                 companyBreakdownModal('Total produksi listrik (KWH)', rows,
-                    function (r) { return rowSum(r, months, cats, 'kwh'); }, fmtKwhFull);
+                    function (r) { return rowSum(r, months, cats, 'kwh'); }, fmtKwhFull, 'kwh');
             }
         });
 
         // 3 — total Rp
         var rpSeries = monthlyTotals(rows, cats, 'rp');
         var totRp = groupSum(rows, months, cats, 'rp');
-        var lr = lastTwo(rpSeries);
         kpiTile(wrap, {
             label: 'Total nilai produksi',
             icon: 'rp',
             value: fmtRp(totRp),
             tooltip: fmtRpFull(totRp),
-            delta: lr.length === 2 ? deltaBadge(lr[0], lr[1], true) : null,
-            sub: 'seluruh bulan pada irisan filter',
+            qoq: qoqLine(rows, cats, 'rp'),
+            sub: win.text,
+            subTitle: win.title,
             spark: sparkline(rpSeries, 64, 26),
             onClick: function () {
                 companyBreakdownModal('Total nilai produksi (Rp)', rows,
-                    function (r) { return rowSum(r, months, cats, 'rp'); }, fmtRpFull);
+                    function (r) { return rowSum(r, months, cats, 'rp'); }, fmtRpFull, 'rp');
             }
         });
 
@@ -951,11 +1226,17 @@
             sub: top && top.v > 0 && totalAll > 0 ? nfPct.format(top.v / totalAll * 100) + '% dari total produksi' : 'belum ada data',
             onClick: function () {
                 openModal('Produksi per kategori pelanggan', filterPills(), function (body) {
-                    var s = sect(body, 'Total KWH per kategori');
-                    simpleTable(s, ['Kategori', 'Produksi (KWH)', 'Porsi'],
+                    var s = sect(body, 'Total per kategori dan pertumbuhan q-to-q');
+                    var pair = qoqPair();
+                    simpleTable(s, ['Kategori', 'Produksi (KWH)', qoqHead('KWH', pair), 'Nilai (Rp)', qoqHead('Rp', pair), 'Porsi KWH'],
                         catTotals.map(function (c) {
-                            return [DATA.categories[c.cat], fmtKwhFull(c.v), totalAll ? nfPct.format(c.v / totalAll * 100) + '%' : '—'];
+                            return [DATA.categories[c.cat], fmtKwhFull(c.v), fmtSigned(groupQoq(rows, [c.cat], 'kwh', pair)),
+                                fmtRpFull(groupSum(rows, months, [c.cat], 'rp')), fmtSigned(groupQoq(rows, [c.cat], 'rp', pair)),
+                                totalAll ? nfPct.format(c.v / totalAll * 100) + '%' : '—'];
                         }), 1);
+                    s.appendChild(el('p', 'stx-note', pair
+                        ? 'Pertumbuhan q-to-q membandingkan total ' + quarterLabel(pair.cur) + ' dengan ' + quarterLabel(pair.prev) + ' — selalu triwulan penuh, terlepas dari filter Bulan. ' + qoqPartial(pair)
+                        : 'Belum ada triwulan pembanding, sehingga pertumbuhan q-to-q belum dapat dihitung.'));
                 });
             }
         });
@@ -1145,24 +1426,40 @@
 
     function renderKategori() {
         var unit = state.unitKategori;
+        var pair = qoqPair();
         var shell = cardShell('card-kategori',
             'Per kategori pelanggan',
-            'Klik baris untuk memfokuskan seluruh dashboard pada kategori itu',
+            'Pertumbuhan q-to-q per kategori' + (pair ? ' (' + qoqPairLabel(pair) + ')' : '') + ' — klik baris untuk memfokuskan seluruh dashboard pada kategori itu',
             { unitKey: 'unitKategori' });
         var t = theme();
         var rows = filteredRows();
         var months = activeMonths();
         var fmt = fmtUnit(unit), fmtF = fmtUnitFull(unit);
 
+        // Growth is carried for both units at once: the unit toggle decides what
+        // the bars show, but "pertumbuhan per kategori" is asked of KWH and
+        // rupiah together, so the Tabel view always lists both.
         var list = CATS.map(function (cat) {
-            return { cat: cat, label: DATA.categories[cat], v: groupSum(rows, months, [cat], unit) };
+            return {
+                cat: cat,
+                label: DATA.categories[cat],
+                v: groupSum(rows, months, [cat], unit),
+                kwh: groupSum(rows, months, [cat], 'kwh'),
+                rp: groupSum(rows, months, [cat], 'rp'),
+                gKwh: groupQoq(rows, [cat], 'kwh', pair),
+                gRp: groupQoq(rows, [cat], 'rp', pair)
+            };
         });
         var total = list.reduce(function (a, c) { return a + (c.v || 0); }, 0);
 
-        simpleTable(shell.tablePane, ['Kategori', 'Nilai', 'Porsi'],
+        simpleTable(shell.tablePane, ['Kategori', 'Produksi (KWH)', qoqHead('KWH', pair), 'Nilai (Rp)', qoqHead('Rp', pair), 'Porsi'],
             list.map(function (g) {
-                return [g.label, fmtF(g.v), total ? nfPct.format((g.v || 0) / total * 100) + '%' : '—'];
+                return [g.label, fmtKwhFull(g.kwh), fmtSigned(g.gKwh), fmtRpFull(g.rp), fmtSigned(g.gRp),
+                    total ? nfPct.format((g.v || 0) / total * 100) + '%' : '—'];
             }), 1);
+        shell.tablePane.appendChild(el('p', 'stx-note', pair
+            ? 'Pertumbuhan q-to-q membandingkan total ' + quarterLabel(pair.cur) + ' dengan ' + quarterLabel(pair.prev) + ' — selalu triwulan penuh, terlepas dari filter Bulan. Porsi dihitung atas satuan yang sedang aktif (' + (unit === 'kwh' ? 'KWH' : 'rupiah') + '). ' + qoqPartial(pair)
+            : 'Belum ada triwulan pembanding, sehingga pertumbuhan q-to-q belum dapat dihitung.'));
 
         if (total <= 0) { emptyState(shell.chartPane, 'Belum ada data pada irisan filter ini.'); return; }
 
@@ -1188,9 +1485,17 @@
             var barH = 16;
             svg.appendChild(svgEl('rect', { x: labelW, y: cy - barH / 2, width: plotW, height: barH, rx: 4, fill: t.grid, opacity: 0.45 }));
             if (bw > 0) svg.appendChild(svgEl('path', { d: roundRightBarPath(labelW, cy - barH / 2, Math.max(bw, 2), barH, 4), fill: t.s1, opacity: dim ? 0.3 : 1 }));
-            var val = svgEl('text', { x: labelW + plotW + 8, y: cy + 4, 'font-size': 11, 'font-weight': 700, fill: dim ? t.muted : t.ink });
+            // level on top, its q-to-q growth right underneath — the growth of the
+            // unit currently on the bars; the Tabel view carries both units
+            var gPct = unit === 'kwh' ? g.gKwh : g.gRp;
+            var val = svgEl('text', { x: labelW + plotW + 8, y: cy + (gPct === null ? 4 : -1), 'font-size': 11, 'font-weight': 700, fill: dim ? t.muted : t.ink });
             val.textContent = fmtNc(g.v);
             svg.appendChild(val);
+            if (gPct !== null) {
+                var gTxt = svgEl('text', { x: labelW + plotW + 8, y: cy + 11, 'font-size': 9.5, 'font-weight': 700, fill: dim ? t.muted : qoqColor(t, gPct) });
+                gTxt.textContent = fmtSigned(gPct);
+                svg.appendChild(gTxt);
+            }
 
             var hit = svgEl('rect', { x: 0, y: padT2 + i * rowH, width: W, height: rowH, fill: 'transparent' });
             hit.style.cursor = 'pointer';
@@ -1198,10 +1503,18 @@
             hit.setAttribute('role', 'button');
             hit.setAttribute('aria-label', g.label);
             hit.addEventListener('pointermove', function (e) {
-                tipShow(e.clientX, e.clientY, g.label, [
+                var lines = [
                     { color: t.s1, label: unit === 'kwh' ? 'Produksi' : 'Nilai', value: fmtF(g.v) },
                     { label: 'Porsi', value: total ? nfPct.format((g.v || 0) / total * 100) + '%' : '—' }
-                ]);
+                ];
+                // the pair is stated once on its own line — repeating it inside
+                // both growth labels would wrap the tooltip onto four lines
+                if (pair) {
+                    lines.push({ label: 'Pertumbuhan', value: qoqPairLabelShort(pair) });
+                    lines.push({ label: 'q-to-q KWH', value: fmtSigned(g.gKwh) });
+                    lines.push({ label: 'q-to-q Rupiah', value: fmtSigned(g.gRp) });
+                }
+                tipShow(e.clientX, e.clientY, g.label, lines);
             });
             hit.addEventListener('pointerleave', tipHide);
             function focusCat() {
@@ -1410,8 +1723,8 @@
      */
     var SORT_OPTS = [
         { key: 'perusahaan', label: 'Nama perusahaan',      num: false, sub: 'urut abjad' },
-        { key: 'kwh',        label: 'Produksi listrik',     num: true,  sub: 'total KWH pada irisan filter' },
-        { key: 'rp',         label: 'Nilai produksi',       num: true,  sub: 'total rupiah pada irisan filter' },
+        { key: 'kwh',        label: 'Produksi listrik',     num: true,  sub: 'total KWH pada bulan terpilih' },
+        { key: 'rp',         label: 'Nilai produksi',       num: true,  sub: 'total rupiah pada bulan terpilih' },
         { key: 'harga',      label: 'Harga rata-rata/KWH',  num: true,  sub: 'nilai ÷ produksi' },
         { key: 'nBulan',     label: 'Jumlah bulan terisi',  num: true,  sub: 'kelengkapan pengisian' },
         { key: 'pembangkit', label: 'Jenis pembangkit',     num: false, sub: 'urut abjad' },
@@ -1498,6 +1811,17 @@
 
     var TABLE_PAGE = 10;
 
+    // Growth line under a number inside a table cell. Nothing is drawn when
+    // there is no rate to state — an endless column of "—" is noise, not data.
+    function qoqCell(td, pct, pair) {
+        if (pct === null) return;
+        // names its baseline rather than saying "q-to-q": the reader should not
+        // have to look up which transition the filter is on
+        var q = el('div', 'stx-qoq-cell ' + qoqClass(pct), fmtSigned(pct) + ' vs ' + quarterLabel(pair.prev));
+        q.title = 'Pertumbuhan q-to-q ' + quarterLabel(pair.cur) + ' vs ' + quarterLabel(pair.prev);
+        td.appendChild(q);
+    }
+
     // Paged footer: keeps the card short by default instead of one endless scroll.
     function pagerFoot(card, total, limit) {
         if (total <= TABLE_PAGE) return;
@@ -1533,10 +1857,11 @@
     function renderTable() {
         var card = document.getElementById('card-table');
         clear(card);
+        var pair = qoqPair();
         var head = el('div', 'stx-chart-head');
         var titles = el('div');
         titles.appendChild(el('div', 'stx-chart-title', 'Rincian per perusahaan'));
-        titles.appendChild(el('div', 'stx-chart-sub', 'Klik baris untuk detail per bulan — pakai Urutkan atau klik judul kolom untuk memeringkat'));
+        titles.appendChild(el('div', 'stx-chart-sub', 'Produksi dan nilai membawa pertumbuhan q-to-q perusahaan itu' + (pair ? ' (' + qoqPairLabel(pair) + ')' : '') + ' — klik baris untuk detail per bulan'));
         head.appendChild(titles);
         sortTools(head);
         card.appendChild(head);
@@ -1611,9 +1936,11 @@
             tr.appendChild(tdS);
             var tdK = el('td', 'num', x.kwh === null ? '—' : nfCompact.format(x.kwh));
             tdK.title = fmtKwhFull(x.kwh);
+            qoqCell(tdK, rowQoq(r, cats, 'kwh', pair), pair);
             tr.appendChild(tdK);
             var tdR = el('td', 'num', fmtRp(x.rp));
             tdR.title = fmtRpFull(x.rp);
+            qoqCell(tdR, rowQoq(r, cats, 'rp', pair), pair);
             tr.appendChild(tdR);
             tr.appendChild(el('td', 'num', x.harga === null ? '—' : nfFull.format(Math.round(x.harga))));
             tr.appendChild(el('td', 'num', x.nBulan + '/' + months.length));
@@ -1634,9 +1961,11 @@
     function companyModal(r) {
         var months = activeMonths();
         var cats = activeCats();
+        var pair = qoqPair();
         openModal(r.perusahaan, [
             r.jenisPembangkit || 'Pembangkit —',
             state.tahun === 'all' ? 'Semua tahun' : 'Tahun ' + state.tahun,
+            state.triwulan === 'all' ? 'Semua triwulan' : 'Triwulan ' + TW_ROMAN[state.triwulan],
             r.selesai ? 'Selesai' : 'Draf'
         ], function (body) {
             var s1 = sect(body, 'Identitas');
@@ -1649,12 +1978,32 @@
 
             var kwh = rowSum(r, months, cats, 'kwh');
             var rp = rowSum(r, months, cats, 'rp');
-            var s2 = sect(body, 'Ringkasan pada irisan filter');
+            var s2 = sect(body, 'Ringkasan ' + monthWindowLabel().text);
             moneyRows(s2, [
                 { label: 'Total produksi listrik', value: fmtKwhFull(kwh) },
                 { label: 'Total nilai produksi', value: fmtRpFull(rp) },
                 { label: 'Harga rata-rata per KWH', value: (kwh && rp !== null) ? 'Rp ' + nfFull.format(Math.round(rp / kwh)) : '—', total: true }
             ]);
+
+            if (pair) {
+                var s2b = sect(body, 'Pertumbuhan q-to-q (' + qoqPairLabel(pair) + ')');
+                simpleTable(s2b, ['Komponen', quarterLabel(pair.prev), quarterLabel(pair.cur), qoqHead('', pair)], [
+                    ['Produksi listrik (KWH)', 'kwh', fmtKwhFull],
+                    ['Nilai produksi (Rp)', 'rp', fmtRpFull]
+                ].map(function (m) {
+                    var pv = rowSum(r, pair.prev.months, cats, m[1]), cv = rowSum(r, pair.cur.months, cats, m[1]);
+                    return [m[0], m[2](pv), m[2](cv), fmtSigned(pctChange(cv, pv))];
+                }), 1);
+                s2b.appendChild(el('p', 'stx-note', 'Dihitung dari total triwulan penuh, terlepas dari filter Bulan yang sedang aktif. ' + qoqPartial(pair)));
+
+                var s2c = sect(body, 'Pertumbuhan q-to-q per kategori pelanggan');
+                simpleTable(s2c, ['Kategori', 'KWH ' + quarterLabel(pair.cur), qoqHead('KWH', pair), 'Rp ' + quarterLabel(pair.cur), qoqHead('Rp', pair)],
+                    CATS.map(function (cat) {
+                        var pk = rowSum(r, pair.prev.months, [cat], 'kwh'), ck = rowSum(r, pair.cur.months, [cat], 'kwh');
+                        var pr = rowSum(r, pair.prev.months, [cat], 'rp'), cr = rowSum(r, pair.cur.months, [cat], 'rp');
+                        return [DATA.categories[cat], fmtKwhFull(ck), fmtSigned(pctChange(ck, pk)), fmtRpFull(cr), fmtSigned(pctChange(cr, pr))];
+                    }), 1);
+            }
 
             var s3 = sect(body, 'Per bulan');
             var scr = el('div');

@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Model;
  * UB's "Blok 1" spans four sub-blocks; only Blok 1-A is identity, so that is
  * what the sheet carries in full. Blok 1-B/1-C/1-D and Blok 2/3 appear as their
  * completion flags — enough to see who is stuck where without a 90-column file.
+ *
+ * Kode KBLI (Q9g) is the one exception: it lives in Blok 1-B but sits next to
+ * the other identity codes here, because BPS classifies respondents by it.
  */
 class UbBlok1Export extends SurveyMonitoringExport
 {
@@ -82,6 +85,7 @@ class UbBlok1Export extends SurveyMonitoringExport
             'Nama Kawasan',
             'Memiliki NIB',
             'NIB',
+            'Kode KBLI',
             'Status Badan Usaha',
             'Nama Pengusaha',
             'Jenis Kelamin',
@@ -126,6 +130,7 @@ class UbBlok1Export extends SurveyMonitoringExport
             $this->val($record->nama_kawasan),
             $this->label($record->has_nib, self::YA_TIDAK),
             $this->val($record->nib),
+            $this->val($record->kode_kbli),
             $this->label($record->status_badan_usaha, self::STATUS_BADAN_USAHA),
             $this->val($record->nama_pengusaha),
             $this->label($record->jenis_kelamin, self::JENIS_KELAMIN),

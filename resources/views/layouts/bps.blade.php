@@ -132,6 +132,17 @@
                             Video
                         </a>
                     </li>
+                    @if(config('devapps.enabled'))
+                        <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:1.1rem 1rem 0.35rem;">Pengembang</li>
+                        <li>
+                            <a href="{{ route('develop.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('develop.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                </svg>
+                                Portal Pengembang
+                            </a>
+                        </li>
+                    @endif
                     <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:1.1rem 1rem 0.35rem;">Pengguna &amp; Akun</li>
                     <li>
                         <a href="{{ route('bps.users.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.users.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
@@ -299,6 +310,17 @@
                                 Video
                             </a>
                         </li>
+                        @if(config('devapps.enabled'))
+                            <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.9rem 1rem 0.1rem;">Pengembang</li>
+                            <li>
+                                <a href="{{ route('develop.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('develop.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                    </svg>
+                                    Portal Pengembang
+                                </a>
+                            </li>
+                        @endif
                         <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.9rem 1rem 0.1rem;">Pengguna &amp; Akun</li>
                         <li>
                             <a href="{{ route('bps.users.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.users.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">

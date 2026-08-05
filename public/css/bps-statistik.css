@@ -118,12 +118,17 @@
 .stx-kpi .k-ico svg { width: 16px; height: 16px; }
 .stx-kpi .k-value { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.35rem; line-height: 1.15; }
 .stx-kpi .k-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.5rem; min-height: 1.2rem; }
-.stx-kpi .k-delta { font-size: 0.6875rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.22rem; padding: 0.14rem 0.5rem; border-radius: 9999px; }
-.stx-kpi .k-delta.up { color: var(--stx-good); background: rgba(12, 163, 12, 0.10); }
-.stx-kpi .k-delta.down { color: var(--stx-bad); background: rgba(210, 60, 60, 0.10); }
-.stx-kpi .k-delta.flat { color: var(--stx-muted); background: var(--stx-plane); }
 .stx-kpi .k-sub { font-size: 0.6875rem; color: var(--stx-muted); }
 .stx-kpi svg.spark { display: block; }
+
+/* q-to-q growth, written as plain text rather than a badge: it states which two
+   quarters it compares, which no pill has room for. .stx-qoq sits under a KPI
+   value, .stx-qoq-cell under a number inside a table cell. */
+.stx-qoq { font-size: 0.6875rem; font-weight: 700; margin-top: 0.3rem; line-height: 1.35; }
+.stx-qoq-cell { font-size: 0.625rem; font-weight: 700; margin-top: 0.1rem; line-height: 1.3; }
+.stx-qoq.up, .stx-qoq-cell.up { color: var(--stx-good); }
+.stx-qoq.down, .stx-qoq-cell.down { color: var(--stx-bad); }
+.stx-qoq.flat, .stx-qoq.na, .stx-qoq-cell.flat, .stx-qoq-cell.na { color: var(--stx-muted); }
 
 /* ═══════════════════ Popover (perusahaan / KBLI picker) ═══════════════════ */
 .stx-popwrap { position: relative; display: inline-flex; }

@@ -81,7 +81,10 @@
 
     // kbliSel: checkbox multi-select (empty object = semua). Status defaults to
     // "Selesai" so the dashboard opens on final data only.
-    var state = { tw: 'all', kbliSel: {}, status: 'done', sortKey: 'pendapatanTotal', sortDir: -1, excluded: {}, tableLimit: 10 };
+    // qoq holds the *current* quarter of the growth pair (prev is always qoq−1);
+    // qoqTouched records that the user picked it by hand, after which the
+    // Triwulan filter stops moving it.
+    var state = { tw: 'all', qoq: null, qoqTouched: false, kbliSel: {}, status: 'done', sortKey: 'pendapatanTotal', sortDir: -1, excluded: {}, tableLimit: 10 };
 
     var EXCL_KEY = 'stx-excl-' + DATA.tahun;
     try {
@@ -166,6 +169,115 @@
         var seen = {};
         rows.forEach(function (r) { seen[r.uid] = true; });
         return Object.keys(seen).length;
+    }
+
+    /* ═══════════════ q-to-q growth ═══════════════ */
+
+    /**
+     * Growth against the previous quarter, in percent. null whenever either side
+     * is unreported or the base is 0 — a rate off nothing is not a rate, and
+     * printing 0% there would read as "tidak berubah".
+     */
+    function pctChange(cur, prev) {
+        if (cur === null || cur === undefined || prev === null || prev === undefined || prev === 0) return null;
+        return (cur - prev) / Math.abs(prev) * 100;
+    }
+    function fmtSigned(pct) {
+        if (pct === null) return '—';
+        var sign = pct > 0.05 ? '+' : (pct < -0.05 ? '−' : '±');
+        return sign + nfPct.format(Math.abs(pct)) + '%';
+    }
+    function qoqClass(pct) {
+        if (pct === null) return 'na';
+        return pct > 0.05 ? 'up' : (pct < -0.05 ? 'down' : 'flat');
+    }
+    function qoqArrow(pct) {
+        if (pct === null) return '';
+        return pct > 0.05 ? '▲ ' : (pct < -0.05 ? '▼ ' : '• ');
+    }
+
+    /**
+     * Every quarter transition the year can report: TW II vs I, III vs II,
+     * IV vs III. Both sides must have been reported — a growth rate needs two
+     * quarters, and a gap in the middle is not a transition.
+     */
+    function qoqPairs() {
+        return DATA.quarters
+            .filter(function (q) { return DATA.quarters.indexOf(q - 1) !== -1; })
+            .map(function (q) { return { cur: q, prev: q - 1 }; });
+    }
+    /** The dashboard opens on TW II vs TW I; the earliest pair stands in for it. */
+    function defaultQoqCur() {
+        var pairs = qoqPairs();
+        if (!pairs.length) return null;
+        for (var i = 0; i < pairs.length; i++) if (pairs[i].cur === 2) return 2;
+        return pairs[0].cur;
+    }
+    /** The two quarters every q-to-q figure compares — whatever the picker holds. */
+    function qoqPair() {
+        var cur = state.qoq;
+        if (!cur || DATA.quarters.indexOf(cur) === -1 || DATA.quarters.indexOf(cur - 1) === -1) return null;
+        return { cur: cur, prev: cur - 1 };
+    }
+    state.qoq = defaultQoqCur();
+    function qoqPairLabel(pair) {
+        return 'TW ' + TW_ROMAN[pair.cur] + ' vs TW ' + TW_ROMAN[pair.prev];
+    }
+    // KPI tiles are a sixth of the row wide — the label has to survive there
+    // without wrapping onto a third line
+    function qoqPairLabelShort(pair) {
+        return 'TW ' + TW_ROMAN[pair.cur] + ' vs ' + TW_ROMAN[pair.prev];
+    }
+
+    /**
+     * Plain-text q-to-q line for a KPI tile. `metric` is applied to each
+     * quarter's slice, so it honours every filter except Triwulan.
+     */
+    function qoqLine(metric) {
+        var pair = qoqPair();
+        var line = el('div', 'stx-qoq');
+        if (!pair) {
+            line.className = 'stx-qoq na';
+            line.textContent = 'q-to-q — belum ada triwulan pembanding';
+            return line;
+        }
+        var pct = pctChange(metric(rowsOfQuarter(pair.cur)), metric(rowsOfQuarter(pair.prev)));
+        line.className = 'stx-qoq ' + qoqClass(pct);
+        line.textContent = qoqArrow(pct) + fmtSigned(pct) + ' q-to-q (' + qoqPairLabelShort(pair) + ')';
+        line.title = 'Pertumbuhan ' + qoqPairLabel(pair) + ' pada irisan filter aktif';
+        return line;
+    }
+
+    // Same company one quarter earlier — the baseline behind every per-company
+    // q-to-q figure. Indexed over every row of the year, so a quarter the
+    // Triwulan filter hides can still serve as the comparison.
+    var ROW_BY_QUARTER = (function () {
+        var idx = {};
+        DATA.rows.forEach(function (r) { idx[r.uid + '|' + r.triwulan] = r; });
+        return idx;
+    })();
+    function prevQuarterRow(r) {
+        var p = ROW_BY_QUARTER[r.uid + '|' + (r.triwulan - 1)];
+        // a draft must not become the baseline while the dashboard is showing
+        // final data only — the same rule the aggregates follow
+        return (p && matchesStatus(p)) ? p : null;
+    }
+    function rowQoq(r, field) {
+        var p = prevQuarterRow(r);
+        return p ? pctChange(r[field], p[field]) : null;
+    }
+
+    /**
+     * Heading for a per-report q-to-q column. These figures are row-relative —
+     * every report against its own previous quarter — so the heading can only
+     * name the pair when a single Triwulan makes it the same for every row.
+     * It never says a bare "q-to-q": the reader would have no way to tell which
+     * transition a screenshotted table is showing.
+     */
+    function qoqRowHead() {
+        return (state.tw !== 'all' && DATA.quarters.indexOf(state.tw - 1) !== -1)
+            ? 'q-to-q (TW ' + TW_ROMAN[state.tw] + ' vs TW ' + TW_ROMAN[state.tw - 1] + ')'
+            : 'q-to-q (vs TW sebelumnya)';
     }
 
     /* ═══════════════ tooltip ═══════════════ */
@@ -528,8 +640,13 @@
 
     // Always wrapped in .stx-tablewrap: cells are nowrap, so an unwrapped table
     // overflows its container (visibly spilling outside the modal card).
+    //
+    // Replaces only a table this helper mounted earlier, never the whole node:
+    // most callers pass a .stx-sect that already holds its heading, and a blanket
+    // clear() silently deleted the very title labelling the table.
     function simpleTable(pane, headers, rows, numericFrom) {
-        clear(pane);
+        var old = pane.querySelector('.stx-tablewrap');
+        if (old && old.parentNode === pane) pane.removeChild(old);
         var wrap = el('div', 'stx-tablewrap');
         var t = el('table', 'stx-table');
         var thead = el('thead'); var trh = el('tr');
@@ -657,7 +774,31 @@
                 });
             });
             return opts;
-        }, state.tw, function (v) { state.tw = v; rerender(); });
+        }, state.tw, function (v) {
+            state.tw = v;
+            // Until the user picks a growth pair by hand, focusing one quarter
+            // also moves the q-to-q onto that quarter's transition — the
+            // behaviour before the picker existed. An explicit choice survives.
+            if (!state.qoqTouched && v !== 'all' && DATA.quarters.indexOf(v - 1) !== -1) state.qoq = v;
+            rerender();
+        });
+
+        // ── Pertumbuhan q-to-q: which quarter transition every growth figure reports ──
+        var pairs = qoqPairs();
+        if (pairs.length) {
+            ddSingle(bar, 'Pertumbuhan', function () {
+                return pairs.map(function (p) {
+                    var prevUids = {};
+                    rowsOfQuarter(p.prev).forEach(function (r) { prevUids[r.uid] = true; });
+                    var n = rowsOfQuarter(p.cur).filter(function (r) { return prevUids[r.uid]; }).length;
+                    return {
+                        v: p.cur,
+                        t: 'TW ' + TW_ROMAN[p.cur] + ' vs TW ' + TW_ROMAN[p.prev],
+                        sub: n ? n + ' perusahaan melapor di kedua triwulan' : 'Tidak ada perusahaan di kedua triwulan'
+                    };
+                });
+            }, state.qoq, function (v) { state.qoq = v; state.qoqTouched = true; rerender(); });
+        }
 
         bar.appendChild(el('div', 'stx-filter-sep'));
 
@@ -877,19 +1018,6 @@
         return svg;
     }
 
-    function deltaBadge(cur, prev, upIsGood) {
-        if (cur === null || prev === null || prev === 0) return null;
-        var pct = (cur - prev) / Math.abs(prev) * 100;
-        var span = el('span', 'k-delta');
-        var dir = pct > 0.05 ? 'up' : (pct < -0.05 ? 'down' : 'flat');
-        if (upIsGood === null) span.classList.add('flat');
-        else span.classList.add(dir === 'flat' ? 'flat' : ((dir === 'up') === upIsGood ? 'up' : 'down'));
-        var arrow = dir === 'up' ? '▲' : (dir === 'down' ? '▼' : '•');
-        span.textContent = arrow + ' ' + nfPct.format(Math.abs(pct)) + '%';
-        span.title = 'Dibanding triwulan sebelumnya';
-        return span;
-    }
-
     var KPI_ICONS = {
         melapor: 'M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 8h1m4 0h1M9 12h1m4 0h1M9 16h1m4 0h1',
         pendapatan: 'M12 3a9 9 0 100 18 9 9 0 000-18zM14.5 9.3c-.4-.8-1.4-1.3-2.5-1.3-1.4 0-2.5.8-2.5 1.9s1.1 1.5 2.5 1.9c1.4.4 2.5.8 2.5 1.9s-1.1 1.9-2.5 1.9c-1.1 0-2.1-.5-2.5-1.3M12 6.7V8m0 8v1.3',
@@ -915,14 +1043,13 @@
         if (def.icon) top.appendChild(kpiIcon(def.icon));
         tile.appendChild(top);
         tile.appendChild(el('div', 'k-value', def.value));
+        if (def.qoq) tile.appendChild(def.qoq);
         var foot = el('div', 'k-foot');
         var left = el('div');
-        if (def.delta) left.appendChild(def.delta);
-        else if (def.sub) left.appendChild(el('span', 'k-sub', def.sub));
+        if (def.sub) left.appendChild(el('span', 'k-sub', def.sub));
         foot.appendChild(left);
         if (def.spark) foot.appendChild(def.spark);
         tile.appendChild(foot);
-        if (def.sub && def.delta) tile.appendChild(el('div', 'k-sub', def.sub));
         tile.title = def.tooltip || 'Klik untuk rincian';
         tile.addEventListener('click', def.onClick);
         container.appendChild(tile);
@@ -937,12 +1064,13 @@
         openModal(title, pills, function (body) {
             var s = sect(body, 'Rincian per perusahaan');
             var sorted = rows.slice().sort(function (a, b) { return (b[field] || 0) - (a[field] || 0); });
-            simpleTable(s, ['Perusahaan', 'TW', 'KBLI', 'Nilai'],
+            simpleTable(s, ['Perusahaan', 'TW', 'KBLI', 'Nilai', qoqRowHead()],
                 sorted.map(function (r) {
-                    return [r.perusahaan, TW_ROMAN[r.triwulan], r.kbli || '—', fmt(r[field])];
+                    return [r.perusahaan, TW_ROMAN[r.triwulan], r.kbli || '—', fmt(r[field]), fmtSigned(rowQoq(r, field))];
                 }), 3);
             var filled = rows.filter(function (r) { return r[field] !== null && r[field] !== undefined; }).length;
-            s.appendChild(el('p', 'stx-note', filled + ' dari ' + rows.length + ' laporan mengisi nilai ini. Nilai kosong (—) belum dilaporkan dan tidak dihitung.'));
+            s.appendChild(el('p', 'stx-note', filled + ' dari ' + rows.length + ' laporan mengisi nilai ini. Nilai kosong (—) belum dilaporkan dan tidak dihitung. '
+                + 'Kolom q-to-q membandingkan baris itu dengan triwulan sebelumnya pada perusahaan yang sama; "—" berarti triwulan pembanding belum ada atau bernilai nol.'));
         });
     }
 
@@ -951,9 +1079,6 @@
         clear(wrap);
         var rows = filteredRows();
         var singleTw = state.tw !== 'all';
-        var prevRows = null;
-        if (singleTw && DATA.quarters.indexOf(state.tw - 1) !== -1) prevRows = rowsOfQuarter(state.tw - 1);
-
         var pills = filterPills();
 
         // 1 — companies reporting (distinct respondents; a company may report several quarters)
@@ -980,7 +1105,7 @@
             icon: 'pendapatan',
             value: fmtRp(pend),
             tooltip: fmtRpFull(pend),
-            delta: prevRows ? deltaBadge(pend, sumField(prevRows, 'pendapatanTotal'), true) : null,
+            qoq: qoqLine(function (rs) { return sumField(rs, 'pendapatanTotal'); }),
             sub: countField(rows, 'pendapatanTotal') + ' dari ' + rows.length + ' mengisi',
             spark: sparkline(quarterSeries(function (rs) { return sumField(rs, 'pendapatanTotal'); }), 64, 26),
             onClick: function () { companyBreakdownModal('Total pendapatan', pills, rows, 'pendapatanTotal', fmtRpFull); }
@@ -993,7 +1118,7 @@
             icon: 'pengeluaran',
             value: fmtRp(peng),
             tooltip: fmtRpFull(peng),
-            delta: prevRows ? deltaBadge(peng, sumField(prevRows, 'pengeluaranTotal'), null) : null,
+            qoq: qoqLine(function (rs) { return sumField(rs, 'pengeluaranTotal'); }),
             sub: countField(rows, 'pengeluaranTotal') + ' dari ' + rows.length + ' mengisi',
             spark: sparkline(quarterSeries(function (rs) { return sumField(rs, 'pengeluaranTotal'); }), 64, 26),
             onClick: function () { companyBreakdownModal('Total pengeluaran', pills, rows, 'pengeluaranTotal', fmtRpFull); }
@@ -1006,16 +1131,17 @@
             icon: 'surplus',
             value: fmtRp(sur),
             tooltip: fmtRpFull(sur),
-            delta: prevRows ? deltaBadge(sur, sumField(prevRows, 'surplus'), true) : null,
+            qoq: qoqLine(function (rs) { return sumField(rs, 'surplus'); }),
             sub: countField(rows, 'surplus') + ' laporan lengkap dihitung',
             spark: sparkline(quarterSeries(function (rs) { return sumField(rs, 'surplus'); }), 64, 26),
             onClick: function () {
                 openModal('Surplus usaha (perkiraan)', pills, function (body) {
                     var s = sect(body, 'Rincian per perusahaan');
                     var sorted = rows.slice().sort(function (a, b) { return (b.surplus || 0) - (a.surplus || 0); });
-                    simpleTable(s, ['Perusahaan', 'TW', 'Pendapatan', 'Pengeluaran', 'Surplus'],
-                        sorted.map(function (r) { return [r.perusahaan, TW_ROMAN[r.triwulan], fmtRpFull(r.pendapatanTotal), fmtRpFull(r.pengeluaranTotal), fmtRpFull(r.surplus)]; }), 2);
-                    s.appendChild(el('p', 'stx-note', 'Perkiraan surplus usaha = total pendapatan − (upah/gaji + biaya produksi + biaya operasional). Penambahan aset tetap (investasi) tidak dikurangkan. Hanya laporan dengan kedua sisi terisi yang dihitung.'));
+                    simpleTable(s, ['Perusahaan', 'TW', 'Pendapatan', 'Pengeluaran', 'Surplus', qoqRowHead()],
+                        sorted.map(function (r) { return [r.perusahaan, TW_ROMAN[r.triwulan], fmtRpFull(r.pendapatanTotal), fmtRpFull(r.pengeluaranTotal), fmtRpFull(r.surplus), fmtSigned(rowQoq(r, 'surplus'))]; }), 2);
+                    s.appendChild(el('p', 'stx-note', 'Perkiraan surplus usaha = total pendapatan − (upah/gaji + biaya produksi + biaya operasional). Penambahan aset tetap (investasi) tidak dikurangkan. Hanya laporan dengan kedua sisi terisi yang dihitung. '
+                        + 'Kolom q-to-q membandingkan surplus baris itu dengan triwulan sebelumnya pada perusahaan yang sama.'));
                 });
             }
         });
@@ -1033,7 +1159,7 @@
             icon: 'tk',
             value: fmtNc(tk),
             tooltip: fmtN(tk),
-            delta: prevRows ? deltaBadge(tk, sumField(prevRows, 'tenagaKerja'), true) : null,
+            qoq: qoqLine(function (rs) { return sumField(rs, 'tenagaKerja'); }),
             sub: tkNote || (countField(tkRows, 'tenagaKerja') + ' dari ' + tkRows.length + ' mengisi'),
             spark: sparkline(quarterSeries(function (rs) { return sumField(rs, 'tenagaKerja'); }), 64, 26),
             onClick: function () { companyBreakdownModal('Tenaga kerja (rata-rata per triwulan)', pills, tkRows, 'tenagaKerja', fmtN); }
@@ -1045,7 +1171,7 @@
             label: 'Rata-rata ekspor',
             icon: 'ekspor',
             value: fmtPct(eks),
-            delta: prevRows ? deltaBadge(eks, avgField(prevRows, 'eksporPct'), true) : null,
+            qoq: qoqLine(function (rs) { return avgField(rs, 'eksporPct'); }),
             sub: 'rata-rata sederhana % produksi diekspor',
             spark: sparkline(quarterSeries(function (rs) { return avgField(rs, 'eksporPct'); }), 64, 26),
             onClick: function () { companyBreakdownModal('Persentase produksi yang diekspor', pills, rows, 'eksporPct', fmtPct); }
@@ -1062,6 +1188,8 @@
         } else if (kbliKeys.length > 1) {
             pills.push(kbliKeys.length + ' kelompok KBLI');
         }
+        var pair = qoqPair();
+        if (pair) pills.push('q-to-q ' + qoqPairLabel(pair));
         if (state.status === 'done') pills.push('Hanya selesai');
         if (state.status === 'draft') pills.push('Hanya draf');
         if (excludedEligible()) pills.push(excludedEligible() + ' perusahaan dikecualikan');
@@ -2012,6 +2140,10 @@
         return cols;
     }
 
+    // Money columns that carry their own q-to-q line: the growth rate belongs
+    // beside the level it grew from, not in a separate column per metric.
+    var QOQ_CELL_COLS = { pendapatanTotal: 1, pengeluaranTotal: 1, surplus: 1 };
+
     function cellFor(r, col) {
         var td;
         switch (col.key) {
@@ -2037,6 +2169,16 @@
             default:
                 td = el('td', 'num', fmtRp(r[col.key]));
                 td.title = fmtRpFull(r[col.key]);
+                if (QOQ_CELL_COLS[col.key]) {
+                    var pct = rowQoq(r, col.key);
+                    if (pct !== null) {
+                        // names its baseline rather than saying "q-to-q" — rows of
+                        // different quarters sit side by side in this table
+                        var q = el('div', 'stx-qoq-cell ' + qoqClass(pct), fmtSigned(pct) + ' vs TW ' + TW_ROMAN[r.triwulan - 1]);
+                        q.title = 'Pertumbuhan q-to-q TW ' + TW_ROMAN[r.triwulan] + ' vs TW ' + TW_ROMAN[r.triwulan - 1] + ' pada perusahaan ini';
+                        td.appendChild(q);
+                    }
+                }
                 return td;
         }
     }
@@ -2081,7 +2223,7 @@
         var head = el('div', 'stx-chart-head');
         var titles = el('div');
         titles.appendChild(el('div', 'stx-chart-title', 'Rincian per perusahaan'));
-        titles.appendChild(el('div', 'stx-chart-sub', 'Klik baris untuk membuka detail lengkap isian — pakai Urutkan atau klik judul kolom untuk memeringkat'));
+        titles.appendChild(el('div', 'stx-chart-sub', 'Pendapatan, pengeluaran, dan surplus membawa pertumbuhan q-to-q terhadap triwulan sebelumnya perusahaan itu — klik baris untuk detail lengkap isian'));
         head.appendChild(titles);
         sortTools(head);
         card.appendChild(head);
@@ -2179,6 +2321,18 @@
                 { label: 'Total pengeluaran', value: fmtRpFull(r.pengeluaranTotal), total: true },
                 { label: 'Surplus usaha (perkiraan)', value: fmtRpFull(r.surplus), total: true }
             ]);
+
+            var prevQ = prevQuarterRow(r);
+            if (prevQ) {
+                var s3b = sect(body, 'Pertumbuhan q-to-q (TW ' + TW_ROMAN[r.triwulan] + ' vs TW ' + TW_ROMAN[prevQ.triwulan] + ')');
+                simpleTable(s3b,
+                    ['Komponen', 'TW ' + TW_ROMAN[prevQ.triwulan], 'TW ' + TW_ROMAN[r.triwulan],
+                        'q-to-q (TW ' + TW_ROMAN[r.triwulan] + ' vs TW ' + TW_ROMAN[prevQ.triwulan] + ')'],
+                    [['pendapatanTotal', 'Total pendapatan'], ['pengeluaranTotal', 'Total pengeluaran'], ['surplus', 'Surplus usaha (perkiraan)']]
+                        .map(function (m) {
+                            return [m[1], fmtRpFull(prevQ[m[0]]), fmtRpFull(r[m[0]]), fmtSigned(pctChange(r[m[0]], prevQ[m[0]]))];
+                        }), 1);
+            }
 
             var s4 = sect(body, 'Investasi dan persediaan');
             kvGrid(s4, [

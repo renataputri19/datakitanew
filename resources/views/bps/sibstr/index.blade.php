@@ -575,7 +575,7 @@
 @include('bps.partials.export-excel-modal', [
     'exportAction'   => route('bps.sibstr.export'),
     'exportTitle'    => 'Ekspor Data Survei SIBSTR',
-    'exportSubtitle' => 'Satu baris per submisi berisi Blok I (identitas), kelengkapan Blok I dan status survei. Kosongkan filter untuk mengunduh semua data.',
+    'exportSubtitle' => 'Satu baris per submisi berisi Blok I (identitas), KBLI utama, kelengkapan Blok I dan status survei. Kosongkan filter untuk mengunduh semua data.',
     'exportFields'   => [
         [
             'type'    => 'select',

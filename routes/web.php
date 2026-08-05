@@ -27,6 +27,8 @@ use App\Http\Controllers\Monalisa\NotificationController as MonalisaNotification
 use App\Http\Controllers\DevLoginController;
 use App\Http\Controllers\PetaController;
 use App\Http\Controllers\Superadmin\UserController as SuperadminUserController;
+use App\Http\Controllers\Develop\DevAppController;
+use App\Http\Controllers\Develop\AuthzController as DevelopAuthzController;
 
 /*
 |--------------------------------------------------------------------------
@@ -504,6 +506,46 @@ Route::middleware(['auth', 'is_superadmin'])->prefix('superadmin')->name('supera
     Route::get('/companies-template/download', [CompanyController::class, 'downloadTemplate'])->name('companies.download-template');
     Route::post('/companies/import', [CompanyController::class, 'import'])->name('companies.import');
     Route::get('/companies/search', [CompanyController::class, 'search'])->name('companies.search');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Developer Portal
+|--------------------------------------------------------------------------
+|
+| Lets a BPS user mount an application built in their own Git repo under a
+| path on this domain. The app runs in its own container on Dokploy; only
+| the routing and the access decision live here.
+|
+| See docs/DEVELOP_PORTAL.md.
+|
+*/
+
+// Edge authorisation endpoint, called by Traefik's forwardAuth before every
+// request to a dev app. Deliberately outside the auth middleware: it must be
+// reachable anonymously so it can answer "no" and bounce to /login. It runs
+// in the `web` group so it can read the session cookie Traefik forwards.
+Route::get('/develop/authz/{slug}', DevelopAuthzController::class)
+    ->where('slug', '[a-z0-9-]+')
+    ->name('develop.authz');
+
+Route::middleware(['auth', 'is_bps'])->prefix('develop')->name('develop.')->group(function () {
+    Route::get('/',        [DevAppController::class, 'index'])->name('index');
+    Route::get('/create',  [DevAppController::class, 'create'])->name('create');
+    Route::post('/',       [DevAppController::class, 'store'])->name('store');
+
+    Route::get('/{app}',            [DevAppController::class, 'show'])->name('show');
+    Route::get('/{app}/edit',       [DevAppController::class, 'edit'])->name('edit');
+    Route::put('/{app}',            [DevAppController::class, 'update'])->name('update');
+    Route::delete('/{app}',         [DevAppController::class, 'destroy'])->name('destroy');
+
+    Route::post('/{app}/deploy',    [DevAppController::class, 'deploy'])->name('deploy');
+    Route::post('/{app}/refresh',   [DevAppController::class, 'refresh'])->name('refresh');
+    Route::post('/{app}/stop',      [DevAppController::class, 'stop'])->name('stop');
+    Route::post('/{app}/start',     [DevAppController::class, 'start'])->name('start');
+    Route::post('/{app}/toggle',    [DevAppController::class, 'toggle'])->name('toggle');
+
+    Route::get('/{app}/traefik.yml', [DevAppController::class, 'traefikConfig'])->name('traefik');
 });
 
 // Form Routes
