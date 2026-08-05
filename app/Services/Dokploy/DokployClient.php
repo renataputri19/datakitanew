@@ -399,6 +399,11 @@ class DokployClient
         return match ($response->status()) {
             401, 403 => 'Dokploy menolak API key. Periksa DOKPLOY_API_KEY.',
             404      => 'Endpoint Dokploy tidak ditemukan. Periksa nama endpoint di config/dokploy.php terhadap <DOKPLOY_URL>/swagger.',
+            // Not a real HTTP status — SafeLine (雷池) WAF returns it when its
+            // user-group rule blocks a request. The call never reached Dokploy:
+            // an API key can't satisfy a browser-session gate. Go around it.
+            467      => 'Permintaan diblokir WAF sebelum sampai ke Dokploy, bukan ditolak Dokploy. '
+                      . 'Pakai alamat internal (mis. DOKPLOY_URL=http://dokploy:3000) agar tidak melewati WAF.',
             default  => 'Dokploy mengembalikan HTTP ' . $response->status() . '.',
         };
     }

@@ -47,20 +47,53 @@ class DokployPing extends Command
             $failures++;
         }
 
-        // ── Traefik dynamic dir ─────────────────────────────────────────
+        // ── Routing delivery ────────────────────────────────────────────
+        // The API is the normal path now; a mounted dynamic directory is a
+        // fallback that also hands datakita standing write access to Traefik's
+        // routing, so having it unset is the good outcome, not a warning.
         $dynamicPath = config('devapps.traefik.dynamic_path');
 
         if (! $dynamicPath) {
-            $this->warn2('Traefik dynamic path', 'belum diatur — konfigurasi rute harus disalin manual');
+            $this->ok('Penulisan rute', 'lewat Dokploy API (disarankan)');
         } elseif ($traefik->canWrite()) {
-            $this->ok('Traefik dynamic path', $dynamicPath . ' (dapat ditulis)');
+            $this->warn2(
+                'Penulisan rute',
+                $dynamicPath . ' — mount langsung masih aktif; hapus agar memakai Dokploy API',
+            );
         } else {
-            $this->fail('Traefik dynamic path', $dynamicPath . ' tidak ada atau tidak dapat ditulis');
-            $failures++;
+            $this->warn2('Penulisan rute', $dynamicPath . ' diatur tapi tidak dapat ditulis; akan memakai Dokploy API');
         }
 
         // ── ForwardAuth reachability, as Traefik will see it ─────────────
-        $this->ok('ForwardAuth', rtrim((string) config('devapps.forward_auth_base'), '/') . '/develop/authz/<slug>');
+        // Traefik needs an absolute URL here. Without a scheme it silently
+        // fails to call the gate, and every request to every dev app errors.
+        $authBase = trim((string) config('devapps.forward_auth_base'));
+
+        if ($authBase === '') {
+            $this->fail('ForwardAuth', 'DEVAPPS_FORWARD_AUTH_BASE belum diisi');
+            $failures++;
+        } elseif (! preg_match('#^https?://#i', $authBase)) {
+            $this->fail(
+                'ForwardAuth',
+                "\"{$authBase}\" tidak punya skema. Harus diawali http:// — contoh: http://{$authBase}",
+            );
+            $failures++;
+        } else {
+            $this->ok('ForwardAuth', rtrim($authBase, '/') . '/develop/authz/<slug>');
+        }
+
+        // ── Dokploy address shape ───────────────────────────────────────
+        // Going out through the public hostname means traversing whatever sits
+        // in front of the panel; on this deployment a WAF answers API calls
+        // with HTTP 467. The internal service address avoids all of it.
+        $dokployUrl = (string) config('dokploy.base_url');
+
+        if ($dokployUrl !== '' && preg_match('#^https://#i', $dokployUrl)) {
+            $this->warn2(
+                'Alamat Dokploy',
+                'memakai hostname publik — jika terblokir WAF (HTTP 467), pakai alamat internal seperti http://dokploy:3000',
+            );
+        }
 
         // ── Dokploy ─────────────────────────────────────────────────────
         if (! $dokploy->isConfigured()) {
