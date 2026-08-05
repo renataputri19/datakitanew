@@ -47,16 +47,20 @@ class AppProvisioner
         try {
             if (! $app->isProvisioned()) {
                 // Dokploy requires appName to be unique across the server.
-                $appName = $this->uniqueAppName($app);
-
                 $app->dokploy_application_id = $this->dokploy->createApplication(
                     name: $app->name,
-                    appName: $appName,
+                    appName: $this->uniqueAppName($app),
                     description: "datakita dev app /{$app->slug} — pemilik: " . ($app->owner->name ?? 'n/a'),
                 );
-                $app->dokploy_app_name = $appName;
                 $app->save();
             }
+
+            // Always take the appName from Dokploy rather than from what we
+            // asked for: it appends its own suffix, so "testing-app-4siufv"
+            // becomes "testing-app-4siufv-rcriky". That value is the Swarm
+            // service name, which is what the Traefik service must point at —
+            // guess it and the router resolves to nothing.
+            $this->syncAppName($app);
 
             $this->dokploy->saveGitProvider(
                 applicationId: $app->dokploy_application_id,
@@ -418,6 +422,34 @@ class AppProvisioner
     private function uniqueAppName(DevApp $app): string
     {
         return Str::slug($app->slug) . '-' . Str::lower(Str::random(6));
+    }
+
+    /**
+     * Store the appName Dokploy actually assigned.
+     *
+     * Never trust the name we submitted — Dokploy appends a suffix of its own,
+     * and the result is the Docker/Swarm service name the Traefik service has
+     * to resolve. A stale value here produces a router that matches the
+     * request and then points at a host that doesn't exist.
+     */
+    private function syncAppName(DevApp $app): void
+    {
+        try {
+            $remote = $this->dokploy->application($app->dokploy_application_id);
+        } catch (DokployException $e) {
+            Log::warning('Could not read back the Dokploy appName', [
+                'slug'  => $app->slug,
+                'error' => $e->getMessage(),
+            ]);
+
+            return;
+        }
+
+        $appName = $remote['appName'] ?? null;
+
+        if (is_string($appName) && $appName !== '' && $appName !== $app->dokploy_app_name) {
+            $app->forceFill(['dokploy_app_name' => $appName])->save();
+        }
     }
 
     /**
