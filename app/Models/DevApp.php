@@ -35,6 +35,19 @@ class DevApp extends Model
     public const AUTH_ALLOWLIST      = 'allowlist';
     public const AUTH_OWNER_ONLY     = 'owner_only';
 
+    // ── Edge-protection states ──────────────────────────────────────────
+    //
+    // Whether the auth gate is actually installed in Traefik. This cannot be
+    // inferred from anything else: if the forwardAuth middleware goes missing,
+    // requests reach the app WITHOUT passing through datakita at all, so the
+    // access decision in allows() is never consulted and cannot save us.
+    // Enforcement therefore happens by stopping the container — see
+    // AppProvisioner::verifyRouting().
+    public const ROUTING_UNKNOWN      = 'unknown';       // never applied yet
+    public const ROUTING_PROTECTED    = 'protected';     // read back, gate present
+    public const ROUTING_UNPROTECTED  = 'unprotected';   // read back, gate MISSING
+    public const ROUTING_UNVERIFIABLE = 'unverifiable';  // could not read it back
+
     // ── Lifecycle states ────────────────────────────────────────────────
     public const STATUS_DRAFT        = 'draft';
     public const STATUS_PROVISIONING = 'provisioning';
@@ -62,11 +75,12 @@ class DevApp extends Model
     ];
 
     protected $casts = [
-        'allowed_roles'    => 'array',
-        'enabled'          => 'boolean',
-        'strip_prefix'     => 'boolean',
-        'container_port'   => 'integer',
-        'last_deployed_at' => 'datetime',
+        'allowed_roles'      => 'array',
+        'enabled'            => 'boolean',
+        'strip_prefix'       => 'boolean',
+        'container_port'     => 'integer',
+        'last_deployed_at'   => 'datetime',
+        'routing_checked_at' => 'datetime',
     ];
 
     // ── Relations ───────────────────────────────────────────────────────
@@ -254,5 +268,47 @@ class DevApp extends Model
     public function isProvisioned(): bool
     {
         return ! empty($this->dokploy_application_id);
+    }
+
+    // ── Edge protection ─────────────────────────────────────────────────
+
+    /**
+     * Whether the auth gate was positively confirmed present at the edge.
+     *
+     * Anything other than a confirmed yes is treated as a no by the callers —
+     * "we couldn't check" is not the same as "it's fine".
+     */
+    public function isProtected(): bool
+    {
+        return $this->routing_status === self::ROUTING_PROTECTED;
+    }
+
+    /**
+     * True when we positively read a config with the gate missing. This is
+     * the state that justifies stopping the container.
+     */
+    public function isConfirmedUnprotected(): bool
+    {
+        return $this->routing_status === self::ROUTING_UNPROTECTED;
+    }
+
+    public function routingLabel(): string
+    {
+        return match ($this->routing_status) {
+            self::ROUTING_PROTECTED    => 'Terlindungi',
+            self::ROUTING_UNPROTECTED  => 'TIDAK terlindungi',
+            self::ROUTING_UNVERIFIABLE => 'Tidak dapat diperiksa',
+            default                    => 'Belum dipasang',
+        };
+    }
+
+    public function routingBadge(): string
+    {
+        return match ($this->routing_status) {
+            self::ROUTING_PROTECTED    => 'green',
+            self::ROUTING_UNPROTECTED  => 'red',
+            self::ROUTING_UNVERIFIABLE => 'amber',
+            default                    => 'gray',
+        };
     }
 }

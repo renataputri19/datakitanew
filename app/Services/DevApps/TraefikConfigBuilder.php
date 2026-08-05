@@ -132,6 +132,72 @@ class TraefikConfigBuilder
     }
 
     /**
+     * Does this config actually install the auth gate for this app?
+     *
+     * Answers the only question that matters after Dokploy hands a config
+     * back: can a request reach the app without datakita having authorised
+     * it? Deliberately checks the pieces rather than comparing the whole
+     * document, because Dokploy may reformat what it stores — reformatting is
+     * fine, a missing middleware is not.
+     *
+     * Every check must pass. A config with the router but no forwardAuth is
+     * *worse* than no config at all: the app is reachable and unguarded.
+     */
+    public function verifyProtection(DevApp $app, string $config): bool
+    {
+        if (trim($config) === '') {
+            return false;
+        }
+
+        $router  = "devapp-{$app->slug}";
+        $authUrl = rtrim((string) config('devapps.forward_auth_base'), '/') . "/develop/authz/{$app->slug}";
+
+        $required = [
+            // The router must exist and be chained to OUR auth middleware —
+            // not merely have some middleware list.
+            "{$router}-auth",
+            // ...which must point at this app's authz endpoint, so a config
+            // copied from another app can't pass verification.
+            $authUrl,
+            'forwardAuth',
+            // The session cookie must still be stripped before the app.
+            self::SCRUB_MIDDLEWARE,
+            'Cookie: ""',
+        ];
+
+        foreach ($required as $needle) {
+            if (! str_contains($config, $needle)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Human-readable reason a config failed verification, for the portal.
+     */
+    public function protectionFailureReason(DevApp $app, string $config): string
+    {
+        if (trim($config) === '') {
+            return 'Dokploy mengembalikan konfigurasi Traefik kosong.';
+        }
+
+        $router = "devapp-{$app->slug}";
+
+        if (! str_contains($config, "{$router}-auth") || ! str_contains($config, 'forwardAuth')) {
+            return 'Middleware pemeriksa akses (forwardAuth) tidak ada di konfigurasi Traefik. '
+                . 'Kemungkinan Dokploy menimpanya saat deploy.';
+        }
+
+        if (! str_contains($config, 'Cookie: ""')) {
+            return 'Middleware penghapus cookie sesi tidak ada. Aplikasi akan menerima cookie sesi DataKita.';
+        }
+
+        return 'Konfigurasi Traefik tidak cocok dengan yang seharusnya dipasang.';
+    }
+
+    /**
      * Whether the portal can write config itself, or can only render it for
      * an admin to paste.
      */

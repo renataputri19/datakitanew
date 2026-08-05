@@ -13,6 +13,7 @@
                 <h1 class="bps-title">{{ $app->name }}</h1>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
                     <span class="bps-badge bps-badge-{{ $app->statusBadge() }}">{{ $app->statusLabel() }}</span>
+                    <span class="bps-badge bps-badge-{{ $app->routingBadge() }}">{{ $app->routingLabel() }}</span>
                     @unless($app->enabled)
                         <span class="bps-badge bps-badge-gray">Nonaktif</span>
                     @endunless
@@ -27,6 +28,37 @@
         </div>
 
         <div class="bps-card-body">
+            {{-- The loudest thing on the page, because an app that is running
+                 without its gate is the one failure that looks like success. --}}
+            @if($app->isConfirmedUnprotected())
+                <div class="mb-6 rounded-md border-2 border-red-500 bg-red-50 dark:bg-red-900/30 p-4">
+                    <p class="text-sm font-bold text-red-800 dark:text-red-300 mb-1">
+                        Aplikasi ini TIDAK terlindungi
+                    </p>
+                    <p class="text-sm text-red-700 dark:text-red-400">
+                        Gerbang akses DataKita tidak terpasang di proxy, sehingga siapa pun dapat
+                        membuka aplikasi ini tanpa login. Kontainer sudah dihentikan otomatis.
+                        Jalankan <strong>Deploy Ulang</strong> untuk memasang ulang gerbangnya.
+                    </p>
+                    @if($app->routing_error)
+                        <p class="mt-2 text-xs text-red-600 dark:text-red-400 font-mono">{{ $app->routing_error }}</p>
+                    @endif
+                </div>
+            @elseif($app->routing_status === \App\Models\DevApp::ROUTING_UNVERIFIABLE)
+                <div class="mb-6 rounded-md border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4">
+                    <p class="text-sm font-medium text-amber-800 dark:text-amber-300 mb-1">
+                        Status perlindungan tidak dapat diperiksa
+                    </p>
+                    <p class="text-sm text-amber-700 dark:text-amber-400">
+                        DataKita tidak bisa membaca konfigurasi Traefik dari Dokploy, jadi belum
+                        bisa dipastikan gerbang akses masih terpasang. Periksa koneksi Dokploy.
+                    </p>
+                    @if($app->routing_error)
+                        <p class="mt-2 text-xs text-amber-600 dark:text-amber-400 font-mono">{{ $app->routing_error }}</p>
+                    @endif
+                </div>
+            @endif
+
             @if($app->last_error)
                 <div class="mb-6 rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
                     <p class="text-sm font-medium text-red-800 dark:text-red-300 mb-1">Kesalahan terakhir</p>

@@ -5,7 +5,7 @@ a path on the datakita domain, gated by datakita's own login — without their
 code ever entering this repo or this container.
 
 ```
-https://datakita.angkatabatam.id/survei-xyz
+https://datakita.angkabatam.id/survei-xyz
         │                         │
         │                         └── somebody else's container, built from
         │                             their GitHub repo
@@ -74,29 +74,86 @@ kill switch.
 ### 1. Dokploy
 
 1. Create a project to hold the dev apps (keep them out of datakita's project).
-2. Settings → API/CLI → generate a key.
+2. Settings → Profile → API/CLI → generate a key.
 3. Set in datakita's environment:
    ```
-   DOKPLOY_URL=https://your-dokploy-host:3000
+   DOKPLOY_URL=http://dokploy:3000
    DOKPLOY_API_KEY=...
-   DOKPLOY_PROJECT_ID=...
+   DOKPLOY_ENVIRONMENT_ID=...   # 0.29+; see below
    ```
+
+**Use Dokploy's internal address, not its public hostname.** datakita and
+Dokploy share a Docker network, so `http://dokploy:3000` reaches the panel
+directly. The public hostname routes through whatever sits in front of it —
+on this deployment that's Cloudflare and a SafeLine WAF, and SafeLine's
+user-group rule answers API calls with `HTTP 467` and a login page, because a
+request carrying only `x-api-key` can't satisfy a browser-session gate. Going
+internal sidesteps the WAF, TLS verification, and a round trip.
+
+If you must use the public hostname, add a SafeLine bypass rule for `/api/*`
+or for datakita's source IP — but prefer the internal address.
+
+**Environments (0.29+).** Applications belong to an environment, not directly
+to a project, so `application.create` wants `environmentId`. Both ids are in
+the panel URL:
+
+```
+/dashboard/project/PSV6I7Aawe0YZICnFLC-U/environment/MhMEcDn-MUIn-XBCvAaOB
+                   └──── projectId ────┘             └─── environmentId ───┘
+```
+
+Set `DOKPLOY_ENVIRONMENT_ID` and leave `DOKPLOY_PROJECT_ID` empty. On older
+Dokploy without environments, do the reverse.
 
 The API key can create and delete applications on the server. Treat it as a
 root credential — Dokploy's environment tab, never the repo.
 
 ### 2. Traefik dynamic config
 
-The portal generates one YAML file per app. Mount Dokploy's Traefik dynamic
-directory into the datakita container (Advanced → Volumes) and point the app
-at it:
+Nothing to configure — the portal writes each app's Traefik config through
+Dokploy's API (`application.updateTraefikConfig`), then reads it back to
+confirm it landed.
 
-```
-DEVAPPS_TRAEFIK_DYNAMIC_PATH=/etc/dokploy/traefik/dynamic
-```
+It writes the **whole** config document rather than merging into Dokploy's, so
+the router, its middleware chain and the service always agree with each other.
 
-Without the mount everything still works, but each app's config has to be
-downloaded from its detail page and copied across by hand.
+Two fallbacks exist if the API route is unavailable:
+
+1. `DEVAPPS_TRAEFIK_DYNAMIC_PATH` — a mounted Traefik dynamic directory the
+   portal writes to directly. **Not recommended:** it gives the datakita
+   container standing write access to Traefik's routing, so any file-write bug
+   in datakita becomes "reroute any URL on this domain to anywhere", with no
+   audit trail. The API route grants no such standing access and every change
+   lands in Dokploy's Audit Logs.
+2. Neither — the detail page renders the config for manual copy-paste into
+   Dokploy's **Traefik File System** page.
+
+#### Why the read-back matters
+
+Dokploy generates each app's Traefik config from its own domain settings, so a
+deploy can overwrite ours and drop the forwardAuth middleware. When that
+happens the app keeps serving traffic and **nothing looks broken — it is just
+no longer protected**. That is the worst failure this feature has.
+
+It cannot be defended against from inside datakita: with the middleware gone,
+requests reach the app without touching datakita at all, so `DevApp::allows()`
+is never consulted. The only enforcement available is to **stop the
+container**, and that is what `AppProvisioner::verifyRouting()` does.
+
+Each app therefore carries a `routing_status`:
+
+| Status | Meaning | Action |
+|---|---|---|
+| `protected` | read back, gate confirmed present | none |
+| `unprotected` | read back, gate **missing** | container stopped, banner shown |
+| `unverifiable` | config could not be read | flagged, app left running |
+| `unknown` | never applied, or a deploy invalidated the last check | re-verified on refresh |
+
+`unverifiable` deliberately does **not** stop the app — a transient API error
+must not take a healthy app offline. But it is never reported as protected
+either: "we could not check" is not "it is fine".
+
+Verification runs after every apply and after every successful deploy.
 
 ### 3. ForwardAuth address
 
@@ -127,14 +184,22 @@ bites — whether the configured Dokploy endpoint names exist on your install.
 
 ## Dokploy endpoint names
 
-Dokploy renames API endpoints between releases; 0.x has shipped both
-`application.saveGitProdiver` (with the typo) and `application.saveGitProvider`.
-They are therefore config, not code — `config/dokploy.php`, each overridable by
-env. Check yours at `<DOKPLOY_URL>/swagger` and override any that differ:
+Dokploy renames API endpoints between releases, so they live in
+`config/dokploy.php` as config rather than code, each overridable by env.
+
+**The defaults are correct for 0.29.2** and were verified against this
+deployment's `/swagger`. You only need an override if you're on a version
+where a name differs. The one known case: releases before ~0.24 spelled it
+`application.saveGitProdiver` — with the typo — so on those you'd set
 
 ```
-DOKPLOY_EP_SAVE_GIT=application.saveGitProvider
+DOKPLOY_EP_SAVE_GIT=application.saveGitProdiver
 ```
+
+On 0.29.2 the spelling is correct and no override is needed.
+
+Note the panel's Swagger UI is reachable in a browser even when API calls from
+the server are not — the WAF gates programmatic requests, not your session.
 
 A 404 from `dokploy:ping` almost always means a renamed endpoint, not a
 broken token.
@@ -205,6 +270,7 @@ not a DB connection.
 | [config/devapps.php](../config/devapps.php), [config/dokploy.php](../config/dokploy.php) | all tunables |
 | [tests/Feature/DevAppAuthzTest.php](../tests/Feature/DevAppAuthzTest.php) | every branch of the access decision, including the denials |
 | [tests/Feature/DevAppPortalTest.php](../tests/Feature/DevAppPortalTest.php) | slug guards, ownership, generated config |
+| [tests/Feature/DevAppRoutingVerificationTest.php](../tests/Feature/DevAppRoutingVerificationTest.php) | read-back verification and the stop-the-container enforcement |
 
 Tests need MySQL (the suite's sqlite config doesn't work for this project):
 

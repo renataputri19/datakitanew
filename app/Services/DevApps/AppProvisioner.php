@@ -129,11 +129,19 @@ class AppProvisioner
                 'dokploy_deployment_id' => $result['deploymentId'] ?? $result['id'] ?? null,
             ]);
 
-            $app->update([
+            // forceFill throughout this class: status, last_error,
+            // last_deployed_at and routing_status are intentionally NOT
+            // mass-assignable — they're internal state the provisioner owns,
+            // never request input — so update() would silently discard them.
+            $app->forceFill([
                 'status'           => DevApp::STATUS_DEPLOYING,
                 'last_deployed_at' => now(),
                 'last_error'       => null,
-            ]);
+                // The build may rewrite the Traefik config out from under us,
+                // so the previous "protected" verdict is no longer evidence of
+                // anything. refresh() re-verifies once the build finishes.
+                'routing_status'   => DevApp::ROUTING_UNKNOWN,
+            ])->save();
 
             return $attempt;
         } catch (DokployException $e) {
@@ -202,6 +210,14 @@ class AppProvisioner
         };
         $app->save();
 
+        // A finished deploy is exactly when Dokploy is most likely to have
+        // regenerated the app's Traefik config from its own domain settings
+        // and dropped our middleware chain. Re-apply and re-verify here —
+        // this is the moment the silent-failure risk actually materialises.
+        if ($status === DevAppDeployment::STATUS_SUCCESS) {
+            $this->applyRouting($app);
+        }
+
         return $app;
     }
 
@@ -211,7 +227,7 @@ class AppProvisioner
             $this->dokploy->stop($app->dokploy_application_id);
         }
 
-        $app->update(['status' => DevApp::STATUS_STOPPED]);
+        $app->forceFill(['status' => DevApp::STATUS_STOPPED])->save();
     }
 
     public function start(DevApp $app): void
@@ -220,7 +236,7 @@ class AppProvisioner
             $this->dokploy->start($app->dokploy_application_id);
         }
 
-        $app->update(['status' => DevApp::STATUS_RUNNING]);
+        $app->forceFill(['status' => DevApp::STATUS_RUNNING])->save();
     }
 
     /**
@@ -249,18 +265,115 @@ class AppProvisioner
     }
 
     /**
-     * (Re)write the app's Traefik config when it can be written directly.
+     * Install the app's routing + auth gate, then confirm it took.
      *
-     * Returns the path written, or null when the portal has no mounted
-     * dynamic directory and the admin must paste the config manually.
+     * Preference order:
+     *   1. Dokploy's API — the normal path. No filesystem access needed, and
+     *      every change lands in Dokploy's audit log.
+     *   2. A mounted Traefik dynamic directory, if one is configured.
+     *   3. Neither — the config has to be pasted by hand from the portal.
+     *
+     * Always runs {@see self::verifyRouting()} afterwards. Applying without
+     * verifying is the whole trap this feature has: writing a config that
+     * Dokploy then discards leaves the app reachable and unguarded, and
+     * nothing about it looks broken.
      */
     public function applyRouting(DevApp $app): ?string
     {
-        if (! $this->traefik->canWrite()) {
-            return null;
+        if ($app->isProvisioned() && $this->dokploy->isConfigured()) {
+            try {
+                $this->dokploy->updateTraefikConfig(
+                    $app->dokploy_application_id,
+                    $this->traefik->build($app),
+                );
+
+                $this->verifyRouting($app);
+
+                return 'dokploy-api';
+            } catch (DokployException $e) {
+                // Fall through to the filesystem path rather than failing the
+                // whole save — but record why, and leave the app unverified.
+                $this->markRouting($app, DevApp::ROUTING_UNVERIFIABLE, $e->summary());
+            }
         }
 
-        return $this->traefik->write($app);
+        if ($this->traefik->canWrite()) {
+            $path = $this->traefik->write($app);
+            // A file we just wrote ourselves is as verified as it gets without
+            // asking Traefik, which exposes no such API.
+            $this->markRouting($app, DevApp::ROUTING_PROTECTED, null);
+
+            return $path;
+        }
+
+        return null;
+    }
+
+    /**
+     * Read the live Traefik config back and confirm the auth gate is in it.
+     *
+     * If it is positively absent, the container is stopped. That is the only
+     * enforcement available: with the forwardAuth middleware gone, requests
+     * reach the app without touching datakita at all, so no check inside
+     * datakita can refuse them. An unreachable app is a far better outcome
+     * than an unguarded one.
+     *
+     * A read *failure* is treated differently from a read showing the gate
+     * missing — we don't stop a working app because the API had a bad minute.
+     */
+    public function verifyRouting(DevApp $app): string
+    {
+        if (! $app->isProvisioned() || ! $this->dokploy->isConfigured()) {
+            $this->markRouting($app, DevApp::ROUTING_UNKNOWN, null);
+
+            return DevApp::ROUTING_UNKNOWN;
+        }
+
+        try {
+            $live = $this->dokploy->readTraefikConfig($app->dokploy_application_id);
+        } catch (DokployException $e) {
+            $this->markRouting($app, DevApp::ROUTING_UNVERIFIABLE, $e->summary());
+
+            return DevApp::ROUTING_UNVERIFIABLE;
+        }
+
+        if ($this->traefik->verifyProtection($app, $live)) {
+            $this->markRouting($app, DevApp::ROUTING_PROTECTED, null);
+
+            return DevApp::ROUTING_PROTECTED;
+        }
+
+        $reason = $this->traefik->protectionFailureReason($app, $live);
+        $this->markRouting($app, DevApp::ROUTING_UNPROTECTED, $reason);
+
+        Log::warning('Dev app is running without its auth gate — stopping it', [
+            'slug'   => $app->slug,
+            'reason' => $reason,
+        ]);
+
+        try {
+            $this->dokploy->stop($app->dokploy_application_id);
+            $app->forceFill(['status' => DevApp::STATUS_STOPPED])->save();
+        } catch (DokployException $e) {
+            // Couldn't stop it either. Close the portal-side gate so at least
+            // the app is refused if the middleware happens to still be live,
+            // and make the error loud.
+            $app->forceFill([
+                'enabled'    => false,
+                'last_error' => 'Aplikasi berjalan tanpa gerbang akses dan tidak dapat dihentikan: ' . $e->summary(),
+            ])->save();
+        }
+
+        return DevApp::ROUTING_UNPROTECTED;
+    }
+
+    private function markRouting(DevApp $app, string $status, ?string $error): void
+    {
+        $app->forceFill([
+            'routing_status'     => $status,
+            'routing_checked_at' => now(),
+            'routing_error'      => $error ? Str::limit($error, 1000) : null,
+        ])->save();
     }
 
     /**

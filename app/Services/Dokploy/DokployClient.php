@@ -191,6 +191,54 @@ class DokployClient
         $this->post('domain_delete', ['domainId' => $domainId]);
     }
 
+    // ── Traefik config ──────────────────────────────────────────────────
+
+    /**
+     * Read the application's Traefik config as Dokploy currently holds it.
+     *
+     * Dokploy has returned this both as a bare string and wrapped in an
+     * object, so unwrap defensively — a wrong guess here would make the
+     * verification step read an empty document and wrongly conclude the app
+     * is unprotected.
+     */
+    public function readTraefikConfig(string $applicationId): string
+    {
+        $data = $this->get('read_traefik_config', ['applicationId' => $applicationId]);
+
+        if (is_string($data)) {
+            return $data;
+        }
+
+        if (is_array($data)) {
+            $key = (string) config('dokploy.traefik_config_key', 'traefikConfig');
+
+            foreach ([$key, 'traefikConfig', 'config', 'data'] as $candidate) {
+                if (isset($data[$candidate]) && is_string($data[$candidate])) {
+                    return $data[$candidate];
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Replace the application's Traefik config.
+     *
+     * The portal writes the whole document rather than merging into Dokploy's,
+     * so the router, its middleware chain and the service always agree with
+     * each other. See TraefikConfigBuilder for why the chain is not optional.
+     */
+    public function updateTraefikConfig(string $applicationId, string $traefikConfig): void
+    {
+        $key = (string) config('dokploy.traefik_config_key', 'traefikConfig');
+
+        $this->post('update_traefik_config', [
+            'applicationId' => $applicationId,
+            $key            => $traefikConfig,
+        ]);
+    }
+
     // ── Deployments ─────────────────────────────────────────────────────
 
     /**

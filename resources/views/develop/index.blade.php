@@ -85,6 +85,9 @@
                         @unless($app->enabled)
                             <span class="bps-badge bps-badge-gray ml-1">Nonaktif</span>
                         @endunless
+                        @if($app->isConfirmedUnprotected())
+                            <span class="bps-badge bps-badge-red ml-1">Tidak terlindungi</span>
+                        @endif
                     </td>
                     @if($canManageAll)
                         <td class="text-sm text-gray-600 dark:text-gray-400">{{ $app->owner->name ?? '—' }}</td>

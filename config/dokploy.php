@@ -72,12 +72,34 @@ return [
         'application_deploy' => env('DOKPLOY_EP_APP_DEPLOY', 'application.deploy'),
         'application_stop'   => env('DOKPLOY_EP_APP_STOP', 'application.stop'),
         'application_start'  => env('DOKPLOY_EP_APP_START', 'application.start'),
-        'save_git_provider'  => env('DOKPLOY_EP_SAVE_GIT', 'application.saveGitProdiver'),
+        // Older Dokploy releases shipped this with a typo — `saveGitProdiver`.
+        // Verified as `saveGitProvider` on 0.29.2; override via env if yours
+        // still has the misspelling.
+        'save_git_provider'  => env('DOKPLOY_EP_SAVE_GIT', 'application.saveGitProvider'),
         'save_build_type'    => env('DOKPLOY_EP_SAVE_BUILD', 'application.saveBuildType'),
         'save_environment'   => env('DOKPLOY_EP_SAVE_ENV', 'application.saveEnvironment'),
         'domain_create'      => env('DOKPLOY_EP_DOMAIN_CREATE', 'domain.create'),
         'domain_delete'      => env('DOKPLOY_EP_DOMAIN_DELETE', 'domain.delete'),
         'deployment_all'     => env('DOKPLOY_EP_DEPLOYMENT_ALL', 'deployment.all'),
+
+        // Per-application Traefik config. This is how the portal installs the
+        // auth gate without needing write access to Traefik's directory.
+        'read_traefik_config'   => env('DOKPLOY_EP_READ_TRAEFIK', 'application.readTraefikConfig'),
+        'update_traefik_config' => env('DOKPLOY_EP_UPDATE_TRAEFIK', 'application.updateTraefikConfig'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Traefik config payload keys
+    |--------------------------------------------------------------------------
+    |
+    | The field name updateTraefikConfig expects the YAML document under, and
+    | the field readTraefikConfig returns it in. Separated out because they are
+    | the one part of the contract we could not verify from the endpoint list
+    | alone — if a deploy reports "config tidak tersimpan", check the request
+    | body schema at <DOKPLOY_URL>/swagger and correct these.
+    |
+    */
+    'traefik_config_key' => env('DOKPLOY_TRAEFIK_CONFIG_KEY', 'traefikConfig'),
 
 ];
