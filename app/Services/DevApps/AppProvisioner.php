@@ -289,6 +289,12 @@ class AppProvisioner
     public function applyRouting(DevApp $app): ?string
     {
         if ($app->isProvisioned() && $this->dokploy->isConfigured()) {
+            // Refresh the appName first — it is the Traefik service host, and
+            // it has to be right *in the document we are about to push*.
+            // Doing this only at provision time missed every already-created
+            // app, which then routed to a hostname that doesn't exist.
+            $this->syncAppName($app);
+
             try {
                 $this->dokploy->updateTraefikConfig(
                     $app->dokploy_application_id,

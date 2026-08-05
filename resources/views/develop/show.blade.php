@@ -196,10 +196,16 @@
                 <div>
                     <h2 class="bps-subtitle">Konfigurasi Rute (Traefik)</h2>
                     <p class="bps-help-text mt-2">
-                        @if($traefikWritable)
+                        @if($app->isProtected())
+                            Sudah dipasang otomatis ke Traefik lewat Dokploy dan diverifikasi.
+                            Tidak perlu disalin manual — ditampilkan untuk rujukan saja.
+                        @elseif($dokployReady)
+                            Akan dipasang otomatis lewat Dokploy saat Anda menekan Deploy.
+                        @elseif($traefikWritable)
                             Ditulis otomatis ke <code class="text-xs">{{ $traefikFile }}</code> setiap kali pengaturan disimpan.
                         @else
-                            Salin isi berikut ke <code class="text-xs">{{ $traefikFile }}</code> di direktori dynamic Traefik.
+                            Dokploy belum tersedia — salin isi berikut ke
+                            <code class="text-xs">{{ $traefikFile }}</code> di direktori dynamic Traefik.
                         @endif
                     </p>
                 </div>
