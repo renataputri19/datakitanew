@@ -108,13 +108,17 @@ class DokployClient
         string $buildPath = '/',
         ?string $sshKeyId = null,
     ): void {
-        $this->post('save_git_provider', array_filter([
+        // No array_filter here, deliberately. Dokploy declares
+        // customGitSSHKeyId as nullable rather than optional, so the key has
+        // to be present even for a public repo — dropping it fails validation
+        // with a bare "Input validation failed".
+        $this->post('save_git_provider', [
             'applicationId'      => $applicationId,
             'customGitUrl'       => $repoUrl,
             'customGitBranch'    => $branch,
             'customGitBuildPath' => $buildPath ?: '/',
-            'customGitSSHKeyId'  => $sshKeyId,
-        ], fn ($v) => $v !== null && $v !== ''));
+            'customGitSSHKeyId'  => $sshKeyId ?: null,
+        ]);
     }
 
     /**
@@ -355,6 +359,41 @@ class DokployClient
     }
 
     /**
+     * Flatten Dokploy's zod validation issues into " — field: reason" pairs.
+     *
+     * Dokploy answers a bad payload with {code, message, issues[]}, where the
+     * message is always the generic "Input validation failed" and the issues
+     * carry the field path and what was wrong with it. Without this, a payload
+     * mismatch gives you nothing to act on.
+     *
+     * @param  mixed  $json
+     */
+    private function validationIssues($json): string
+    {
+        foreach (['issues', 'error.json.issues', 'error.issues'] as $path) {
+            $issues = data_get($json, $path);
+
+            if (! is_array($issues) || $issues === []) {
+                continue;
+            }
+
+            $parts = [];
+
+            foreach ($issues as $issue) {
+                $field = data_get($issue, 'path');
+                $field = is_array($field) ? implode('.', $field) : (string) $field;
+                $why   = (string) (data_get($issue, 'message') ?? '');
+
+                $parts[] = $field !== '' ? "{$field}: {$why}" : $why;
+            }
+
+            return ' — ' . implode('; ', array_filter($parts));
+        }
+
+        return '';
+    }
+
+    /**
      * Translate a cURL/Guzzle connection failure into something actionable.
      *
      * Always keeps the raw message on the end — the guesses below cover the
@@ -392,7 +431,9 @@ class DokployClient
             $value = data_get($json, implode('.', $path));
 
             if (is_string($value) && $value !== '') {
-                return $value;
+                // "Input validation failed" on its own is useless — the field
+                // names are in the issues array, so pull them out.
+                return $value . $this->validationIssues($json);
             }
         }
 
