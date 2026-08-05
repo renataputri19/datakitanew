@@ -123,8 +123,24 @@ return [
     */
     'traefik' => [
         'dynamic_path'  => env('DEVAPPS_TRAEFIK_DYNAMIC_PATH'),
-        'entrypoints'   => explode(',', env('DEVAPPS_TRAEFIK_ENTRYPOINTS', 'websecure')),
-        'cert_resolver' => env('DEVAPPS_TRAEFIK_CERT_RESOLVER', 'letsencrypt'),
+
+        // Both entrypoints, matching what Dokploy generates for its own apps.
+        //
+        // Binding only to websecure looks right and silently fails whenever
+        // something terminates TLS in front of Traefik — a WAF, a load
+        // balancer, Cloudflare Tunnel — because Traefik then receives plain
+        // HTTP on :80 and a websecure-only router never matches. The router
+        // loads without error and simply never fires, which is a miserable
+        // thing to debug.
+        'entrypoints'   => explode(',', env('DEVAPPS_TRAEFIK_ENTRYPOINTS', 'web,websecure')),
+
+        // Emitting a `tls:` block on the router would undo the above: a router
+        // with TLS settings only matches TLS connections, so it would stop
+        // matching on the `web` entrypoint. Traefik's websecure entrypoint
+        // already carries a default certResolver, so HTTPS still works without
+        // it. Set this only if your entrypoint has no TLS defaults.
+        'cert_resolver' => env('DEVAPPS_TRAEFIK_CERT_RESOLVER'),
+
         'priority'      => (int) env('DEVAPPS_TRAEFIK_PRIORITY', 100),
     ],
 

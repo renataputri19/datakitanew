@@ -310,6 +310,33 @@ class DevAppPortalTest extends TestCase
         $this->assertLessThan($scrubPosition, $authPosition);
     }
 
+    public function test_generated_traefik_config_binds_both_entrypoints(): void
+    {
+        // Regression: binding only to `websecure` produced a router that
+        // loaded without error and never matched, because SafeLine terminates
+        // TLS and forwards to Traefik over plain HTTP — so requests arrive on
+        // `web`. Cost a long debugging session; it must not come back.
+        $user = $this->bpsUser();
+        $this->actingAs($user)->post('/develop', $this->validPayload());
+
+        $yaml = app(TraefikConfigBuilder::class)->build(DevApp::firstOrFail());
+
+        $this->assertStringContainsString('entryPoints: ["web", "websecure"]', $yaml);
+    }
+
+    public function test_generated_traefik_config_has_no_router_level_tls_by_default(): void
+    {
+        // A router carrying a tls block matches TLS connections only, which
+        // would undo the `web` binding above. The websecure entrypoint
+        // supplies TLS defaults instead.
+        $user = $this->bpsUser();
+        $this->actingAs($user)->post('/develop', $this->validPayload());
+
+        $yaml = app(TraefikConfigBuilder::class)->build(DevApp::firstOrFail());
+
+        $this->assertStringNotContainsString('certResolver', $yaml);
+    }
+
     public function test_generated_traefik_config_routes_the_expected_host_and_path(): void
     {
         $user = $this->bpsUser();

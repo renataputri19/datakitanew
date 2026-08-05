@@ -128,6 +128,28 @@ Two fallbacks exist if the API route is unavailable:
 2. Neither — the detail page renders the config for manual copy-paste into
    Dokploy's **Traefik File System** page.
 
+#### Entrypoints: bind both, always
+
+Generated routers bind to **`web` and `websecure`**, and carry **no
+router-level `tls:` block**. Both details matter, and both are easy to get
+wrong in a way that fails silently.
+
+This deployment runs Cloudflare → SafeLine WAF → Traefik, and SafeLine's
+upstream is `http://127.0.0.1:21711` — plain HTTP. TLS is terminated *before*
+Traefik, so requests arrive on the **`web`** entrypoint. A router bound only to
+`websecure` loads without any error and simply never matches: the request falls
+through to datakita's `Host()` router, hits `Route::fallback()`, and the visitor
+lands on the homepage looking like the app doesn't exist.
+
+The `tls:` block is omitted for the same reason — a router with TLS settings
+matches TLS connections *only*, which would cancel out the `web` binding.
+Traefik's `websecure` entrypoint already declares a default `certResolver`, so
+HTTPS still works. Set `DEVAPPS_TRAEFIK_CERT_RESOLVER` only if your entrypoint
+has no TLS defaults, and expect to drop `web` from the entrypoint list if you do.
+
+Dokploy's own generated configs sidestep this by defining two routers per app,
+one per entrypoint. Binding a single router to both achieves the same thing.
+
 #### Why the read-back matters
 
 Dokploy generates each app's Traefik config from its own domain settings, so a

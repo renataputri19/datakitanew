@@ -53,7 +53,7 @@ class TraefikConfigBuilder
         $service     = $this->serviceUrl($app);
         $entryPoints = $this->yamlList(array_map('trim', config('devapps.traefik.entrypoints', ['websecure'])));
         $priority    = (int) config('devapps.traefik.priority', 100);
-        $resolver    = (string) config('devapps.traefik.cert_resolver', 'letsencrypt');
+        $resolver    = (string) config('devapps.traefik.cert_resolver', '');
         $authUrl     = rtrim((string) config('devapps.forward_auth_base'), '/') . "/develop/authz/{$slug}";
 
         $headers = array_values(config('devapps.identity_headers', []));
@@ -79,8 +79,16 @@ class TraefikConfigBuilder
         foreach ($middlewares as $mw) {
             $lines[] = "        - {$mw}@file";
         }
-        $lines[] = '      tls:';
-        $lines[] = "        certResolver: {$resolver}";
+
+        // Only when explicitly configured. A router carrying a tls block
+        // matches TLS connections *only*, which would stop it matching on the
+        // `web` entrypoint — and `web` is where the request arrives whenever
+        // something upstream terminates TLS. See config/devapps.php.
+        if ($resolver !== '') {
+            $lines[] = '      tls:';
+            $lines[] = "        certResolver: {$resolver}";
+        }
+
         $lines[] = '';
         $lines[] = '  middlewares:';
 
