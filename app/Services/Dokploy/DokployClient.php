@@ -108,16 +108,20 @@ class DokployClient
         string $buildPath = '/',
         ?string $sshKeyId = null,
     ): void {
-        // No array_filter here, deliberately. Dokploy declares
-        // customGitSSHKeyId as nullable rather than optional, so the key has
-        // to be present even for a public repo — dropping it fails validation
-        // with a bare "Input validation failed".
+        // No array_filter here, deliberately. Dokploy 0.29 declares these as
+        // nullable/nonoptional rather than optional, so every key has to be
+        // present even when it carries no value — omitting one fails with a
+        // bare "Input validation failed".
         $this->post('save_git_provider', [
             'applicationId'      => $applicationId,
             'customGitUrl'       => $repoUrl,
             'customGitBranch'    => $branch,
             'customGitBuildPath' => $buildPath ?: '/',
             'customGitSSHKeyId'  => $sshKeyId ?: null,
+            // Paths that trigger an auto-redeploy on push. The portal doesn't
+            // expose this, but the field is nonoptional; empty = watch nothing.
+            'watchPaths'         => [],
+            'enableSubmodules'   => false,
         ]);
     }
 
