@@ -13,7 +13,12 @@
                 <h1 class="bps-title">{{ $app->name }}</h1>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
                     <span class="bps-badge bps-badge-{{ $app->statusBadge() }}">{{ $app->statusLabel() }}</span>
-                    <span class="bps-badge bps-badge-{{ $app->routingBadge() }}">{{ $app->routingLabel() }}</span>
+                    {{-- The routing badge reports on the Traefik edge gate. Under
+                         the in-app proxy there is no edge to report on — the gate
+                         is unconditional, so the badge would only add noise. --}}
+                    @if($edgeIsTraefik)
+                        <span class="bps-badge bps-badge-{{ $app->routingBadge() }}">{{ $app->routingLabel() }}</span>
+                    @endif
                     @unless($app->enabled)
                         <span class="bps-badge bps-badge-gray">Nonaktif</span>
                     @endunless
@@ -29,8 +34,10 @@
 
         <div class="bps-card-body">
             {{-- The loudest thing on the page, because an app that is running
-                 without its gate is the one failure that looks like success. --}}
-            @if($app->isConfirmedUnprotected())
+                 without its gate is the one failure that looks like success.
+                 Traefik-edge only: the proxy gate cannot go missing, because
+                 it IS the route. --}}
+            @if($edgeIsTraefik && $app->isConfirmedUnprotected())
                 <div class="mb-6 rounded-md border-2 border-red-500 bg-red-50 dark:bg-red-900/30 p-4">
                     <p class="text-sm font-bold text-red-800 dark:text-red-300 mb-1">
                         Aplikasi ini TIDAK terlindungi
@@ -44,7 +51,7 @@
                         <p class="mt-2 text-xs text-red-600 dark:text-red-400 font-mono">{{ $app->routing_error }}</p>
                     @endif
                 </div>
-            @elseif($app->routing_status === \App\Models\DevApp::ROUTING_UNVERIFIABLE)
+            @elseif($edgeIsTraefik && $app->routing_status === \App\Models\DevApp::ROUTING_UNVERIFIABLE)
                 <div class="mb-6 rounded-md border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4">
                     <p class="text-sm font-medium text-amber-800 dark:text-amber-300 mb-1">
                         Status perlindungan tidak dapat diperiksa
@@ -190,6 +197,10 @@
     </div>
 
     {{-- ── Routing config ─────────────────────────────────────────────── --}}
+    {{-- Only in traefik edge mode. Under the in-app proxy this card describes
+         a mechanism that does not run here, which would be actively
+         misleading about how the app is actually protected. --}}
+    @if($edgeIsTraefik)
     <div class="bps-card mt-6">
         <div class="bps-card-body">
             <div class="flex flex-wrap items-start justify-between gap-3">
@@ -217,6 +228,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- ── Deploy history ─────────────────────────────────────────────── --}}
     <div class="bps-card mt-6">

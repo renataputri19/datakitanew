@@ -18,6 +18,12 @@ use Tests\TestCase;
  *
  * These tests cover the only defence available: read the config back, and if
  * the gate is positively gone, stop the container.
+ *
+ * All of this is specific to `edge_mode = traefik`, which this deployment does
+ * not use — there is no Traefik here, and under the in-app proxy the gate
+ * cannot go missing because it is the route. The behaviour is kept and kept
+ * tested for the day a Traefik does front this server, so these tests select
+ * that mode explicitly. DevAppEdgeModeTest covers the proxy side.
  */
 class DevAppRoutingVerificationTest extends TestCase
 {
@@ -28,6 +34,9 @@ class DevAppRoutingVerificationTest extends TestCase
         parent::setUp();
 
         config()->set('devapps.enabled', true);
+        // The subject of this whole file. Without it the provisioner takes the
+        // proxy path, where there is no edge config to read back.
+        config()->set('devapps.edge_mode', 'traefik');
         config()->set('devapps.public_host_url', 'https://datakita.test');
         config()->set('devapps.forward_auth_base', 'http://datakita-app');
         config()->set('devapps.traefik.dynamic_path', null);

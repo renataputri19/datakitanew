@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\ClientInterface as GuzzleClientInterface;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -12,7 +14,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // The developer portal proxies requests to dev-app containers. Bound
+        // rather than constructed inline so tests can swap in a mock handler
+        // and never touch the network.
+        $this->app->bind(GuzzleClientInterface::class, fn () => new GuzzleClient());
     }
 
     /**

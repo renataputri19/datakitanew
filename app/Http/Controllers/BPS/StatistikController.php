@@ -214,6 +214,14 @@ class StatistikController extends Controller
             ? $nilaiProduksi - $biayaTotal
             : null;
 
+        // ── NTB dan Biaya Antara (rumus BPS) ──
+        // NTB          = R303 + R304 + R310 + R311
+        // Biaya Antara = R312 + R313
+        // Kuesioner industri tidak punya R303 — nilai penjualannya berasal dari
+        // Blok IIIA (301 + 302), yaitu $nilaiProduksi.
+        $ntb = $this->sumOrNull([$nilaiProduksi, $royalti, $upah, $capex]);
+        $biayaAntara = $this->sumOrNull([$biayaProduksi, $biayaOperasional]);
+
         // ── Blok V sentiment (kondisi p1 / prospek p2) ──
         $blok5 = [];
         $b5 = is_array($r->blok5_data) ? $r->blok5_data : [];
@@ -255,6 +263,8 @@ class StatistikController extends Controller
             'biayaOperasional'  => $biayaOperasional,
             'pengeluaranTotal'  => $pengeluaranTotal,
             'surplus'           => $surplus,
+            'ntb'               => $ntb,
+            'biayaAntara'       => $biayaAntara,
             'capex'             => $capex,
 
             'nilaiProduksi' => $nilaiProduksi,

@@ -35,7 +35,10 @@
                 </div>
             @endunless
 
-            @unless($traefikWritable)
+            {{-- Traefik-edge only: in proxy mode there is no routing file to
+                 write anywhere, so this would send people looking for a
+                 directory that nothing reads. --}}
+            @if($edgeIsTraefik && ! $traefikWritable)
                 <div class="bps-info-box mb-6">
                     <p class="text-sm text-blue-800 dark:text-blue-300">
                         <strong>Konfigurasi rute dibuat manual.</strong>
@@ -43,7 +46,7 @@
                         aplikasi perlu diunduh dari halaman detail lalu disalin ke direktori dynamic Traefik.
                     </p>
                 </div>
-            @endunless
+            @endif
 
             @forelse($apps as $app)
                 @if($loop->first)

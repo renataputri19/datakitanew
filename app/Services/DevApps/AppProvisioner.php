@@ -288,6 +288,20 @@ class AppProvisioner
      */
     public function applyRouting(DevApp $app): ?string
     {
+        // In proxy mode there is no edge configuration to write. The gate is
+        // ProxyController, and every request must pass through it: a dev app
+        // is given no Dokploy domain and no published host port, so the
+        // internal container hostname the proxy dials is the only way in.
+        //
+        // This must short-circuit before verifyRouting(), which would find no
+        // Traefik middleware, correctly conclude the edge gate is missing, and
+        // stop a container that is in fact perfectly well protected.
+        if (! $this->usesTraefikEdge()) {
+            $this->markRouting($app, DevApp::ROUTING_PROTECTED, null);
+
+            return 'proxy';
+        }
+
         if ($app->isProvisioned() && $this->dokploy->isConfigured()) {
             // Refresh the appName first — it is the Traefik service host, and
             // it has to be right *in the document we are about to push*.
@@ -337,6 +351,14 @@ class AppProvisioner
      */
     public function verifyRouting(DevApp $app): string
     {
+        // See applyRouting(): with the in-app proxy there is no edge gate to
+        // read back, and its absence is not evidence of anything.
+        if (! $this->usesTraefikEdge()) {
+            $this->markRouting($app, DevApp::ROUTING_PROTECTED, null);
+
+            return DevApp::ROUTING_PROTECTED;
+        }
+
         if (! $app->isProvisioned() || ! $this->dokploy->isConfigured()) {
             $this->markRouting($app, DevApp::ROUTING_UNKNOWN, null);
 
@@ -381,6 +403,17 @@ class AppProvisioner
         return DevApp::ROUTING_UNPROTECTED;
     }
 
+    /**
+     * Whether the access gate runs at a Traefik edge rather than in-app.
+     *
+     * False on this deployment — there is no Traefik here. The Traefik code
+     * is kept and stays correct; it becomes useful the day one exists.
+     */
+    private function usesTraefikEdge(): bool
+    {
+        return config('devapps.edge_mode') === 'traefik';
+    }
+
     private function markRouting(DevApp $app, string $status, ?string $error): void
     {
         $app->forceFill([
@@ -394,14 +427,21 @@ class AppProvisioner
      * The environment Dokploy injects into the app's container.
      *
      * Note what is *not* here: no DB credentials, no APP_KEY, no datakita
-     * secrets of any kind. An app that needs datakita data asks for a
-     * scoped API token instead.
+     * secrets of any kind. An app that needs its own database gets its own
+     * database, provisioned separately in Dokploy — never datakita's.
+     *
+     * The owner's own variables go in first so that ours overwrite them on a
+     * collision. That ordering is deliberate: DATAKITA_HEADER_* tells the app
+     * which header carries the visitor's identity, and an app that could
+     * repoint those could nominate a header the client controls. The
+     * controller rejects reserved keys at validation time too — this is the
+     * backstop for rows written before that rule existed.
      */
-    private function environmentBlock(DevApp $app): string
+    public function environmentBlock(DevApp $app): string
     {
         $headers = config('devapps.identity_headers', []);
 
-        $vars = [
+        $vars = array_merge(DevApp::parseEnvVars($app->env_vars), [
             'PORT'                      => (string) $app->container_port,
             // Empty when strip_prefix is on — the app then sees itself at "/".
             'DATAKITA_BASE_PATH'        => $app->strip_prefix ? '' : $app->mountPath(),
@@ -411,7 +451,7 @@ class AppProvisioner
             'DATAKITA_HEADER_USER_NAME' => $headers['name'] ?? '',
             'DATAKITA_HEADER_USER_MAIL' => $headers['email'] ?? '',
             'DATAKITA_HEADER_USER_ROLE' => $headers['role'] ?? '',
-        ];
+        ]);
 
         $lines = [];
         foreach ($vars as $key => $value) {

@@ -16,6 +16,46 @@ https://datakita.angkabatam.id/survei-xyz
 
 ## How a request flows
 
+There are two possible gates, selected by `DEVAPPS_EDGE_MODE`.
+
+### `proxy` — the default, and what this deployment runs
+
+DataKita authorises the request and forwards it itself. There is **no Traefik
+on this server**: SafeLine proxies straight to each app's published port, so
+there is no edge at which to hang a gate.
+
+```
+browser ──▶ Cloudflare ──▶ SafeLine ──▶ datakita
+                                          │
+                                          │ 1. route {slug}/{path?} matches,
+                                          │    after every DataKita route
+                                          │
+                                          │ 2. DevApp::allows(Auth::user())
+                                          │      ├─ 302 → /login (anonymous)
+                                          │      ├─ 403 / 503
+                                          │      └─ allowed ↓
+                                          │
+                                          │ 3. drop DataKita's cookies,
+                                          │    set X-Datakita-User-* headers
+                                          │
+                                          │ 4. strip prefix (optional)
+                                          │
+                                          └─▶ http://{appName}:{port}/…
+                                                the dev app's container,
+                                                reachable only on the
+                                                Docker network
+```
+
+`App\Http\Controllers\Develop\ProxyController`. The app's container is given no
+Dokploy domain and no published host port, so that internal hostname is the
+only way in — which is what makes the gate unbypassable rather than merely
+present.
+
+### `traefik` — unused here, kept working
+
+The original design: Traefik routes each app directly and calls
+`/develop/authz/{slug}` as a forwardAuth middleware before every request.
+
 ```
 browser ──▶ Traefik
               │
@@ -33,6 +73,26 @@ browser ──▶ Traefik
               │
               └─▶ 5. the dev app's container
 ```
+
+Everything in the "Traefik dynamic config" and "ForwardAuth address" sections
+below applies to this mode only. **It is not in use on this deployment** — the
+portal hides the Traefik card and the routing badge unless
+`DEVAPPS_EDGE_MODE=traefik`, because they would describe a mechanism that is
+not running. The code is retained and still tested, for the day a Traefik does
+front this server.
+
+### What the proxy does and does not carry
+
+| | Behaviour |
+|---|---|
+| Method, query, body | Forwarded. Multipart uploads are rebuilt from the parsed request, since PHP consumes `php://input` for those. |
+| DataKita's cookies | **Never forwarded** — session cookie, `XSRF-TOKEN`, `remember_web_*`. The app could otherwise act as the visitor. |
+| The app's own cookies | Forwarded both ways. DataKita's `EncryptCookies` encrypts them in the browser and decrypts them back before forwarding, so this is invisible to the app. A `Set-Cookie` naming one of *DataKita's* cookies is dropped. |
+| Identity headers | Always set by us, never passed through from the client. |
+| `Location` on redirects | Rewritten to stay under `/{slug}`. External redirects are left alone. |
+| Hop-by-hop headers | Dropped in both directions. |
+| WebSockets | **Not supported.** The proxy cannot upgrade a connection. |
+| Cost | Each proxied request holds a PHP-FPM worker for its lifetime. `DEVAPPS_PROXY_TIMEOUT` bounds it. |
 
 The dev app implements **no login**. It reads the user from request headers:
 

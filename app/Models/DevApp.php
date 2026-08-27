@@ -68,6 +68,7 @@ class DevApp extends Model
         'dockerfile_path',
         'ssh_key_id',
         'container_port',
+        'env_vars',
         'strip_prefix',
         'auth_mode',
         'allowed_roles',
@@ -234,6 +235,61 @@ class DevApp extends Model
     public static function slugIsReserved(string $slug): bool
     {
         return in_array(strtolower(trim($slug, '/')), self::reservedSlugs(), true);
+    }
+
+    // ── Environment ─────────────────────────────────────────────────────
+
+    /**
+     * Parse the owner's `KEY=value` lines.
+     *
+     * Blank lines and `#` comments are ignored, so a developer can paste a
+     * .env file straight in.
+     *
+     * @return array<string, string>
+     */
+    public static function parseEnvVars(?string $raw): array
+    {
+        $vars = [];
+
+        foreach (preg_split('/\R/', (string) $raw) ?: [] as $line) {
+            $line = trim($line);
+
+            if ($line === '' || str_starts_with($line, '#') || ! str_contains($line, '=')) {
+                continue;
+            }
+
+            [$key, $value] = explode('=', $line, 2);
+            $key = trim($key);
+
+            if ($key !== '') {
+                $vars[$key] = trim($value);
+            }
+        }
+
+        return $vars;
+    }
+
+    /**
+     * Variables DataKita sets itself, which an app may not override.
+     *
+     * This is an access-control boundary, not tidiness: DATAKITA_HEADER_* is
+     * how the app learns which header carries the visitor's identity. An app
+     * that could repoint those could nominate a header the client controls
+     * and then trust whatever it says.
+     */
+    public static function envKeyIsReserved(string $key): bool
+    {
+        $key = strtoupper(trim($key));
+
+        return $key === 'PORT' || str_starts_with($key, 'DATAKITA_');
+    }
+
+    /**
+     * A syntactically usable shell variable name.
+     */
+    public static function envKeyIsValid(string $key): bool
+    {
+        return (bool) preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', trim($key));
     }
 
     // ── Presentation ────────────────────────────────────────────────────

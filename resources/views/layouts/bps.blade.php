@@ -132,7 +132,8 @@
                             Video
                         </a>
                     </li>
-                    @if(config('devapps.enabled'))
+                    {{-- Portal routes only exist when APP_ROLE serves them; route() would throw otherwise. --}}
+                    @if(config('devapps.enabled') && \App\Support\AppRole::servesDevPortal())
                         <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:1.1rem 1rem 0.35rem;">Pengembang</li>
                         <li>
                             <a href="{{ route('develop.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('develop.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
@@ -310,7 +311,8 @@
                                 Video
                             </a>
                         </li>
-                        @if(config('devapps.enabled'))
+                        {{-- Portal routes only exist when APP_ROLE serves them; route() would throw otherwise. --}}
+                        @if(config('devapps.enabled') && \App\Support\AppRole::servesDevPortal())
                             <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.9rem 1rem 0.1rem;">Pengembang</li>
                             <li>
                                 <a href="{{ route('develop.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('develop.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">

@@ -56,6 +56,7 @@ class DevAppController extends Controller
             'dokployReady'    => $this->dokploy->isConfigured(),
             'traefikWritable' => $this->traefik->canWrite(),
             'canManageAll'    => $this->canManageAll(),
+            'edgeIsTraefik'   => $this->edgeIsTraefik(),
         ]);
     }
 
@@ -104,6 +105,7 @@ class DevAppController extends Controller
             'traefikWritable' => $this->traefik->canWrite(),
             'traefikFile'     => $this->traefik->fileName($app),
             'dokployReady'    => $this->dokploy->isConfigured(),
+            'edgeIsTraefik'   => $this->edgeIsTraefik(),
         ]);
     }
 
@@ -283,6 +285,27 @@ class DevAppController extends Controller
             'dockerfile_path' => ['nullable', 'string', 'max:255', 'required_if:build_type,dockerfile'],
             'ssh_key_id'      => ['nullable', 'string', 'max:100'],
             'container_port'  => ['required', 'integer', 'min:1', 'max:65535'],
+            'env_vars'        => [
+                'nullable', 'string', 'max:20000',
+                function ($attribute, $value, $fail) {
+                    foreach (array_keys(DevApp::parseEnvVars($value)) as $key) {
+                        if (! DevApp::envKeyIsValid((string) $key)) {
+                            $fail('Nama variabel "' . $key . '" tidak valid. Gunakan huruf, angka, dan garis bawah, diawali huruf.');
+
+                            return;
+                        }
+
+                        // Not tidiness: DATAKITA_HEADER_* tells the app which
+                        // header carries the visitor's identity, so an app
+                        // able to set it could trust a client-supplied one.
+                        if (DevApp::envKeyIsReserved((string) $key)) {
+                            $fail('Variabel "' . $key . '" diatur otomatis oleh DataKita dan tidak boleh ditimpa.');
+
+                            return;
+                        }
+                    }
+                },
+            ],
             'strip_prefix'    => ['nullable', 'boolean'],
             'auth_mode'       => ['required', Rule::in(array_keys(DevApp::authModeDefinitions()))],
             'allowed_roles'   => ['nullable', 'array'],
@@ -362,6 +385,18 @@ class DevAppController extends Controller
     private function canManageAll(): bool
     {
         return (bool) (Auth::user()?->is_superadmin);
+    }
+
+    /**
+     * Whether the access gate runs at a Traefik edge rather than in-app.
+     *
+     * False on this deployment. The Traefik cards and the routing badge are
+     * hidden when it is, because they would describe a mechanism that isn't
+     * running and imply the app is unprotected when it is not.
+     */
+    private function edgeIsTraefik(): bool
+    {
+        return config('devapps.edge_mode') === 'traefik';
     }
 
     private function guardOwnerQuota(): void

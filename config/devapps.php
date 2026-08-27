@@ -27,6 +27,43 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Edge mode
+    |--------------------------------------------------------------------------
+    |
+    | Where the access gate runs.
+    |
+    |   'proxy'    DataKita authorises and forwards the request itself, via
+    |              App\Http\Controllers\Develop\ProxyController. The default,
+    |              and the only mode that works on this deployment: there is
+    |              no Traefik here, SafeLine proxies straight to each app's
+    |              published port, so there is no edge to hang a gate on.
+    |
+    |   'traefik'  Traefik routes the app directly and calls /develop/authz
+    |              as a forwardAuth middleware. Correct code, currently unused
+    |              — it becomes useful the day a Traefik actually fronts this
+    |              server. See docs/DEVELOP_PORTAL.md.
+    |
+    */
+    'edge_mode' => env('DEVAPPS_EDGE_MODE', 'proxy'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Proxy
+    |--------------------------------------------------------------------------
+    |
+    | Timeouts for the hop from DataKita to the dev app's container. Every
+    | proxied request holds a PHP-FPM worker for its whole lifetime, and
+    | pm.max_children is 20 — a generous timeout here is how one hung dev app
+    | takes the portal down with it. Keep them short.
+    |
+    */
+    'proxy' => [
+        'connect_timeout' => (float) env('DEVAPPS_PROXY_CONNECT_TIMEOUT', 5),
+        'timeout'         => (float) env('DEVAPPS_PROXY_TIMEOUT', 60),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Public host
     |--------------------------------------------------------------------------
     |

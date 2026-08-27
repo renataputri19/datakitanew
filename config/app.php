@@ -41,6 +41,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Role
+    |--------------------------------------------------------------------------
+    |
+    | Which route surface this container serves. One codebase, two products:
+    | DataKita itself and the developer portal that fronts third-party apps.
+    |
+    |   unset / 'datakita'  routes/web.php only — production
+    |   'all'               both — datakitadev only, a dev convenience
+    |   'devportal'         routes/devportal.php only — apps.angkabatam.id
+    |
+    | Read through App\Support\AppRole, which rejects any other value rather
+    | than falling back and quietly publishing the wrong surface.
+    |
+    */
+
+    'role' => env('APP_ROLE'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Debug Mode
     |--------------------------------------------------------------------------
     |

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\AppRole;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
@@ -28,13 +29,30 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Which route files load is decided by APP_ROLE, so a portal-only
+        // container never publishes /bps or /superadmin. With APP_ROLE unset
+        // this is exactly the pre-split route table plus nothing.
+        //
+        // Note for deployment: docker/entrypoint.sh runs `route:cache` at
+        // container start, after the environment is in place, so the cache is
+        // always built for the role that container actually runs as.
         $this->routes(function () {
-            Route::middleware('api')
-                ->prefix('api')
-                ->group(base_path('routes/api.php'));
+            if (AppRole::servesDatakita()) {
+                Route::middleware('api')
+                    ->prefix('api')
+                    ->group(base_path('routes/api.php'));
 
-            Route::middleware('web')
-                ->group(base_path('routes/web.php'));
+                Route::middleware('web')
+                    ->group(base_path('routes/web.php'));
+            }
+
+            // Registered after web.php. Safe in `all` mode: no DataKita route
+            // matches /develop/*, and Route::fallback() is sorted last by the
+            // router regardless of where it was declared.
+            if (AppRole::servesDevPortal()) {
+                Route::middleware('web')
+                    ->group(base_path('routes/devportal.php'));
+            }
         });
     }
 }

@@ -2010,6 +2010,8 @@
         { key: 'pendapatanTotal', label: 'Pendapatan', num: true },
         { key: 'pengeluaranTotal', label: 'Pengeluaran', num: true },
         { key: 'surplus', label: 'Surplus', num: true },
+        { key: 'ntb', label: 'NTB', num: true, hint: 'Nilai Tambah Bruto = 303 + 304 + 310 + 311' },
+        { key: 'biayaAntara', label: 'Biaya Antara', num: true, hint: 'Biaya Antara = 312 + 313' },
         { key: 'tenagaKerja', label: 'TK', num: true },
         { key: 'eksporPct', label: 'Ekspor', num: true },
         { key: 'updatedAt', label: 'Diperbarui', num: false }
@@ -2030,6 +2032,8 @@
         { key: 'nilaiProduksi',    label: 'Nilai produksi',     num: true,  sub: 'output Blok IIIA (301 + 302)' },
         { key: 'biayaTotal',       label: 'Biaya produksi',     num: true,  sub: 'termasuk pembelian aset' },
         { key: 'nilaiTambah',      label: 'Nilai tambah',       num: true,  sub: 'nilai produksi − biaya produksi' },
+        { key: 'ntb',              label: 'NTB',                num: true,  sub: '303 + 304 + 310 + 311' },
+        { key: 'biayaAntara',      label: 'Biaya antara',       num: true,  sub: '312 + 313' },
         { key: 'upah',             label: 'Upah & gaji',        num: true },
         { key: 'capex',            label: 'Pembelian aset',     num: true },
         { key: 'tenagaKerja',      label: 'Tenaga kerja',       num: true,  sub: 'rata-rata pekerja' },
@@ -2248,6 +2252,7 @@
         cols.forEach(function (c) {
             var sorted = state.sortKey === c.key;
             var th = el('th', (c.num ? 'num' : '') + (sorted ? ' sorted' : '') || null, c.label);
+            if (c.hint) th.title = c.hint;
             if (sorted) {
                 th.setAttribute('aria-sort', state.sortDir === 1 ? 'ascending' : 'descending');
                 th.appendChild(el('span', 'arrow', state.sortDir === 1 ? '▲' : '▼'));
@@ -2321,6 +2326,28 @@
                 { label: 'Total pengeluaran', value: fmtRpFull(r.pengeluaranTotal), total: true },
                 { label: 'Surplus usaha (perkiraan)', value: fmtRpFull(r.surplus), total: true }
             ]);
+
+            // NTB dan Biaya Antara dirinci per komponen kuesioner, supaya
+            // angka totalnya bisa ditelusuri ke isian yang membentuknya.
+            var s3a = sect(body, 'NTB dan Biaya Antara');
+            moneyRows(s3a, [
+                {
+                    label: r.sektor === 'industri'
+                        ? '303. Penjualan barang/jasa — dari Blok IIIA (301 + 302)'
+                        : '303. Penjualan barang/jasa',
+                    value: fmtRpFull(r.sektor === 'industri' ? r.nilaiProduksi : r.penjualan)
+                },
+                { label: '304. Royalti, bunga, dividen dan lainnya', value: fmtRpFull(r.pendapatanRoyalti) },
+                { label: '310. Upah, gaji, dan jaminan sosial', value: fmtRpFull(r.upah) },
+                { label: '311. Penambahan aset tetap', value: fmtRpFull(r.capex) },
+                { label: 'NTB (303 + 304 + 310 + 311)', value: fmtRpFull(r.ntb), total: true }
+            ]);
+            // blok kedua menempel ke garis total blok pertama tanpa jarak sendiri
+            moneyRows(s3a, [
+                { label: '312. Biaya produksi (bahan baku dan penolong)', value: fmtRpFull(r.biayaProduksi) },
+                { label: '313. Biaya operasional', value: fmtRpFull(r.biayaOperasional) },
+                { label: 'Biaya Antara (312 + 313)', value: fmtRpFull(r.biayaAntara), total: true }
+            ]).style.marginTop = '1rem';
 
             var prevQ = prevQuarterRow(r);
             if (prevQ) {

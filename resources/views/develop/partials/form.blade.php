@@ -126,6 +126,24 @@
                 </span>
             </label>
         </div>
+
+        <div class="mt-5">
+            <label for="env_vars" class="bps-label">Variabel Lingkungan <span class="text-gray-400 font-normal">(opsional)</span></label>
+            <textarea id="env_vars" name="env_vars" rows="5" class="bps-input font-mono text-xs"
+                      placeholder="DB_HOST=nama-layanan-database&#10;DB_DATABASE=aplikasi_saya&#10;DB_USERNAME=aplikasi&#10;DB_PASSWORD=...">{{ old('env_vars', $app->env_vars) }}</textarea>
+            <p class="bps-help-text">
+                Satu <code class="text-xs">KUNCI=nilai</code> per baris. Baris kosong dan baris diawali
+                <code class="text-xs">#</code> diabaikan.
+                <strong>Butuh database?</strong> Buat database sendiri di Dokploy
+                (Datakita Dev Apps &rarr; Create Service &rarr; Database), lalu isikan kredensialnya di sini.
+                Jangan pernah memakai database DataKita — aplikasi Anda tidak akan pernah menerima kredensialnya.
+                Nama yang diawali <code class="text-xs">DATAKITA_</code> dan <code class="text-xs">PORT</code>
+                diatur otomatis dan tidak bisa ditimpa.
+            </p>
+            @error('env_vars')
+                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+            @enderror
+        </div>
     </section>
 
     {{-- ── Access ────────────────────────────────────────────────────── --}}
