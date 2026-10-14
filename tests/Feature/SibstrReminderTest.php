@@ -55,6 +55,12 @@ class SibstrReminderTest extends TestCase
         ], $attrs));
     }
 
+    /** A Triwulanan respondent: finished TW II 2026, has not started TW III. */
+    private function respondent(User $user, array $attrs = []): SurveyResponse
+    {
+        return $this->sibstr($user, 2026, 2, array_merge(['is_completed' => true], $attrs));
+    }
+
     private function template(): SurveyReminderTemplate
     {
         return SurveyReminderTemplate::allFor('sibstr')->first();
@@ -113,46 +119,105 @@ class SibstrReminderTest extends TestCase
     //  Recipients
     // ─────────────────────────────────────────────────────────
 
-    public function test_recipients_respect_status_and_kondisi_filters(): void
+    public function test_recipients_come_from_the_chosen_sources(): void
     {
-        $notStarted = $this->user();
-        $this->sibstr($notStarted, 2025, 0, [
-            'nama_perusahaan' => 'PT Belum Mulai', 'penghubung' => 'Ani', 'email' => 'ani@belum.example',
+        // Finished TW II; the Blok I contact comes from the (unfinished) Tahunan record.
+        $finishedTw2 = $this->user();
+        $this->respondent($finishedTw2);
+        $this->sibstr($finishedTw2, 2025, 0, [
+            'nama_perusahaan' => 'PT Selesai TW2', 'penghubung' => 'Ani', 'email' => 'ani@tw2.example',
         ]);
+
+        $finishedTw1 = $this->user();
+        $this->sibstr($finishedTw1, 2026, 1, ['email' => 'bukan-email', 'telepon_fax' => '0778-123', 'is_completed' => true]);
+
+        $tahunanOnly = $this->user();
+        $this->sibstr($tahunanOnly, 2025, 0, ['email' => 'x@tahunan.example', 'is_completed' => true]);
 
         $inProgress = $this->user();
         $this->sibstr($inProgress, 2026, 3, ['email' => 'kontak@proses.example', 'is_completed' => false]);
 
-        $done = $this->user();
-        $this->sibstr($done, 2026, 3, ['email' => 'x@selesai.example', 'is_completed' => true]);
+        $finishedTw3 = $this->user();
+        $this->sibstr($finishedTw3, 2026, 3, ['email' => 'x@selesai.example', 'is_completed' => true]);
+
+        // Opened TW I but never finished anything: matches no source.
+        $abandoned = $this->user();
+        $this->sibstr($abandoned, 2026, 1, ['email' => 'x@abandoned.example', 'is_completed' => false]);
 
         $closed = $this->user();
-        $this->sibstr($closed, 2026, 2, ['email' => 'x@tutup.example', 'kondisi_perusahaan' => 'tutup']);
+        $this->respondent($closed, ['email' => 'x@tutup.example', 'kondisi_perusahaan' => 'tutup']);
 
         $mitra = $this->user(User::ROLE_MITRA);
-        $this->sibstr($mitra, 2026, 2, ['email' => 'x@mitra.example']);
-
-        $noEmail = $this->user();
-        $this->sibstr($noEmail, 2026, 1, ['email' => 'bukan-email', 'telepon_fax' => '0778-123']);
+        $this->respondent($mitra, ['email' => 'x@mitra.example']);
 
         $ids = fn ($c) => $c->map(fn ($r) => $r['user']->id)->sort()->values()->all();
         $sorted = fn (array $a) => collect($a)->sort()->values()->all();
+        $chase = fn (array $sources, array $excluded = ['tutup'], ?array $statuses = null)
+            => $ids(SibstrReminder::recipients(2026, 3, $sources, $excluded, $statuses));
 
-        $all = SibstrReminder::recipients(2026, 3, self::BOTH, ['tutup']);
-        $this->assertSame($sorted([$notStarted->id, $inProgress->id, $noEmail->id]), $ids($all));
+        $this->assertSame(
+            ['2025-0', '2026-1', '2026-2', 'mulai'],
+            array_keys(SibstrReminder::sourceOptions(2026, 3))
+        );
 
-        $first = $all->firstWhere('user.id', $notStarted->id);
-        $this->assertSame('ani@belum.example', $first['email']);
+        // The automatic default for TW III: finished TW I or TW II, or started TW III.
+        $this->assertSame(['2026-1', '2026-2', 'mulai'], SibstrReminder::defaultSources(2026, 3));
+        $all = SibstrReminder::recipients(2026, 3, SibstrReminder::defaultSources(2026, 3), ['tutup']);
+        $this->assertSame($sorted([$finishedTw2->id, $finishedTw1->id, $inProgress->id]), $ids($all));
+
+        // Each source on its own; Tahunan only when ticked.
+        $this->assertSame([$finishedTw2->id], $chase(['2026-2']));
+        $this->assertSame([$finishedTw1->id], $chase(['2026-1']));
+        $this->assertSame([$tahunanOnly->id], $chase(['2025-0']));
+        $this->assertSame([$inProgress->id], $chase(['mulai']));
+
+        // The saved statuses narrow the automatic run.
+        $this->assertSame([$inProgress->id], $chase(SibstrReminder::defaultSources(2026, 3), ['tutup'], ['dalam_proses']));
+
+        // Chasing TW II: finishing the later TW III is a source too.
+        $this->assertContains($finishedTw3->id, $ids(SibstrReminder::recipients(2026, 2, ['2026-3'], [])));
+
+        $first = $all->firstWhere('user.id', $finishedTw2->id);
+        $this->assertSame('ani@tw2.example', $first['email']);
         $this->assertSame('Ani', $first['penghubung']);
         $this->assertSame('belum_mulai', $first['status']);
-        $this->assertSame('0778-123', $all->firstWhere('user.id', $noEmail->id)['telepon']);
-        $this->assertNull($all->firstWhere('user.id', $noEmail->id)['email']);
-
-        // Only those who started but did not finish.
-        $this->assertSame([$inProgress->id], $ids(SibstrReminder::recipients(2026, 3, ['dalam_proses'], ['tutup'])));
+        $this->assertSame('0778-123', $all->firstWhere('user.id', $finishedTw1->id)['telepon']);
+        $this->assertNull($all->firstWhere('user.id', $finishedTw1->id)['email']);
 
         // Without the exclusion the closed company is back.
-        $this->assertContains($closed->id, $ids(SibstrReminder::recipients(2026, 3, self::BOTH, [])));
+        $this->assertContains($closed->id, $chase(['2026-2'], []));
+    }
+
+    public function test_one_email_per_address_even_when_companies_share_it(): void
+    {
+        Mail::fake();
+        $alfa = $this->user();
+        $this->respondent($alfa, ['nama_perusahaan' => 'PT Alfa', 'email' => 'Admin@Grup.example']);
+        $beta = $this->user();
+        $this->respondent($beta, ['nama_perusahaan' => 'PT Beta', 'email' => ' admin@grup.example ']);
+        $gamma = $this->user();
+        $this->sibstr($gamma, 2025, 0, ['nama_perusahaan' => 'PT Gamma', 'email' => 'admin@grup.example', 'is_completed' => true]);
+
+        // Three companies from two sources, one address: one entry naming all.
+        $list = SibstrReminder::recipients(2026, 3, ['2025-0', '2026-2'], []);
+        $this->assertCount(1, $list);
+        $this->assertSame(['PT Alfa', 'PT Beta', 'PT Gamma'], $list->first()['companies']);
+        $this->assertSame('PT Alfa, PT Beta dan PT Gamma', $list->first()['nama_perusahaan']);
+
+        $bps  = $this->user(User::ROLE_ADMIN);
+        $send = fn (array $sources, User $via) => $this->actingAs($bps)->post(route('bps.pengingat.send'), [
+            'tahun' => 2026, 'triwulan' => 3, 'sumber' => $sources,
+            'user_ids' => [$via->id], 'template_id' => $this->template()->id,
+        ]);
+
+        $send(['2026-2'], $alfa)->assertSessionHas('success');
+        // Later the same day the address comes up again through PT Gamma: refused.
+        $send(['2025-0'], $gamma)->assertSessionHas('error');
+
+        $this->artisan('sibstr:proses-pengingat')->assertSuccessful();
+        Mail::assertSent(SibstrTriwulanReminder::class, 1);
+        Mail::assertSent(SibstrTriwulanReminder::class, fn ($m) => $m->hasTo('Admin@Grup.example')
+            && $m->namaPerusahaan === 'PT Alfa dan PT Beta');
     }
 
     // ─────────────────────────────────────────────────────────
@@ -163,7 +228,7 @@ class SibstrReminderTest extends TestCase
     {
         Mail::fake();
         $this->autoSettings(['extra_message' => 'Batas akhir 25 Oktober.']);
-        $this->sibstr($this->user(), 2025, 0, ['nama_perusahaan' => 'PT Satu', 'email' => 'kontak@satu.example']);
+        $this->respondent($this->user(), ['nama_perusahaan' => 'PT Satu', 'email' => 'kontak@satu.example']);
 
         $this->artisan('sibstr:proses-pengingat')->assertSuccessful();
         $this->artisan('sibstr:proses-pengingat')->assertSuccessful();
@@ -188,7 +253,7 @@ class SibstrReminderTest extends TestCase
     public function test_automatic_run_waits_for_send_time_and_auto_switch(): void
     {
         Mail::fake();
-        $this->sibstr($this->user(), 2025, 0, ['email' => 'kontak@satu.example']);
+        $this->respondent($this->user(), ['email' => 'kontak@satu.example']);
 
         $this->autoSettings(['auto_enabled' => false]);
         $this->artisan('sibstr:proses-pengingat')->assertSuccessful();
@@ -203,7 +268,7 @@ class SibstrReminderTest extends TestCase
     {
         Mail::fake();
         $this->autoSettings();
-        $this->sibstr($this->user(), 2025, 0, ['email' => 'kontak@satu.example']);
+        $this->respondent($this->user(), ['email' => 'kontak@satu.example']);
         config(['sibstr.reminder.enabled' => false]);
 
         $this->artisan('sibstr:proses-pengingat')->assertSuccessful();
@@ -221,7 +286,7 @@ class SibstrReminderTest extends TestCase
             'sibstr.reminder.mailer'     => 'reminder',
         ]);
         $this->autoSettings();
-        $this->sibstr($this->user(), 2025, 0, ['email' => 'kontak@satu.example']);
+        $this->respondent($this->user(), ['email' => 'kontak@satu.example']);
 
         $this->artisan('sibstr:proses-pengingat')->assertSuccessful();
 
@@ -244,14 +309,14 @@ class SibstrReminderTest extends TestCase
         Mail::fake();
         $picked  = $this->user();
         $skipped = $this->user();
-        $this->sibstr($picked, 2025, 0, ['nama_perusahaan' => 'PT Dipilih', 'email' => 'a@dipilih.example']);
-        $this->sibstr($skipped, 2025, 0, ['nama_perusahaan' => 'PT Tidak', 'email' => 'b@tidak.example']);
+        $this->respondent($picked, ['nama_perusahaan' => 'PT Dipilih', 'email' => 'a@dipilih.example']);
+        $this->respondent($skipped, ['nama_perusahaan' => 'PT Tidak', 'email' => 'b@tidak.example']);
         $bps = $this->user(User::ROLE_ADMIN);
 
         $payload = [
             'tahun'         => 2026,
             'triwulan'      => 3,
-            'status'        => ['belum_mulai'],
+            'sumber'        => ['2026-2'],
             'user_ids'      => [$picked->id],
             'template_id'   => $this->template()->id,
             'extra_message' => 'Mohon segera diisi.',
@@ -277,12 +342,12 @@ class SibstrReminderTest extends TestCase
     public function test_manual_blast_is_refused_when_server_may_not_send(): void
     {
         $user = $this->user();
-        $this->sibstr($user, 2025, 0, ['email' => 'a@dipilih.example']);
+        $this->respondent($user, ['email' => 'a@dipilih.example']);
         config(['sibstr.reminder.enabled' => false]);
 
         $this->actingAs($this->user(User::ROLE_ADMIN))
             ->post(route('bps.pengingat.send'), [
-                'tahun' => 2026, 'triwulan' => 3, 'status' => ['belum_mulai'], 'user_ids' => [$user->id],
+                'tahun' => 2026, 'triwulan' => 3, 'sumber' => ['2026-2'], 'user_ids' => [$user->id],
             ])
             ->assertSessionHas('error');
 
@@ -314,8 +379,8 @@ class SibstrReminderTest extends TestCase
 
     public function test_pages_render_for_bps_and_are_closed_to_others(): void
     {
-        $this->sibstr($this->user(), 2025, 0, ['nama_perusahaan' => 'PT Tampil', 'email' => 'a@tampil.example']);
-        $this->sibstr($this->user(), 2025, 0, ['nama_perusahaan' => 'PT Tanpa Email']);
+        $this->respondent($this->user(), ['nama_perusahaan' => 'PT Tampil', 'email' => 'a@tampil.example']);
+        $this->respondent($this->user(), ['nama_perusahaan' => 'PT Tanpa Email']);
         $bps = $this->user(User::ROLE_ADMIN);
 
         $this->actingAs($bps)->get(route('bps.pengingat.index'))
@@ -328,7 +393,7 @@ class SibstrReminderTest extends TestCase
         $this->actingAs($bps)->get(route('bps.pengingat.template.edit', $this->template()))->assertOk()->assertSee('{kalimat_status}');
 
         $this->actingAs($bps)->post(route('bps.pengingat.send'), [
-            'tahun' => 2026, 'triwulan' => 3, 'status' => ['belum_mulai'],
+            'tahun' => 2026, 'triwulan' => 3, 'sumber' => ['2026-2'],
             'user_ids' => SurveyResponse::pluck('user_id')->all(),
             'template_id' => $this->template()->id,
         ]);
@@ -338,6 +403,43 @@ class SibstrReminderTest extends TestCase
         $this->actingAs($bps)->get(route('bps.pengingat.blast.email', $blast))->assertOk()->assertSee('PT Tampil');
 
         $this->actingAs($this->user())->get(route('bps.pengingat.index'))->assertRedirect();
+    }
+
+    public function test_send_tab_lists_the_ticked_sources_and_previews_the_chosen_text(): void
+    {
+        $this->respondent($this->user(), ['nama_perusahaan' => 'PT Selesai TW2', 'email' => 'a@tw2.example']);
+        $this->sibstr($this->user(), 2026, 3, ['nama_perusahaan' => 'PT Sedang Isi', 'email' => 'b@proses.example', 'is_completed' => false]);
+        $this->sibstr($this->user(), 2025, 0, ['nama_perusahaan' => 'PT Tahunan Saja', 'email' => 'c@tahunan.example', 'is_completed' => true]);
+        $bps = $this->user(User::ROLE_ADMIN);
+        $kirim = fn (array $query) => $this->actingAs($bps)
+            ->get(route('bps.pengingat.index', ['tab' => 'kirim', 'periode' => '2026-3'] + $query))->assertOk();
+
+        // A fresh visit uses the automatic sources; Tahunan is offered, not ticked.
+        $this->actingAs($bps)->get(route('bps.pengingat.index'))
+            ->assertOk()->assertSee('PT Selesai TW2')->assertSee('PT Sedang Isi')
+            ->assertSee('data-pg-source="2025-0" role="checkbox" aria-checked="false"', false)->assertDontSee('PT Tahunan Saja');
+
+        // Ticking only Tahunan lists the Tahunan-only company.
+        $kirim(['pilih' => 1, 'sumber' => ['2025-0']])->assertSee('PT Tahunan Saja')->assertDontSee('PT Selesai TW2');
+
+        // Unticking everything stays empty rather than falling back; junk is ignored.
+        $kirim(['pilih' => 1, 'sumber' => ['bukan-sumber']])
+            ->assertSee('Belum ada sumber data yang dipilih')->assertDontSee('PT Selesai TW2');
+
+        // A choice in step 1 fetches just the section, without the page around it.
+        $kirim(['pilih' => 1, 'sumber' => ['2026-2'], 'partial' => 1])
+            ->assertSee('id="pg-kirim"', false)->assertSee('PT Selesai TW2')
+            ->assertDontSee('<html', false)->assertDontSee('Jadwal &amp; Pengaturan', false);
+
+        // Pratinjau shows the template, quarter and message picked in the form.
+        $other = SurveyReminderTemplate::create([
+            'survey_type' => 'sibstr', 'name' => 'Khusus', 'subject' => 'Khusus {periode}', 'body' => 'Halo {penghubung}',
+        ]);
+        $this->actingAs($bps)
+            ->get(route('bps.pengingat.preview', ['template' => $other->id, 'periode' => '2026-2', 'pesan' => 'Batas 25 Juli']))
+            ->assertOk()
+            ->assertSee('Subjek:</strong> Khusus Triwulan II 2026', false)
+            ->assertSee('Batas 25 Juli');
     }
 
     public function test_email_carries_reply_to_and_extra_message(): void
@@ -404,7 +506,7 @@ class SibstrReminderTest extends TestCase
 
         // A manual blast the same day can chase TW II 2026 — a different period.
         $this->actingAs($this->user(User::ROLE_ADMIN))->post(route('bps.pengingat.send'), [
-            'tahun' => 2026, 'triwulan' => 2, 'status' => ['belum_mulai'],
+            'tahun' => 2026, 'triwulan' => 2, 'sumber' => ['2026-1'],
             'user_ids' => [$user->id], 'template_id' => $this->template()->id,
         ])->assertSessionHas('success');
         $this->artisan('sibstr:proses-pengingat')->assertSuccessful();
@@ -453,7 +555,7 @@ class SibstrReminderTest extends TestCase
     {
         Mail::fake();
         config(['sibstr.reminder.enabled' => false]); // a test email is fine on any server
-        $this->sibstr($this->user(), 2025, 0, ['email' => 'responden@pt.example']);
+        $this->respondent($this->user(), ['email' => 'responden@pt.example']);
 
         $form = [
             '_method'         => 'PUT', // as sent from the edit form
@@ -491,10 +593,10 @@ class SibstrReminderTest extends TestCase
         Mail::fake();
         $template = $this->template();
         $template->update(['subject' => 'Versi lama {periode}']);
-        $this->sibstr($this->user(), 2025, 0, ['email' => 'kontak@satu.example']);
+        $this->respondent($this->user(), ['email' => 'kontak@satu.example']);
 
         app(SibstrReminderSender::class)->queue(
-            2026, 3, SibstrReminder::recipients(2026, 3, self::BOTH, []),
+            2026, 3, SibstrReminder::recipients(2026, 3, ['2026-2'], []),
             SurveyReminderBlast::TRIGGER_MANUAL, self::BOTH, $template, null, null
         );
         $template->update(['subject' => 'Versi baru {periode}']);

@@ -7,13 +7,16 @@
 @endpush
 
 @section('content')
-<div class="space-y-6">
+<div class="pg">
     <div>
-        <a href="{{ route('bps.pengingat.index', ['tab' => 'template']) }}" class="pg-link text-sm">&larr; Kembali ke daftar template</a>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+        <a href="{{ route('bps.pengingat.index', ['tab' => 'template']) }}" class="pg-link pg-back">
+            @include('bps.pengingat.partials.icon', ['name' => 'back'])
+            Kembali ke daftar template
+        </a>
+        <h1 class="pg-title">
             {{ $template->exists ? 'Ubah Template: ' . $template->name : 'Template Email Baru' }}
         </h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <p class="pg-subtitle">
             Tulis teks biasa. Placeholder seperti <code>{periode}</code> diisi otomatis per perusahaan dan per triwulan,
             jadi satu template bisa dipakai untuk Triwulan I sampai IV.
             @if($isAutoTemplate)
@@ -23,8 +26,9 @@
     </div>
 
     @if($errors->any())
-        <div class="pg-alert pg-alert-error">
-            @foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach
+        <div class="pg-alert pg-alert-error" role="alert">
+            @include('bps.pengingat.partials.icon', ['name' => 'warn'])
+            <div>@foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>
         </div>
     @endif
 
@@ -93,43 +97,52 @@
                         <input type="email" id="test_email" name="test_email" class="pg-input"
                                value="{{ old('test_email', auth()->user()->email) }}">
                     </div>
-                    <div class="pg-field">
-                        <label for="test_periode" class="pg-label">Contoh periode</label>
-                        <select id="test_periode" name="test_periode" class="pg-input">
-                            @foreach($testPeriods as $p)
-                                @php $value = $p['tahun'] . '-' . $p['triwulan']; @endphp
-                                <option value="{{ $value }}" @selected(old('test_periode', $defaultPeriod) === $value)>
-                                    {{ \App\Support\ReminderTemplate::periodLabel($p['tahun'], $p['triwulan']) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="pg-field">
-                        <label for="test_status" class="pg-label">Contoh status isian</label>
-                        <select id="test_status" name="test_status" class="pg-input">
-                            @foreach($statusLabels as $value => $label)
-                                <option value="{{ $value }}" @selected(old('test_status', 'belum_mulai') === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="pg-field">
-                        <label for="test_nama" class="pg-label">Contoh nama perusahaan</label>
-                        <input type="text" id="test_nama" name="test_nama" maxlength="200" class="pg-input"
-                               value="{{ old('test_nama', 'PT Contoh Industri Batam') }}">
-                    </div>
-                    <div class="pg-field">
-                        <label for="test_penghubung" class="pg-label">Contoh penghubung</label>
-                        <input type="text" id="test_penghubung" name="test_penghubung" maxlength="200" class="pg-input"
-                               value="{{ old('test_penghubung', 'Nama Penghubung') }}">
-                    </div>
-                    <div class="pg-field">
-                        <label for="test_pesan" class="pg-label">Contoh pesan tambahan (opsional)</label>
-                        <textarea id="test_pesan" name="test_pesan" rows="2" maxlength="1000" class="pg-input">{{ old('test_pesan', $settings->extra_message) }}</textarea>
-                    </div>
+
+                    <details class="pg-more">
+                        <summary>
+                            Ubah contoh data <span class="pg-optional">(opsional)</span>
+                            @include('bps.pengingat.partials.icon', ['name' => 'chevron', 'class' => 'pg-chevron'])
+                        </summary>
+                        <div class="pg-more-body">
+                            <div class="pg-field">
+                                <label for="test_periode" class="pg-label">Contoh periode</label>
+                                <select id="test_periode" name="test_periode" class="pg-input">
+                                    @foreach($testPeriods as $p)
+                                        @php $value = $p['tahun'] . '-' . $p['triwulan']; @endphp
+                                        <option value="{{ $value }}" @selected(old('test_periode', $defaultPeriod) === $value)>
+                                            {{ \App\Support\ReminderTemplate::periodLabel($p['tahun'], $p['triwulan']) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="pg-field">
+                                <label for="test_status" class="pg-label">Contoh status isian</label>
+                                <select id="test_status" name="test_status" class="pg-input">
+                                    @foreach($statusLabels as $value => $label)
+                                        <option value="{{ $value }}" @selected(old('test_status', 'belum_mulai') === $value)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="pg-field">
+                                <label for="test_nama" class="pg-label">Contoh nama perusahaan</label>
+                                <input type="text" id="test_nama" name="test_nama" maxlength="200" class="pg-input"
+                                       value="{{ old('test_nama', 'PT Contoh Industri Batam') }}">
+                            </div>
+                            <div class="pg-field">
+                                <label for="test_penghubung" class="pg-label">Contoh penghubung</label>
+                                <input type="text" id="test_penghubung" name="test_penghubung" maxlength="200" class="pg-input"
+                                       value="{{ old('test_penghubung', 'Nama Penghubung') }}">
+                            </div>
+                            <div class="pg-field">
+                                <label for="test_pesan" class="pg-label">Contoh pesan tambahan (opsional)</label>
+                                <textarea id="test_pesan" name="test_pesan" rows="2" maxlength="1000" class="pg-input">{{ old('test_pesan', $settings->extra_message) }}</textarea>
+                            </div>
+                        </div>
+                    </details>
 
                     <button type="submit" class="pg-btn pg-btn-primary pg-btn-block" formnovalidate
                             formaction="{{ route('bps.pengingat.template.test') }}">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        @include('bps.pengingat.partials.icon', ['name' => 'mail'])
                         Kirim Email Uji
                     </button>
                 </div>

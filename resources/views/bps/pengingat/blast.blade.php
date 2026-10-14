@@ -11,6 +11,15 @@
         'sent'    => ['pg-badge-green', 'Terkirim'],
         'failed'  => ['pg-badge-red', 'Gagal'],
     ];
+    // queued and sending are one "still waiting" group for the filter.
+    $group  = fn ($status) => in_array($status, ['queued', 'sending'], true) ? 'menunggu' : $status;
+    $total  = $logs->count();
+    $period = 'Triwulan ' . ($roman[$blast->triwulan] ?? $blast->triwulan) . ' ' . $blast->tahun;
+    $filters = array_filter([
+        'sent'     => ['Terkirim', $blast->sent_count],
+        'menunggu' => ['Menunggu', $blast->queued_count],
+        'failed'   => ['Gagal', $blast->failed_count],
+    ], fn ($f) => $f[1] > 0);
 @endphp
 
 @push('styles')
@@ -22,79 +31,128 @@
 @endpush
 
 @section('content')
-<div class="space-y-6">
-    <div class="flex items-start justify-between gap-4 flex-wrap">
+<div class="pg">
+    <div class="pg-head">
         <div>
-            <a href="{{ route('bps.pengingat.index', ['tab' => 'riwayat']) }}" class="pg-link text-sm">&larr; Kembali ke riwayat</a>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                Pengingat SIBSTR Triwulan {{ $roman[$blast->triwulan] ?? $blast->triwulan }} {{ $blast->tahun }}
-            </h1>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {{ $blast->trigger === 'otomatis' ? 'Otomatis' : 'Manual oleh ' . ($blast->createdBy->name ?? '-') }}
+            <a href="{{ route('bps.pengingat.index', ['tab' => 'riwayat']) }}" class="pg-link pg-back">
+                @include('bps.pengingat.partials.icon', ['name' => 'back', 'class' => 'pg-ico'])
+                Kembali ke riwayat
+            </a>
+            <h1 class="pg-title">Pengingat SIBSTR {{ $period }}</h1>
+            <p class="pg-subtitle">
+                {{ $blast->trigger === 'otomatis' ? 'Dikirim otomatis' : 'Dikirim manual oleh ' . ($blast->createdBy->name ?? '-') }}
                 · {{ $wib($blast->created_at)->translatedFormat('l, d M Y H.i') }} WIB
-                · ke responden yang {{ collect($blast->target_statuses)->map(fn ($s) => mb_strtolower($statusLabels[$s] ?? $s))->implode(' / ') }}
+                @if($blast->sources)
+                    · dari data: {{ collect($blast->sources)->map(fn ($s) => $sourceLabels[$s] ?? \App\Support\SibstrReminder::sourceTag($s, $blast->triwulan))->implode(', ') }}
+                @else
+                    · ke responden yang {{ collect($blast->target_statuses)->map(fn ($s) => mb_strtolower($statusLabels[$s] ?? $s))->implode(' / ') }}
+                @endif
             </p>
         </div>
-        @if($blast->failed_count > 0)
-            <form method="POST" action="{{ route('bps.pengingat.retry', $blast) }}"
-                  onsubmit="return confirm('Kirim ulang {{ $blast->failed_count }} email yang gagal?')">
-                @csrf
-                <button type="submit" class="pg-btn pg-btn-primary" @disabled(! $serverEnabled)>
-                    Kirim ulang {{ $blast->failed_count }} yang gagal
-                </button>
-            </form>
-        @endif
+        <a href="{{ route('bps.pengingat.blast.email', $blast) }}" target="_blank" rel="noopener" class="pg-btn pg-btn-ghost">
+            @include('bps.pengingat.partials.icon', ['name' => 'eye'])
+            Lihat isi email
+        </a>
     </div>
 
-    <div class="pg-stats">
-        <div class="pg-card"><div class="pg-card-label">Penerima</div><div class="pg-card-value">{{ $logs->count() }}</div></div>
-        <div class="pg-card"><div class="pg-card-label">Terkirim</div><div class="pg-card-value">{{ $blast->sent_count }}</div></div>
-        <div class="pg-card"><div class="pg-card-label">Dalam antrean</div><div class="pg-card-value">{{ $blast->queued_count }}</div>
-            @if($blast->queued_count > 0)<div class="pg-card-sub">Halaman diperbarui otomatis</div>@endif
-        </div>
-        <div class="pg-card"><div class="pg-card-label">Gagal</div><div class="pg-card-value">{{ $blast->failed_count }}</div></div>
-    </div>
-
+    {{-- Outcome --}}
     <div class="pg-panel">
-        <div class="pg-toolbar">
+        <div class="pg-result-head">
             <div>
-                <div class="pg-card-label">Template</div>
-                <div class="pg-message mt-1">
-                    {{ $blast->template->name ?? 'Template sudah dihapus' }}
-                    <span class="pg-muted">— teks yang dikirim tersimpan di riwayat ini</span>
+                <div class="pg-overview-label">Hasil pengiriman</div>
+                <div class="pg-result-title">
+                    @if($total === 0)
+                        Tidak ada email yang dikirim
+                    @elseif($blast->queued_count > 0)
+                        @include('bps.pengingat.partials.icon', ['name' => 'refresh'])
+                        Sedang dikirim: {{ $blast->sent_count }} dari {{ $total }}
+                    @elseif($blast->failed_count > 0)
+                        <span class="pg-bad">@include('bps.pengingat.partials.icon', ['name' => 'warn'])</span>
+                        {{ $blast->failed_count }} email gagal terkirim
+                    @else
+                        <span class="pg-ok">@include('bps.pengingat.partials.icon', ['name' => 'check'])</span>
+                        Semua email terkirim
+                    @endif
                 </div>
-                <div class="pg-card-label mt-1">Subjek</div>
-                <div class="pg-message mt-1">{{ \App\Support\ReminderTemplate::subject($blast->subject, \App\Support\ReminderTemplate::variables($blast->tahun, $blast->triwulan, null, null, false, '')) }}</div>
+                <div class="pg-hint">
+                    @if($blast->queued_count > 0)
+                        Email terkirim bertahap. Halaman ini diperbarui otomatis setiap 20 detik.
+                    @elseif($blast->failed_count > 0)
+                        Penyebabnya ada di kolom Keterangan. Gangguan sementara biasanya beres bila dikirim ulang.
+                    @endif
+                </div>
             </div>
-            <a href="{{ route('bps.pengingat.blast.email', $blast) }}" target="_blank" rel="noopener" class="pg-btn pg-btn-ghost">Lihat isi email</a>
+            @if($blast->failed_count > 0)
+                <form method="POST" action="{{ route('bps.pengingat.retry', $blast) }}"
+                      onsubmit="return confirm('Kirim ulang {{ $blast->failed_count }} email yang gagal?')">
+                    @csrf
+                    <button type="submit" class="pg-btn pg-btn-primary" @disabled(! $serverEnabled)>
+                        @include('bps.pengingat.partials.icon', ['name' => 'refresh'])
+                        Kirim ulang {{ $blast->failed_count }} yang gagal
+                    </button>
+                </form>
+            @endif
         </div>
-        @if($blast->extra_message)
-            <div class="pg-card-label mt-1">Pesan tambahan</div>
-            <div class="pg-message mt-1">{{ $blast->extra_message }}</div>
-        @endif
+        @include('bps.pengingat.partials.progress', [
+            'total' => $total, 'sent' => $blast->sent_count,
+            'queued' => $blast->queued_count, 'failed' => $blast->failed_count, 'large' => true,
+        ])
     </div>
 
+    {{-- What was sent --}}
+    <div class="pg-panel">
+        <dl class="pg-dl">
+            <dt>Template</dt>
+            <dd>
+                {{ $blast->template->name ?? 'Template sudah dihapus' }}
+                <span class="pg-hint">(teks yang dikirim tersimpan di riwayat ini)</span>
+            </dd>
+            <dt>Subjek</dt>
+            <dd>{{ \App\Support\ReminderTemplate::subject($blast->subject, \App\Support\ReminderTemplate::variables($blast->tahun, $blast->triwulan, null, null, false, '')) }}</dd>
+            @if($blast->extra_message)
+                <dt>Pesan tambahan</dt>
+                <dd class="pg-message">{{ $blast->extra_message }}</dd>
+            @endif
+        </dl>
+    </div>
+
+    {{-- Per recipient --}}
     <div class="pg-panel pg-flush">
         @if($logs->isEmpty())
             <div class="pg-empty">
-                Tidak ada email pada pengiriman ini — semua responden yang sesuai sudah dikirimi hari itu atau tidak punya email Blok I.
+                @include('bps.pengingat.partials.icon', ['name' => 'inbox'])
+                <p>Tidak ada email pada pengiriman ini. Semua responden yang sesuai sudah dikirimi hari itu atau tidak punya email Blok I.</p>
             </div>
         @else
-            <div class="overflow-x-auto">
+            @if(count($filters) > 1)
+                <div class="pg-filters" role="group" aria-label="Saring menurut status">
+                    <button type="button" class="pg-seg pg-seg-sm is-active" data-filter="" aria-pressed="true">
+                        Semua <span class="pg-count">{{ $total }}</span>
+                    </button>
+                    @foreach($filters as $key => [$label, $count])
+                        <button type="button" class="pg-seg pg-seg-sm" data-filter="{{ $key }}" aria-pressed="false">
+                            {{ $label }} <span class="pg-count">{{ $count }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+            <div class="pg-scroll-x">
                 <table class="pg-table">
                     <thead>
-                        <tr><th>Perusahaan</th><th>Penghubung</th><th>Email</th><th>Status</th><th>Waktu Kirim</th><th>Keterangan</th></tr>
+                        <tr><th>Perusahaan</th><th>Email</th><th>Status</th><th>Waktu kirim</th><th>Keterangan</th></tr>
                     </thead>
                     <tbody>
                         @foreach($logs as $log)
                             @php [$cls, $label] = $badges[$log->status] ?? ['pg-badge-gray', $log->status]; @endphp
-                            <tr>
-                                <td class="font-medium">{{ $log->nama_perusahaan ?: '-' }}</td>
-                                <td>{{ $log->penghubung ?: '-' }}</td>
+                            <tr data-group="{{ $group($log->status) }}">
+                                <td>
+                                    <div class="pg-strong">{{ $log->nama_perusahaan ?: '-' }}</div>
+                                    @if($log->penghubung)<div class="pg-muted">{{ $log->penghubung }}</div>@endif
+                                </td>
                                 <td class="pg-break">{{ $log->email }}</td>
                                 <td><span class="pg-badge {{ $cls }}">{{ $label }}</span></td>
-                                <td>{{ $log->sent_at ? $wib($log->sent_at)->format('d/m/Y H.i') : '-' }}</td>
-                                <td class="text-xs pg-break">{{ $log->error ?: '' }}</td>
+                                <td class="pg-nowrap">{{ $log->sent_at ? $wib($log->sent_at)->format('d/m/Y H.i') : '-' }}</td>
+                                <td class="pg-break"><div class="pg-muted">{{ $log->error ?: '' }}</div></td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -104,3 +162,22 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var chips = [].slice.call(document.querySelectorAll('[data-filter]'));
+    var rows  = [].slice.call(document.querySelectorAll('tr[data-group]'));
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            var want = chip.getAttribute('data-filter');
+            chips.forEach(function (c) {
+                c.classList.toggle('is-active', c === chip);
+                c.setAttribute('aria-pressed', c === chip ? 'true' : 'false');
+            });
+            rows.forEach(function (r) { r.hidden = want !== '' && r.getAttribute('data-group') !== want; });
+        });
+    });
+})();
+</script>
+@endpush

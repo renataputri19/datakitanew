@@ -28,11 +28,13 @@ class SibstrReminderSender
 {
     /**
      * Queue one email per reachable recipient, skipping anyone already
-     * emailed (or queued) for this period today. A failed email from earlier
-     * today is moved into this blast and retried.
+     * emailed (or queued) for this period today, by account or by address,
+     * so a shared address never gets the same reminder twice in a day. A
+     * failed email from earlier today is moved into this blast and retried.
      *
-     * @param  Collection  $recipients  from SibstrReminder::recipients()
+     * @param  Collection  $recipients  from SibstrReminder::recipients(), one entry per address
      * @param  list<string>|null  $onlyUserIds  restrict to these respondents
+     * @param  list<string>  $sources  what the list was drawn from, for the history
      * @return array{blast: ?SurveyReminderBlast, queued: int, skipped: int}
      */
     public function queue(
@@ -45,24 +47,28 @@ class SibstrReminderSender
         ?string $extraMessage,
         ?User $by,
         ?array $onlyUserIds = null,
+        array $sources = [],
     ): array {
         $reachable = $recipients->whereNotNull('email');
         if ($onlyUserIds !== null) {
             $reachable = $reachable->filter(fn ($r) => in_array($r['user']->id, $onlyUserIds, true));
         }
 
-        $today    = now()->toDateString();
-        $existing = SurveyReminderLog::where('survey_type', 'sibstr')
+        $today = now()->toDateString();
+        $logs  = SurveyReminderLog::where('survey_type', 'sibstr')
             ->where('tahun', $tahun)
             ->where('triwulan', $triwulan)
             ->whereDate('sent_on', $today)
-            ->get()
-            ->keyBy('user_id');
+            ->get();
+        $existing   = $logs->keyBy('user_id');
+        $usedEmails = $logs->where('status', '!=', SurveyReminderLog::STATUS_FAILED)
+            ->mapWithKeys(fn ($log) => [mb_strtolower($log->email) => true]);
 
-        $candidates = $reachable->reject(function ($r) use ($existing) {
+        $candidates = $reachable->reject(function ($r) use ($existing, $usedEmails) {
             $log = $existing->get($r['user']->id);
 
-            return $log && $log->status !== SurveyReminderLog::STATUS_FAILED;
+            return ($log && $log->status !== SurveyReminderLog::STATUS_FAILED)
+                || $usedEmails->has(mb_strtolower($r['email']));
         });
         $skipped = $reachable->count() - $candidates->count();
 
@@ -78,6 +84,7 @@ class SibstrReminderSender
             'triwulan'        => $triwulan,
             'trigger'         => $trigger,
             'target_statuses' => array_values($statuses),
+            'sources'         => array_values($sources),
             // A copy, not just the id: editing the template later must not
             // change what this blast sends or what its history shows.
             'template_id'     => $template->id,
@@ -149,12 +156,13 @@ class SibstrReminderSender
         return $this->queue(
             $tahun,
             $triwulan,
-            SibstrReminder::recipientsFor($settings, $tahun, $triwulan),
+            SibstrReminder::automaticRecipients($settings, $tahun, $triwulan),
             SurveyReminderBlast::TRIGGER_OTOMATIS,
             $settings->target_statuses ?? [],
             $settings->resolvedTemplate(),
             $settings->extra_message,
             null,
+            sources: SibstrReminder::defaultSources($tahun, $triwulan),
         );
     }
 

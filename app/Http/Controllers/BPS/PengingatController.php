@@ -12,7 +12,7 @@ use App\Services\SibstrReminderSender;
 use App\Support\SibstrFormat;
 use App\Support\SibstrReminder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /**
@@ -48,35 +48,46 @@ class PengingatController extends Controller
 
         if ($tab === 'kirim' && $periods !== []) {
             [$tahun, $triwulan] = $this->selectedPeriod($request, $periods, $current);
-            // The filter form always sends `periode`; only a fresh visit falls
-            // back to the saved targets, so unticking every status sticks.
-            $statuses = array_values(array_intersect(
-                (array) ($request->has('periode') ? $request->query('status', []) : ($settings->target_statuses ?? [])),
-                array_keys(SurveyReminderSetting::statusLabels())
+            $options = SibstrReminder::sourceOptions($tahun, $triwulan);
+            // A fresh visit, or a change of quarter, starts from what the
+            // automatic run uses. The source chips send `pilih`, so a list
+            // the user unticked down to nothing stays empty.
+            $sources = array_values(array_intersect(
+                array_keys($options),
+                $request->has('pilih') ? (array) $request->query('sumber', []) : SibstrReminder::defaultSources($tahun, $triwulan),
             ));
 
-            $recipients = SibstrReminder::recipientsFor($settings, $tahun, $triwulan, $statuses);
-            $userIds    = $recipients->map(fn ($r) => $r['user']->id)->all();
+            // Load every unfinished company once: the chips count from it and
+            // the list is picked from it.
+            $candidates = SibstrReminder::candidates($tahun, $triwulan, $settings->excluded_kondisi ?? []);
+            $recipients = SibstrReminder::select($candidates, $sources);
+            $logs = SurveyReminderLog::where('survey_type', 'sibstr')
+                ->where('tahun', $tahun)->where('triwulan', $triwulan)
+                ->get(['email', 'status', 'sent_on', 'sent_at']);
 
             $data += [
-                'tahun'      => $tahun,
-                'triwulan'   => $triwulan,
-                'statuses'   => $statuses,
-                'recipients' => $recipients,
-                'sentToday'  => SurveyReminderLog::where('survey_type', 'sibstr')
-                    ->where('tahun', $tahun)->where('triwulan', $triwulan)
-                    ->whereDate('sent_on', now()->toDateString())
-                    ->whereIn('user_id', $userIds)
-                    ->pluck('status', 'user_id'),
-                'history'    => SurveyReminderLog::where('survey_type', 'sibstr')
-                    ->where('tahun', $tahun)->where('triwulan', $triwulan)
-                    ->where('status', SurveyReminderLog::STATUS_SENT)
-                    ->whereIn('user_id', $userIds)
-                    ->groupBy('user_id')
-                    ->select('user_id', DB::raw('COUNT(*) as total'), DB::raw('MAX(sent_at) as last_sent_at'))
-                    ->get()
-                    ->keyBy('user_id'),
+                'tahun'         => $tahun,
+                'triwulan'      => $triwulan,
+                'sourceOptions' => $options,
+                'sources'       => $sources,
+                'sourceCounts'  => $candidates->flatMap(fn ($c) => $c['sources'])->countBy(),
+                'recipients'    => $recipients,
+                // Keyed by address, like the sender's once-a-day rule. A
+                // failed attempt never hides a later success the same day.
+                'sentToday'     => $logs->filter(fn ($l) => $l->sent_on && $l->sent_on->isToday())
+                    ->sortBy(fn ($l) => $l->status === SurveyReminderLog::STATUS_FAILED ? 0 : 1)
+                    ->mapWithKeys(fn ($l) => [mb_strtolower($l->email) => $l->status]),
+                'history'       => $logs->where('status', SurveyReminderLog::STATUS_SENT)
+                    ->groupBy(fn ($l) => mb_strtolower($l->email))
+                    ->map(fn ($g) => (object) ['total' => $g->count(), 'last_sent_at' => $g->max('sent_at')]),
             ];
+
+            // Step 1 choices swap this section in place instead of reloading
+            // the page. A separate URL, so the browser never caches the
+            // fragment as the page itself.
+            if ($request->boolean('partial')) {
+                return view('bps.pengingat.partials.kirim', $data);
+            }
         }
 
         if ($tab === 'riwayat') {
@@ -100,13 +111,14 @@ class PengingatController extends Controller
         $validated = $request->validate([
             'tahun'         => ['required', 'integer'],
             'triwulan'      => ['required', 'integer', 'between:1,4'],
-            'status'        => ['required', 'array', 'min:1'],
-            'status.*'      => [Rule::in(array_keys(SurveyReminderSetting::statusLabels()))],
+            'sumber'        => ['required', 'array', 'min:1'],
+            'sumber.*'      => ['string'],
             'user_ids'      => ['required', 'array', 'min:1'],
             'user_ids.*'    => ['string'],
             'template_id'   => ['required', Rule::exists('survey_reminder_templates', 'id')->where('survey_type', 'sibstr')],
             'extra_message' => ['nullable', 'string', 'max:1000'],
         ], [
+            'sumber.required'   => 'Pilih minimal satu sumber data responden.',
             'user_ids.required' => 'Pilih minimal satu responden.',
         ]);
 
@@ -115,22 +127,27 @@ class PengingatController extends Controller
         if (! in_array(['tahun' => $tahun, 'triwulan' => $triwulan], SibstrReminder::availablePeriods(), true)) {
             return back()->with('error', 'Triwulan tersebut belum dibuka untuk pengisian.');
         }
+        $sources = array_values(array_intersect(array_keys(SibstrReminder::sourceOptions($tahun, $triwulan)), $validated['sumber']));
+        if ($sources === []) {
+            return back()->with('error', 'Pilih minimal satu sumber data responden.');
+        }
 
         // Recipients are recomputed here, never taken from the form, so a
         // tampered request can only narrow the list, not add addresses.
         $settings   = SurveyReminderSetting::forSurvey('sibstr');
-        $recipients = SibstrReminder::recipientsFor($settings, $tahun, $triwulan, $validated['status']);
+        $recipients = SibstrReminder::recipients($tahun, $triwulan, $sources, $settings->excluded_kondisi ?? []);
 
         $result = $sender->queue(
             $tahun,
             $triwulan,
             $recipients,
             SurveyReminderBlast::TRIGGER_MANUAL,
-            $validated['status'],
+            array_keys(SurveyReminderSetting::statusLabels()),
             SurveyReminderTemplate::findOrFail($validated['template_id']),
             $validated['extra_message'] ?? null,
             $request->user(),
             $validated['user_ids'],
+            $sources,
         );
 
         if ($result['blast'] === null) {
@@ -139,7 +156,7 @@ class PengingatController extends Controller
 
         $message = "{$result['queued']} email pengingat masuk antrean dan akan terkirim bertahap dalam beberapa menit.";
         if ($result['skipped'] > 0) {
-            $message .= " {$result['skipped']} responden dilewati karena sudah dikirimi hari ini.";
+            $message .= " {$result['skipped']} alamat email dilewati karena sudah dikirimi pengingat triwulan ini hari ini.";
         }
 
         return redirect()->route('bps.pengingat.blast', $result['blast'])->with('success', $message);
@@ -198,6 +215,7 @@ class PengingatController extends Controller
             'logs'          => $blast->logs()->orderBy('nama_perusahaan')->get(),
             'serverEnabled' => (bool) config('sibstr.reminder.enabled'),
             'statusLabels'  => SurveyReminderSetting::statusLabels(),
+            'sourceLabels'  => SibstrReminder::sourceOptions($blast->tahun, $blast->triwulan),
         ]);
     }
 
@@ -214,12 +232,28 @@ class PengingatController extends Controller
         return back()->with('success', "{$count} email yang gagal dimasukkan kembali ke antrean.");
     }
 
-    /** The automatic run's template with sample data, as respondents see it. */
+    /**
+     * A template filled with sample data, as respondents see it. Defaults to
+     * the automatic run's template and message; the send form passes its own
+     * `template`, `periode` and `pesan` so BPS previews what it is about to send.
+     */
     public function preview(Request $request)
     {
         $settings = SurveyReminderSetting::forSurvey('sibstr');
-        $template = $settings->resolvedTemplate();
-        $period   = SibstrReminder::period() ?? (SibstrReminder::availablePeriods()[0] ?? ['tahun' => (int) now()->format('Y'), 'triwulan' => 1]);
+        $template = $request->filled('template')
+            ? SurveyReminderTemplate::where('survey_type', 'sibstr')->find($request->query('template'))
+            : null;
+        $template ??= $settings->resolvedTemplate();
+
+        $period = SibstrReminder::period() ?? (SibstrReminder::availablePeriods()[0] ?? ['tahun' => (int) now()->format('Y'), 'triwulan' => 1]);
+        if (preg_match('/^(\d{4})-([1-4])$/', (string) $request->query('periode'), $m)) {
+            $period = ['tahun' => (int) $m[1], 'triwulan' => (int) $m[2]];
+        }
+
+        // An emptied message box means "no message", not "use the default".
+        $message = $request->has('pesan')
+            ? Str::limit(trim((string) $request->query('pesan')), 1000, '')
+            : $settings->extra_message;
 
         return response((new SibstrTriwulanReminder(
             $period['tahun'],
@@ -227,7 +261,7 @@ class PengingatController extends Controller
             'PT Contoh Industri Batam',
             'Nama Penghubung',
             $request->boolean('dalam_proses'),
-            $settings->extra_message,
+            $message !== '' ? $message : null,
             $settings->from_name,
             $settings->reply_to,
             $template->subject,

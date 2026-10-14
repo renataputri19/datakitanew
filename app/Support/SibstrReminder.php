@@ -7,17 +7,27 @@ use App\Models\SurveyResponse;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /**
  * Who should be reminded to fill SIBSTR Triwulanan, for which quarter, and
  * when the automatic schedule next fires.
  *
- * The respondent population is every non-staff user who has ever started a
- * SIBSTR record (Tahunan or any quarter): a company with no account has no
- * Blok I email to write to, so it cannot be reached from here anyway.
+ * Who is reminded about a quarter comes from "sources", the survey data BPS
+ * picks the list from:
+ *  - "2026-1", "2025-0" …  finished that quarter (triwulan 0 = Tahunan);
+ *  - "mulai"               started the quarter being chased, not finished.
+ * Only companies that have not finished the chased quarter are listed. The
+ * automatic run uses every earlier quarter plus "mulai", so Tahunan-only
+ * companies are reminded only when BPS ticks Tahunan by hand.
+ *
+ * Several companies can share one Blok I email; they are merged so an
+ * address receives one email naming all of them.
  */
 class SibstrReminder
 {
+    public const SOURCE_STARTED = 'mulai';
+
     /**
      * The quarter whose collection is running on $date: the one that has just
      * ended (Jan–Mar collects TW IV of last year, Apr–Jun TW I, and so on).
@@ -61,15 +71,71 @@ class SibstrReminder
     }
 
     /**
-     * One entry per respondent who has not finished ($tahun, $triwulan) and
-     * whose status is in $statuses. Entries with `email` = null have no usable
-     * Blok I email and are returned so BPS can follow up by phone.
+     * The sources BPS can pick from when chasing ($tahun, $triwulan): each
+     * Tahunan year on record, every other open quarter, and having started
+     * this one. Ordered oldest first, "mulai" last.
      *
-     * @param  list<string>  $statuses  SurveyReminderSetting::STATUS_*
-     * @param  list<string>  $excludedKondisi  latest Blok II R201 answers to skip
-     * @return Collection<int, array{user: User, nama_perusahaan: ?string, penghubung: ?string, email: ?string, telepon: ?string, status: string, in_progress: bool}>
+     * @return array<string, string> key => label
      */
-    public static function recipients(int $tahun, int $triwulan, array $statuses, array $excludedKondisi): Collection
+    public static function sourceOptions(int $tahun, int $triwulan): array
+    {
+        $options = [];
+        $tahunan = SurveyResponse::where('survey_type', 'sibstr')->where('triwulan', 0)
+            ->distinct()->orderBy('tahun')->pluck('tahun');
+        foreach ($tahunan as $year) {
+            $options[$year . '-0'] = 'Selesai Tahunan ' . $year;
+        }
+        foreach (array_reverse(self::availablePeriods()) as $p) {
+            if ($p['tahun'] !== $tahun || $p['triwulan'] !== $triwulan) {
+                $options[$p['tahun'] . '-' . $p['triwulan']] = 'Selesai ' . self::shortLabel($p['tahun'], $p['triwulan']);
+            }
+        }
+        $options[self::SOURCE_STARTED] = 'Sudah mulai ' . self::shortLabel($tahun, $triwulan) . ', belum selesai';
+
+        return $options;
+    }
+
+    /**
+     * What the automatic run (and a fresh manual page) chases: everyone who
+     * finished an earlier quarter, plus those who started this one.
+     *
+     * @return list<string>
+     */
+    public static function defaultSources(int $tahun, int $triwulan): array
+    {
+        $sources = [];
+        for ($y = 2026; $y <= $tahun; $y++) {
+            for ($q = 1; $q <= 4 && ($y < $tahun || $q < $triwulan); $q++) {
+                $sources[] = $y . '-' . $q;
+            }
+        }
+        $sources[] = self::SOURCE_STARTED;
+
+        return $sources;
+    }
+
+    /** "TW I 2026", "Tahunan 2025", "Mulai TW III" — the short tag shown per row. */
+    public static function sourceTag(string $source, int $triwulan): string
+    {
+        if ($source === self::SOURCE_STARTED) {
+            return 'Mulai TW ' . ReminderTemplate::roman($triwulan);
+        }
+        [$y, $q] = array_map('intval', explode('-', $source) + [1 => 0]);
+
+        return $q === 0 ? "Tahunan {$y}" : 'TW ' . ReminderTemplate::roman($q) . " {$y}";
+    }
+
+    /**
+     * One entry per company that has not finished ($tahun, $triwulan) and
+     * matches at least one source, before the source choice is applied: each
+     * entry lists every source it matches, so the page can count them.
+     * Entries with `email` = null have no usable Blok I email and are kept so
+     * BPS can follow up by phone.
+     *
+     * @param  list<string>  $excludedKondisi  latest Blok II R201 answers to skip
+     * @return Collection<int, array{user: User, nama_perusahaan: ?string, penghubung: ?string, email: ?string, telepon: ?string, status: string, in_progress: bool, sources: list<string>}>
+     */
+    public static function candidates(int $tahun, int $triwulan, array $excludedKondisi): Collection
     {
         return SurveyResponse::with('user')
             ->where('survey_type', 'sibstr')
@@ -80,14 +146,20 @@ class SibstrReminder
                    'telepon_fax', 'kondisi_perusahaan', 'is_completed', 'updated_at'])
             ->filter(fn (SurveyResponse $r) => $r->user && $r->user->role === User::ROLE_USER)
             ->groupBy('user_id')
-            ->map(function (Collection $rows) use ($tahun, $triwulan, $statuses, $excludedKondisi) {
-                $current = $rows->first(fn ($r) => (int) $r->tahun === $tahun && (int) $r->triwulan === $triwulan);
+            ->map(function (Collection $rows) use ($tahun, $triwulan, $excludedKondisi) {
+                $isTarget = fn ($r) => (int) $r->tahun === $tahun && (int) $r->triwulan === $triwulan;
+                $current  = $rows->first($isTarget);
                 if ($current && $current->is_completed) {
                     return null;
                 }
 
-                $status = $current ? SurveyReminderSetting::STATUS_DALAM_PROSES : SurveyReminderSetting::STATUS_BELUM_MULAI;
-                if (! in_array($status, $statuses, true)) {
+                $sources = $rows->filter(fn ($r) => $r->is_completed && ! $isTarget($r))
+                    ->map(fn ($r) => (int) $r->tahun . '-' . (int) $r->triwulan)
+                    ->unique()->values()->all();
+                if ($current) {
+                    $sources[] = self::SOURCE_STARTED;
+                }
+                if ($sources === []) {
                     return null;
                 }
 
@@ -109,8 +181,9 @@ class SibstrReminder
                         : $rows->first(fn ($r) => filled($r->penghubung))?->penghubung,
                     'email'           => $contact ? trim($contact->email) : null,
                     'telepon'         => $rows->first(fn ($r) => filled($r->telepon_fax))?->telepon_fax,
-                    'status'          => $status,
+                    'status'          => $current ? SurveyReminderSetting::STATUS_DALAM_PROSES : SurveyReminderSetting::STATUS_BELUM_MULAI,
                     'in_progress'     => $current !== null,
+                    'sources'         => $sources,
                 ];
             })
             ->filter()
@@ -118,15 +191,75 @@ class SibstrReminder
             ->values();
     }
 
-    /** Recipients for a period under the saved BPS settings. */
-    public static function recipientsFor(SurveyReminderSetting $settings, int $tahun, int $triwulan, ?array $statuses = null): Collection
+    /**
+     * The candidates matching any of $sources (and $statuses, when given),
+     * merged so each email address appears once. A merged entry names all its
+     * companies in `nama_perusahaan`; `companies` and `user_ids` list them.
+     *
+     * @param  list<string>  $sources
+     * @param  list<string>|null  $statuses  SurveyReminderSetting::STATUS_*
+     */
+    public static function select(Collection $candidates, array $sources, ?array $statuses = null): Collection
+    {
+        $picked = $candidates->filter(fn ($c) => array_intersect($c['sources'], $sources) !== []
+            && ($statuses === null || in_array($c['status'], $statuses, true)));
+
+        $byEmail = $picked->whereNotNull('email')
+            ->groupBy(fn ($c) => mb_strtolower($c['email']))
+            ->map(function (Collection $group) {
+                $names     = $group->pluck('nama_perusahaan')->filter()->unique()->values();
+                $allActive = $group->every(fn ($c) => $c['in_progress']);
+
+                return array_merge($group->first(), [
+                    'nama_perusahaan' => $names->count() > 1
+                        ? Str::limit($names->slice(0, -1)->implode(', ') . ' dan ' . $names->last(), 250)
+                        : $group->first()['nama_perusahaan'],
+                    'companies'   => $names->all(),
+                    'user_ids'    => $group->map(fn ($c) => $c['user']->id)->values()->all(),
+                    // The "you have started" sentence must be true for every company named.
+                    'in_progress' => $allActive,
+                    'status'      => $allActive ? SurveyReminderSetting::STATUS_DALAM_PROSES : SurveyReminderSetting::STATUS_BELUM_MULAI,
+                    'sources'     => $group->flatMap(fn ($c) => $c['sources'])->unique()->values()->all(),
+                ]);
+            });
+
+        $noEmail = $picked->whereNull('email')->map(fn ($c) => $c + [
+            'companies' => array_filter([$c['nama_perusahaan']]),
+            'user_ids'  => [$c['user']->id],
+        ]);
+
+        return $byEmail->values()->concat($noEmail)
+            ->sortBy(fn ($r) => mb_strtolower((string) $r['nama_perusahaan']))
+            ->values();
+    }
+
+    /**
+     * Recipients for chasing ($tahun, $triwulan) from $sources.
+     *
+     * @param  list<string>  $sources
+     * @param  list<string>  $excludedKondisi
+     * @param  list<string>|null  $statuses
+     */
+    public static function recipients(int $tahun, int $triwulan, array $sources, array $excludedKondisi, ?array $statuses = null): Collection
+    {
+        return self::select(self::candidates($tahun, $triwulan, $excludedKondisi), $sources, $statuses);
+    }
+
+    /** Who the automatic run emails under the saved settings. */
+    public static function automaticRecipients(SurveyReminderSetting $settings, int $tahun, int $triwulan): Collection
     {
         return self::recipients(
             $tahun,
             $triwulan,
-            $statuses ?? ($settings->target_statuses ?? []),
-            $settings->excluded_kondisi ?? []
+            self::defaultSources($tahun, $triwulan),
+            $settings->excluded_kondisi ?? [],
+            $settings->target_statuses ?? [],
         );
+    }
+
+    private static function shortLabel(int $tahun, int $triwulan): string
+    {
+        return 'Triwulan ' . ReminderTemplate::roman($triwulan) . ' ' . $tahun;
     }
 
     /**

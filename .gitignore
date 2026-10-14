@@ -27,3 +27,4 @@ Thumbs.db
 # password hashes. The Docker seed (docker/seed/) is the one intentional
 # exception and is not matched by this root-only pattern.
 /*.sql
+/*.sql.gz

@@ -19,6 +19,7 @@ class SurveyReminderBlast extends Model
         'triwulan',
         'trigger',
         'target_statuses',
+        'sources',
         'template_id',
         'subject',
         'body',
@@ -30,6 +31,7 @@ class SurveyReminderBlast extends Model
         'tahun'           => 'integer',
         'triwulan'        => 'integer',
         'target_statuses' => 'array',
+        'sources'         => 'array',
     ];
 
     public function logs()

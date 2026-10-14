@@ -75,7 +75,7 @@ class PengingatTemplateController extends Controller
         }
 
         if (SurveyReminderSetting::where('survey_type', 'sibstr')->where('template_id', $template->id)->exists()) {
-            return back()->with('error', "Template \"{$template->name}\" dipakai pengiriman otomatis. Ganti dulu di tab Pengaturan Otomatis.");
+            return back()->with('error', "Template \"{$template->name}\" dipakai pengiriman otomatis. Ganti dulu di tab Jadwal & Pengaturan.");
         }
 
         $template->delete();
