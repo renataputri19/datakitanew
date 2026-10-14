@@ -12,7 +12,15 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // SIBSTR reminder emails. Runs every minute because the schedule
+        // (days, time) is set by BPS in the database at /bps/pengingat, and
+        // because manual blasts are sent from the same queue. Only servers
+        // with SIBSTR_REMINDER_ENABLED (prod) run it at all.
+        $schedule->command('sibstr:proses-pengingat')
+            ->everyMinute()
+            ->when(fn () => (bool) config('sibstr.reminder.enabled'))
+            ->withoutOverlapping(10)
+            ->appendOutputTo(storage_path('logs/sibstr-reminder.log'));
     }
 
     /**

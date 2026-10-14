@@ -183,6 +183,18 @@
     background: #2563eb;
 }
 
+.contact-link {
+    color: #2563eb;
+}
+
+.contact-link:hover {
+    text-decoration: underline;
+}
+
+.dark .contact-link {
+    color: #60a5fa;
+}
+
 .pagination-container {
     display: flex;
     align-items: center;
@@ -333,7 +345,7 @@
                            id="search"
                            name="search"
                            value="{{ request('search') }}"
-                           placeholder="Cari nama perusahaan, KIP, IDSBR..."
+                           placeholder="Cari nama perusahaan, KIP, IDSBR, penghubung, email..."
                            class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
 
@@ -422,6 +434,7 @@
                         <tr>
                             <th>No</th>
                             <th>Nama Perusahaan</th>
+                            <th>Kontak Penghubung</th>
                             <th>Pengguna</th>
                             <th>KIP/IDSBR</th>
                             @if(!$isTahunan)
@@ -450,6 +463,9 @@
                                     {{ $response->kabupaten_kota }}
                                 </div>
                                 @endif
+                            </td>
+                            <td>
+                                @include('bps.sibstr.partials.contact-cell')
                             </td>
                             <td>
                                 <div class="text-sm">{{ $response->user->name }}</div>
@@ -626,7 +642,7 @@
             'name'        => 'search',
             'label'       => 'Pencarian',
             'value'       => request('search'),
-            'placeholder' => 'Nama perusahaan, KIP, IDSBR, pengguna...',
+            'placeholder' => 'Nama perusahaan, KIP, IDSBR, penghubung, pengguna...',
             'full'        => true,
         ],
     ],

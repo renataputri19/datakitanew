@@ -46,6 +46,19 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
         ],
 
+        // Optional second SMTP account for survey reminders (SIBSTR_REMINDER_MAILER=reminder),
+        // so bulk reminders can use a different provider than password resets.
+        'reminder' => [
+            'transport' => 'smtp',
+            'host' => env('REMINDER_MAIL_HOST'),
+            'port' => env('REMINDER_MAIL_PORT', 587),
+            'encryption' => env('REMINDER_MAIL_ENCRYPTION', 'tls'),
+            'username' => env('REMINDER_MAIL_USERNAME'),
+            'password' => env('REMINDER_MAIL_PASSWORD'),
+            'timeout' => null,
+            'local_domain' => env('MAIL_EHLO_DOMAIN'),
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],

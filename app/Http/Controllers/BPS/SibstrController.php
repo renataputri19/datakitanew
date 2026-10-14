@@ -173,6 +173,9 @@ class SibstrController extends Controller
                 $q->where('nama_perusahaan', 'like', "%{$search}%")
                   ->orWhere('kip', 'like', "%{$search}%")
                   ->orWhere('idsbr', 'like', "%{$search}%")
+                  ->orWhere('penghubung', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('telepon_fax', 'like', "%{$search}%")
                   ->orWhereHas('user', function($userQuery) use ($search) {
                       $userQuery->where('name', 'like', "%{$search}%")
                                 ->orWhere('email', 'like', "%{$search}%");
@@ -307,6 +310,9 @@ class SibstrController extends Controller
                 $q->where('nama_perusahaan', 'like', "%{$search}%")
                   ->orWhere('kip', 'like', "%{$search}%")
                   ->orWhere('idsbr', 'like', "%{$search}%")
+                  ->orWhere('penghubung', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('telepon_fax', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($uq) use ($search) {
                       $uq->where('name', 'like', "%{$search}%")
                          ->orWhere('email', 'like', "%{$search}%");

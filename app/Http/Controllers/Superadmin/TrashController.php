@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Superadmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\KonstruksiSurveyResponse;
 use App\Models\ListrikSurveyResponse;
 use App\Models\SurveyResponse;
 use App\Models\UbSurveyResponse;
@@ -12,7 +13,7 @@ use Illuminate\Http\Request;
 
 /**
  * Superadmin recycle bin for survey submissions soft-deleted by BPS from the
- * /bps/{sibstr,ub,listrik} data pages.
+ * /bps/{sibstr,ub,listrik,konstruksi} data pages.
  *
  * Restoring is not unconditional: each table keeps a "one live submission per
  * user per period" unique key (see migration 2026_07_19_000002). If the
@@ -46,6 +47,11 @@ class TrashController extends Controller
             'model'  => ListrikSurveyResponse::class,
             'label'  => 'Survei Listrik',
             'unique' => ['user_id', 'tahun'],
+        ],
+        'konstruksi' => [
+            'model'  => KonstruksiSurveyResponse::class,
+            'label'  => 'Survei Konstruksi',
+            'unique' => ['user_id', 'tahun', 'triwulan'],
         ],
     ];
 
@@ -88,7 +94,9 @@ class TrashController extends Controller
     /** Human-readable period for a row. */
     private function periodLabel(string $type, Model $row): string
     {
-        if ($type !== 'sibstr') {
+        // SIBSTR and Konstruksi are period-scoped (tahunan / triwulan 1–4);
+        // UB and Listrik have one submission per year and no triwulan column.
+        if (!in_array($type, ['sibstr', 'konstruksi'], true)) {
             return 'Tahun ' . ($row->tahun ?? '—');
         }
 

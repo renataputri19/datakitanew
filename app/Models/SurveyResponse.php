@@ -777,14 +777,16 @@ class SurveyResponse extends Model
      */
     public const TW2_LAUNCH_DATE = '2026-07-06';
 
-    public static function availableTriwulan(int $tahun): array
+    public static function availableTriwulan(int $tahun, ?\DateTimeInterface $at = null): array
     {
         // Triwulanan reporting is only available starting from 2026.
         if ($tahun < 2026) {
             return [];
         }
 
-        $now = now();
+        // $at asks "what will be open on that date" — the reminder schedule
+        // uses it to skip a reminder day that falls before a quarter opens.
+        $now = $at ? \Illuminate\Support\Carbon::instance($at) : now();
         $currentYear  = (int) $now->format('Y');
         $currentMonth = (int) $now->format('n');
 

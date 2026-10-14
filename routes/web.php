@@ -270,6 +270,52 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/listrik/blok3/finish',   [App\Http\Controllers\SurveyListrikController::class, 'finish'])->name('listrik.blok3.finish');
         Route::get('/listrik/pdf',             [App\Http\Controllers\SurveyListrikController::class, 'downloadPdf'])->name('listrik.pdf.download');
 
+        // ── SURVEI KONSTRUKSI (SKTH tahunan; SKTR triwulanan menyusul) ──
+        // URLs carry the period the SIBSTR way so the quarterly form can be
+        // added later without moving anything. The controller serves only the
+        // periods it has a questionnaire for and bounces the rest.
+        Route::get('/konstruksi', [App\Http\Controllers\SurveyKonstruksiController::class, 'entry'])
+            ->name('konstruksi.entry');
+
+        Route::prefix('konstruksi/{year}/{period}')
+            ->name('konstruksi.')
+            ->where(['year' => '[0-9]{4}', 'period' => 'tahunan|[1-4]'])
+            ->group(function () {
+                $ctrl = App\Http\Controllers\SurveyKonstruksiController::class;
+
+                Route::get('/nav',        [$ctrl, 'nav'])->name('nav');
+                Route::post('/start-edit', [$ctrl, 'startEdit'])->name('start-edit');
+                Route::get('/pdf',        [$ctrl, 'downloadPdf'])->name('pdf.download');
+
+                // One page route per block name either instrument uses. The
+                // annual form owns blok1..blok10; the quarterly one owns
+                // status, blok1..blok3 and penutup — the shared names resolve
+                // to different views inside the controller.
+                //
+                // Blok IX is derived, and the closing block (blok10 for SKTH,
+                // penutup for SKTR) finishes the survey, so none of those take
+                // a plain per-blok save.
+                $noSave = ['blok9', 'blok10', 'penutup'];
+
+                foreach (App\Support\KonstruksiBlokPath::keys() as $blok) {
+                    Route::get("/{$blok}", [$ctrl, \Illuminate\Support\Str::camel($blok)])->name($blok);
+
+                    if (!in_array($blok, $noSave, true)) {
+                        Route::post("/{$blok}/save", [$ctrl, 'save' . ucfirst($blok)])->name("{$blok}.save");
+                    }
+                }
+
+                // Both closing blocks post to finish().
+                Route::post('/blok10/finish', [$ctrl, 'finish'])->name('blok10.finish');
+                Route::post('/penutup/finish', [$ctrl, 'finish'])->name('penutup.finish');
+
+                $sections = 'status|penutup|blok([1-9]|10)';
+                Route::post('/{section}/autosave', [$ctrl, 'autoSave'])
+                    ->where('section', $sections)->name('autosave');
+                Route::get('/{section}/field-status', [$ctrl, 'fieldStatus'])
+                    ->where('section', $sections)->name('field-status');
+            });
+
         // ── SIBSTR LANDING PAGE (no period params) ──
         Route::get('/sibstr', [SurveyController::class, 'sibstrEntry'])->name('sibstr.entry');
 
@@ -440,6 +486,9 @@ Route::middleware(['auth'])->group(function () {
         // UB Statistics Dashboard (annual business census viz)
         Route::get('/statistik-ub', [App\Http\Controllers\BPS\StatistikUbController::class, 'index'])->name('statistik.ub');
 
+        // Konstruksi Statistics Dashboard (annual construction survey viz)
+        Route::get('/statistik-konstruksi', [App\Http\Controllers\BPS\StatistikKonstruksiController::class, 'index'])->name('statistik.konstruksi');
+
         // News Management
         Route::resource('news', BPSNewsController::class);
 
@@ -467,6 +516,33 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/listrik/{id}/download', [App\Http\Controllers\BPS\ListrikController::class, 'download'])->name('listrik.download');
         Route::get('/listrik/{id}', [App\Http\Controllers\BPS\ListrikController::class, 'show'])->name('listrik.show');
         Route::delete('/listrik/{id}', [App\Http\Controllers\BPS\ListrikController::class, 'destroy'])->name('listrik.destroy');
+
+        // Konstruksi Survey Data Management (view + PDF + delete — BPS only)
+        Route::get('/konstruksi', [App\Http\Controllers\BPS\KonstruksiController::class, 'index'])->name('konstruksi.index');
+        Route::get('/konstruksi/export', [App\Http\Controllers\BPS\KonstruksiController::class, 'export'])->name('konstruksi.export');
+        Route::get('/konstruksi/{id}/download', [App\Http\Controllers\BPS\KonstruksiController::class, 'download'])->name('konstruksi.download');
+        Route::get('/konstruksi/{id}', [App\Http\Controllers\BPS\KonstruksiController::class, 'show'])->name('konstruksi.show');
+        Route::delete('/konstruksi/{id}', [App\Http\Controllers\BPS\KonstruksiController::class, 'destroy'])->name('konstruksi.destroy');
+
+        // SIBSTR reminder emails — schedule, manual blast and history (BPS only)
+        Route::get('/pengingat', [App\Http\Controllers\BPS\PengingatController::class, 'index'])->name('pengingat.index');
+        Route::post('/pengingat/kirim', [App\Http\Controllers\BPS\PengingatController::class, 'send'])->name('pengingat.send');
+        Route::put('/pengingat/pengaturan', [App\Http\Controllers\BPS\PengingatController::class, 'updateSettings'])->name('pengingat.settings');
+        Route::get('/pengingat/contoh-email', [App\Http\Controllers\BPS\PengingatController::class, 'preview'])->name('pengingat.preview');
+        Route::get('/pengingat/riwayat/{blast}', [App\Http\Controllers\BPS\PengingatController::class, 'blast'])->name('pengingat.blast');
+        Route::get('/pengingat/riwayat/{blast}/email', [App\Http\Controllers\BPS\PengingatController::class, 'blastEmail'])->name('pengingat.blast.email');
+        Route::post('/pengingat/riwayat/{blast}/kirim-ulang', [App\Http\Controllers\BPS\PengingatController::class, 'retry'])->name('pengingat.retry');
+
+        // Reminder email templates. Preview/test take the editor form as typed,
+        // which carries _method=PUT when editing, hence match(['post','put']).
+        Route::get('/pengingat/template/baru', [App\Http\Controllers\BPS\PengingatTemplateController::class, 'create'])->name('pengingat.template.create');
+        Route::post('/pengingat/template', [App\Http\Controllers\BPS\PengingatTemplateController::class, 'store'])->name('pengingat.template.store');
+        Route::match(['post', 'put'], '/pengingat/template/pratinjau', [App\Http\Controllers\BPS\PengingatTemplateController::class, 'preview'])->name('pengingat.template.preview');
+        Route::match(['post', 'put'], '/pengingat/template/kirim-uji', [App\Http\Controllers\BPS\PengingatTemplateController::class, 'test'])
+            ->middleware('throttle:10,1')->name('pengingat.template.test');
+        Route::get('/pengingat/template/{template}/ubah', [App\Http\Controllers\BPS\PengingatTemplateController::class, 'edit'])->name('pengingat.template.edit');
+        Route::put('/pengingat/template/{template}', [App\Http\Controllers\BPS\PengingatTemplateController::class, 'update'])->name('pengingat.template.update');
+        Route::delete('/pengingat/template/{template}', [App\Http\Controllers\BPS\PengingatTemplateController::class, 'destroy'])->name('pengingat.template.destroy');
 
         // BPS User Profile Route
         Route::get('/user/profile', [BPSUserController::class, 'profile'])->name('user.profile.show');

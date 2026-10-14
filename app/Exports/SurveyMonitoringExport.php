@@ -8,6 +8,7 @@ use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 
@@ -23,8 +24,14 @@ use Maatwebsite\Excel\Events\AfterSheet;
  *
  * Empty answers are written as blank cells (not a dash) so Excel's own filters
  * and "count blanks" work as a completeness check.
+ *
+ * WithStrictNullComparison is what makes that convention trustworthy. Without
+ * it PhpSpreadsheet's fromArray() skips every cell that loosely equals null —
+ * and in PHP `0 == null` — so a genuine zero (no projects, nothing spent on a
+ * rincian) came out as an empty cell and read as "not filled". Only a real null
+ * is skipped now; 0 and '' are written as themselves.
  */
-abstract class SurveyMonitoringExport implements FromArray, WithHeadings, WithTitle, WithEvents, ShouldAutoSize
+abstract class SurveyMonitoringExport implements FromArray, WithHeadings, WithTitle, WithEvents, ShouldAutoSize, WithStrictNullComparison
 {
     /** @param Collection<int, Model> $records */
     public function __construct(protected Collection $records)
