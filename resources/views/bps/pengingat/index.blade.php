@@ -387,7 +387,9 @@
                         <a href="{{ route('bps.pengingat.template.create', ['dari' => $t->id]) }}" class="pg-btn pg-btn-ghost pg-btn-sm">Duplikat</a>
                         @if($templates->count() > 1 && ! $autoTemplate->is($t))
                             <form method="POST" action="{{ route('bps.pengingat.template.destroy', $t) }}"
-                                  onsubmit="return confirm(@js('Hapus template "' . $t->name . '"?'))">
+                                  data-confirm="Hapus template ini?"
+                                  data-confirm-text="Template “{{ $t->name }}” dihapus permanen. Riwayat pengiriman yang memakainya tetap tersimpan."
+                                  data-confirm-ok="Ya, Hapus Template" data-confirm-tone="danger">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="pg-btn pg-btn-danger pg-btn-sm">Hapus</button>
@@ -398,6 +400,8 @@
             @endforeach
         </div>
     @endif
+
+    @include('bps.pengingat.partials.confirm')
 </div>
 @endsection
 
@@ -592,10 +596,34 @@
             syncPreview();
         }
 
+        // Ask in the page's own dialog, then submit for real. The button is
+        // disabled so a double click cannot queue the same blast twice.
         form.addEventListener('submit', function (e) {
-            var msg = 'Kirim email pengingat ' + form.getAttribute('data-period') + ' ke ' + checked() + ' alamat email sekarang?\n\n'
-                    + 'Email masuk antrean dan terkirim bertahap dalam beberapa menit.';
-            if (!confirm(msg)) e.preventDefault();
+            if (form.hasAttribute('data-confirmed')) return;
+            e.preventDefault();
+
+            var n = checked();
+            var facts = [
+                ['Periode', form.getAttribute('data-period')],
+                ['Penerima', n.toLocaleString('id-ID') + ' alamat email'],
+            ];
+            if (template) facts.push(['Template', template.options[template.selectedIndex].text]);
+            if (message && message.value.trim()) facts.push(['Pesan tambahan', message.value.trim(), true]);
+
+            pgConfirm({
+                title: 'Kirim email pengingat sekarang?',
+                facts: facts,
+                note:  'Email masuk antrean dan terkirim bertahap dalam beberapa menit. Email yang sudah terkirim tidak bisa ditarik kembali.',
+                ok:    'Ya, Kirim ' + n.toLocaleString('id-ID') + ' Email',
+            }).then(function (ok) {
+                if (!ok) return;
+                form.setAttribute('data-confirmed', '');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.lastChild.textContent = ' Mengirim…';
+                }
+                form.submit();
+            });
         });
 
         // A search kept across a swap applies to the new list too.

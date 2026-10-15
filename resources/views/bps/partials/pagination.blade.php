@@ -1,5 +1,5 @@
 {{--
-  Shared pagination bar for the BPS lists:
+  Shared pagination bar for the BPS lists and the Mitra SIBSTR/UB lists:
       {{ $rows->links('bps.partials.pagination') }}
       {{ $rows->links('bps.partials.pagination', ['label' => 'pengguna']) }}
 

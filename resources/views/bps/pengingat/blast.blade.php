@@ -24,9 +24,10 @@
 
 @push('styles')
 @include('bps.pengingat.partials.styles')
-{{-- Keep the counts moving while the scheduler works through the queue. --}}
+{{-- Keep the counts moving while the scheduler works through the queue. With
+     JS the reload waits out an open confirmation (see the script below). --}}
 @if($blast->queued_count > 0)
-    <meta http-equiv="refresh" content="20">
+    <noscript><meta http-equiv="refresh" content="20"></noscript>
 @endif
 @endpush
 
@@ -84,7 +85,9 @@
             </div>
             @if($blast->failed_count > 0)
                 <form method="POST" action="{{ route('bps.pengingat.retry', $blast) }}"
-                      onsubmit="return confirm('Kirim ulang {{ $blast->failed_count }} email yang gagal?')">
+                      data-confirm="Kirim ulang email yang gagal?"
+                      data-confirm-text="{{ $blast->failed_count }} email yang gagal masuk antrean lagi dan terkirim bertahap dalam beberapa menit."
+                      data-confirm-ok="Ya, Kirim Ulang">
                     @csrf
                     <button type="submit" class="pg-btn pg-btn-primary" @disabled(! $serverEnabled)>
                         @include('bps.pengingat.partials.icon', ['name' => 'refresh'])
@@ -160,11 +163,21 @@
             </div>
         @endif
     </div>
+
+    @include('bps.pengingat.partials.confirm')
 </div>
 @endsection
 
 @push('scripts')
 <script>
+@if($blast->queued_count > 0)
+// Refresh the counts every 20s, but never reload out from under an open
+// "Kirim ulang" confirmation — skip that tick and try again on the next.
+setInterval(function () {
+    if (!document.querySelector('dialog[open]')) location.reload();
+}, 20000);
+@endif
+
 (function () {
     var chips = [].slice.call(document.querySelectorAll('[data-filter]'));
     var rows  = [].slice.call(document.querySelectorAll('tr[data-group]'));

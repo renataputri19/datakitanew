@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\UbSurveyResponse;
+use App\Support\PerPage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -1041,7 +1042,7 @@ class SurveyUbController extends Controller
         $search  = $request->input('search');
         $status  = $request->input('status');
         $sortBy  = $request->input('sort_by', 'updated_at');
-        $perPage = $request->input('per_page', 25);
+        $perPage = PerPage::from($request->input('per_page'));
 
         $query = UbSurveyResponse::with('user');
 

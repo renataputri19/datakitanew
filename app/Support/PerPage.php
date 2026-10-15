@@ -3,7 +3,7 @@
 namespace App\Support;
 
 /**
- * Page sizes for the BPS data tables.
+ * Page sizes for the BPS and Mitra survey data tables.
  *
  * The "Tampilkan" dropdown offers OPTIONS, and the controllers read the
  * request through {@see self::from()} so a hand-edited `?per_page=100000`

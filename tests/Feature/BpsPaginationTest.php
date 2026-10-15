@@ -130,6 +130,32 @@ class BpsPaginationTest extends TestCase
             ->assertViewHas('surveyResponses', fn ($p) => $p->perPage() === 50);
     }
 
+    public function test_mitra_survey_lists_use_the_shared_bar(): void
+    {
+        $mitra = User::factory()->create();
+        $mitra->setRole(User::ROLE_MITRA); // setRole() does not persist
+        $mitra->save();
+        $mitra = $mitra->fresh();
+
+        foreach (range(1, 20) as $i) {
+            UbSurveyResponse::create([
+                'user_id' => User::factory()->create()->id, 'tahun' => 2026, 'survey_section' => 'blok1a',
+                'nama_perusahaan' => "PT Mitra {$i}",
+            ]);
+        }
+
+        $ub = $this->actingAs($mitra)->get(route('survey.ub.entry', ['per_page' => 100000]));
+        $ub->assertOk();
+        $ub->assertViewHas('surveyResponses', fn ($p) => $p->perPage() === 15 && $p->lastPage() === 2);
+        $ub->assertSee('bps-pg-nav', false);
+        // Mitra pages sit on layouts.user-dashboard → layouts.app; the CSS must reach that <head> too.
+        $this->assertMatchesRegularExpression('/<head>.*\.bps-pg-btn \{.*<\/head>/s', $ub->getContent());
+
+        $this->actingAs($mitra)->get(route('survey.sibstr.entry', ['per_page' => 50]))
+            ->assertOk()
+            ->assertViewHas('surveyResponses', fn ($p) => $p->perPage() === 50);
+    }
+
     public function test_every_bps_list_renders_the_shared_bar(): void
     {
         $bps = $this->bpsUser();

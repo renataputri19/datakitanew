@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SurveyResponse;
+use App\Support\PerPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -3005,7 +3006,7 @@ class SurveyController extends Controller
         $status         = $request->input('status');
         $sortBy         = $request->input('sort_by', 'updated_at');
         $sortOrder      = $request->input('sort_order', 'desc');
-        $perPage        = $request->input('per_page', 25);
+        $perPage        = PerPage::from($request->input('per_page'));
         $year           = (int) $request->input('year', now()->year);
         $type           = $request->input('type', 'tahunan');
         $triwulanFilter = $request->input('triwulan');
