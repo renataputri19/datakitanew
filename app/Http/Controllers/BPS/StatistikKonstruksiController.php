@@ -28,7 +28,9 @@ class StatistikKonstruksiController extends Controller
 
     public function index(Request $request)
     {
+        // Respondent accounts only: staff entries are tests, not companies.
         $rows = KonstruksiSurveyResponse::with('user:id,name,email')
+            ->whereHas('user', fn ($q) => $q->respondents())
             ->orderBy('updated_at', 'desc')
             ->get();
 

@@ -6,6 +6,7 @@ use App\Exports\UbBlok1Export;
 use App\Http\Controllers\BPS\Concerns\ExportsSurveyMonitoring;
 use App\Http\Controllers\Controller;
 use App\Models\UbSurveyResponse;
+use App\Support\PerPage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,7 +30,7 @@ class UbController extends Controller
         $search  = $request->input('search');
         $status  = $request->input('status');
         $sortBy  = $request->input('sort_by', 'updated_at');
-        $perPage = $request->input('per_page', 25);
+        $perPage = PerPage::from($request->input('per_page'));
 
         $query = UbSurveyResponse::with('user');
 
@@ -143,6 +144,9 @@ class UbController extends Controller
         }
 
         $this->applyUpdatedAtRange($query, $request->input('date_from'), $request->input('date_to'));
+
+        // Respondent accounts only, like the statistik pages: staff entries are tests.
+        $query->whereHas('user', fn ($q) => $q->respondents());
 
         $records = $query->orderBy('kabupaten_kota')->orderBy('nama_perusahaan')->get();
 

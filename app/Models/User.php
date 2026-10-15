@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Traits\HasUuid;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -156,6 +157,21 @@ class User extends Authenticatable
         if ($this->is_mitra)        return self::ROLE_MITRA;
 
         return self::ROLE_USER;
+    }
+
+    /**
+     * Respondent accounts only: the ones getRoleAttribute() calls ROLE_USER.
+     * Survey statistics use it so entries typed in from staff accounts (BPS,
+     * superadmin, Mitra, Kominfo; mostly tests) are not counted as companies.
+     * Same flags as getRoleAttribute(), so the retired `is_admin` is ignored.
+     */
+    public function scopeRespondents(Builder $query): Builder
+    {
+        foreach (['is_superadmin', 'is_bps', 'is_kominfo_user', 'is_mitra'] as $column) {
+            $query->where(fn (Builder $q) => $q->where($column, false)->orWhereNull($column));
+        }
+
+        return $query;
     }
 
     /**

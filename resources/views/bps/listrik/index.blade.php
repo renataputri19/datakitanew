@@ -203,9 +203,9 @@
                     <label for="per_page" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tampilkan</label>
                     <select id="per_page" name="per_page"
                             class="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option value="25" {{ request('per_page', 25) == 25 ? 'selected' : '' }}>25 per halaman</option>
-                        <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50 per halaman</option>
-                        <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100 per halaman</option>
+                        @foreach(\App\Support\PerPage::OPTIONS as $n)
+                        <option value="{{ $n }}" @selected(\App\Support\PerPage::from(request('per_page')) === $n)>{{ $n }} per halaman</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
@@ -353,10 +353,7 @@
 
             {{-- Pagination --}}
             <div class="pagination-container">
-                <div class="text-sm text-gray-600 dark:text-gray-400">
-                    Menampilkan {{ $surveyResponses->firstItem() }}–{{ $surveyResponses->lastItem() }} dari {{ $surveyResponses->total() }} hasil
-                </div>
-                <div>{{ $surveyResponses->links() }}</div>
+                {{ $surveyResponses->links('bps.partials.pagination') }}
             </div>
         @else
             <div class="empty-state">

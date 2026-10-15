@@ -28,6 +28,13 @@
 
     // A merged address stands for several companies; count the companies.
     $companyCount = $recipients->sum(fn ($r) => max(1, count($r['companies'])));
+
+    // Nothing is ticked on arrival; suggest the quarter just before the chased one.
+    $earlier = array_values(array_filter(
+        \App\Support\SibstrReminder::defaultSources($tahun, $triwulan),
+        fn ($s) => $s !== \App\Support\SibstrReminder::SOURCE_STARTED && isset($sourceOptions[$s])
+    ));
+    $suggestLabel = $earlier ? $periodLabel(...array_map('intval', explode('-', end($earlier)))) : null;
 @endphp
 
 <div class="pg-stack" id="pg-kirim" data-url="{{ route('bps.pengingat.index') }}" data-period-key="{{ $periodKey }}">
@@ -80,20 +87,29 @@
                             $count = $sourceCounts[$key] ?? 0;
                             $started = $key === \App\Support\SibstrReminder::SOURCE_STARTED;
                             [$y, $q] = $started ? [$tahun, $triwulan] : array_map('intval', explode('-', $key));
+                            // Why the big number is below the statistik page's "selesai".
+                            $finished = $sourceTotals[$key]['finished'] ?? 0;
+                            $done     = $sourceTotals[$key]['done'] ?? 0;
+                            $sub = match (true) {
+                                $started   => 'Sudah mulai, belum selesai',
+                                $done > 0  => $finished . ' selesai · ' . $done . ' sudah selesai TW ' . \App\Support\ReminderTemplate::roman($triwulan),
+                                default    => $finished . ' selesai mengisi',
+                            };
                         @endphp
                         <a href="{{ $toggleUrl($key) }}" data-pg-source="{{ $key }}" role="checkbox" aria-checked="{{ $on ? 'true' : 'false' }}"
                            class="pg-source {{ $on ? 'is-active' : '' }} {{ $started ? 'pg-source-started' : '' }} {{ $count === 0 ? 'is-zero' : '' }}">
                             <span class="pg-checkbox" aria-hidden="true"></span>
                             <span class="pg-source-text">
                                 <span class="pg-source-title">{{ $q === 0 ? 'Tahunan ' . $y : $periodLabel($y, $q) }}</span>
-                                <span class="pg-source-sub">{{ $started ? 'Sudah mulai, belum selesai' : 'Sudah selesai mengisi' }}</span>
+                                <span class="pg-source-sub">{{ $sub }}</span>
                             </span>
-                            <span class="pg-source-count" title="{{ $count }} perusahaan dari data ini belum menyelesaikan {{ $periodText }}">{{ $count }}</span>
+                            <span class="pg-source-count" title="{{ $count }} perusahaan dari data ini belum menyelesaikan {{ $periodText }} dan perlu diingatkan">{{ $count }}</span>
                         </a>
                     @endforeach
                 </div>
                 <p class="pg-hint">
-                    Angka = perusahaan dari data itu yang belum menyelesaikan {{ $periodText }}.
+                    Angka besar = perusahaan dari data itu yang <b>belum menyelesaikan {{ $periodText }}</b>, jadi perlu diingatkan.
+                    Yang sudah selesai {{ $periodText }} tidak dihitung, begitu pula isian dari akun BPS atau Mitra.
                     @if($excludedText !== '')
                         Perusahaan berstatus {{ $excludedText }} (Blok II) tidak diikutkan.
                         <a href="{{ route('bps.pengingat.index', ['tab' => 'pengaturan']) }}" class="pg-link">Ubah</a>
@@ -101,9 +117,16 @@
                 </p>
             </div>
 
-            <div class="pg-result" aria-live="polite">
+            <div class="pg-result {{ $sources === [] ? 'is-prompt' : '' }}" aria-live="polite">
                 @if($sources === [])
-                    Centang minimal satu sumber data.
+                    @include('bps.pengingat.partials.icon', ['name' => 'up'])
+                    <span>
+                        <b>Mulai dari sini:</b> centang satu atau beberapa sumber data di atas.
+                        @if($suggestLabel)
+                            Misalnya <b>{{ $suggestLabel }}</b> untuk mengingatkan perusahaan yang sudah mengisi {{ $suggestLabel }}
+                            tetapi belum menyelesaikan {{ $periodText }}.
+                        @endif
+                    </span>
                 @else
                     <span><b>{{ $companyCount }}</b> perusahaan</span>
                     <span class="pg-result-arrow" aria-hidden="true">→</span>
@@ -134,7 +157,11 @@
                 <span class="pg-step-num">2</span>
                 <div>
                     <h2>Periksa penerima</h2>
-                    <p>Semua sudah dicentang. Hapus centang perusahaan yang tidak perlu diingatkan.</p>
+                    <p>
+                        {{ $reachable->isNotEmpty()
+                            ? 'Semua sudah dicentang. Hapus centang perusahaan yang tidak perlu diingatkan.'
+                            : 'Daftar penerima muncul di sini setelah Anda memilih sumber data.' }}
+                    </p>
                 </div>
             </div>
 
@@ -143,7 +170,7 @@
                     @if($sources === [])
                         @include('bps.pengingat.partials.icon', ['name' => 'list'])
                         <p class="pg-empty-title">Belum ada sumber data yang dipilih</p>
-                        <p>Centang minimal satu sumber di atas, misalnya Selesai Triwulan II.</p>
+                        <p>Centang sumber data di langkah 1. Daftar penerima akan muncul di sini.</p>
                     @elseif($recipients->isEmpty())
                         @include('bps.pengingat.partials.icon', ['name' => 'party'])
                         <p class="pg-empty-title">Tidak ada yang perlu diingatkan</p>

@@ -148,7 +148,7 @@
 
             <!-- Pagination -->
             <div class="mt-6">
-                {{ $news->links() }}
+                {{ $news->links('bps.partials.pagination', ['label' => 'berita']) }}
             </div>
         </div>
     </div>

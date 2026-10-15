@@ -140,6 +140,11 @@ class SibstrReminderTest extends TestCase
         $finishedTw3 = $this->user();
         $this->sibstr($finishedTw3, 2026, 3, ['email' => 'x@selesai.example', 'is_completed' => true]);
 
+        // Finished TW II and already TW III: nothing to chase.
+        $finishedBoth = $this->user();
+        $this->respondent($finishedBoth, ['email' => 'x@keduanya.example']);
+        $this->sibstr($finishedBoth, 2026, 3, ['is_completed' => true]);
+
         // Opened TW I but never finished anything: matches no source.
         $abandoned = $this->user();
         $this->sibstr($abandoned, 2026, 1, ['email' => 'x@abandoned.example', 'is_completed' => false]);
@@ -164,6 +169,11 @@ class SibstrReminderTest extends TestCase
         $this->assertSame(['2026-1', '2026-2', 'mulai'], SibstrReminder::defaultSources(2026, 3));
         $all = SibstrReminder::recipients(2026, 3, SibstrReminder::defaultSources(2026, 3), ['tutup']);
         $this->assertSame($sorted([$finishedTw2->id, $finishedTw1->id, $inProgress->id]), $ids($all));
+
+        // The TW II card: 2 respondents finished it (the Mitra and the closed
+        // company do not count), 1 of them already finished TW III, so 1 to chase.
+        $totals = SibstrReminder::sourceTotals(SibstrReminder::history(), 2026, 3, ['tutup']);
+        $this->assertSame(['finished' => 2, 'done' => 1], $totals['2026-2']);
 
         // Each source on its own; Tahunan only when ticked.
         $this->assertSame([$finishedTw2->id], $chase(['2026-2']));
@@ -383,7 +393,7 @@ class SibstrReminderTest extends TestCase
         $this->respondent($this->user(), ['nama_perusahaan' => 'PT Tanpa Email']);
         $bps = $this->user(User::ROLE_ADMIN);
 
-        $this->actingAs($bps)->get(route('bps.pengingat.index'))
+        $this->actingAs($bps)->get(route('bps.pengingat.index', ['tab' => 'kirim', 'periode' => '2026-3', 'pilih' => 1, 'sumber' => ['2026-2']]))
             ->assertOk()->assertSee('PT Tampil')->assertSee('a@tampil.example')->assertSee('PT Tanpa Email');
         $this->actingAs($bps)->get(route('bps.pengingat.index', ['tab' => 'pengaturan']))->assertOk()->assertSee('Simpan Pengaturan');
         $this->actingAs($bps)->get(route('bps.pengingat.preview'))->assertOk()->assertSee('PT Contoh Industri Batam');
@@ -414,10 +424,17 @@ class SibstrReminderTest extends TestCase
         $kirim = fn (array $query) => $this->actingAs($bps)
             ->get(route('bps.pengingat.index', ['tab' => 'kirim', 'periode' => '2026-3'] + $query))->assertOk();
 
-        // A fresh visit uses the automatic sources; Tahunan is offered, not ticked.
+        // A fresh visit ticks nothing and points at the cards, suggesting the
+        // quarter before the chased one; no one is listed yet.
         $this->actingAs($bps)->get(route('bps.pengingat.index'))
-            ->assertOk()->assertSee('PT Selesai TW2')->assertSee('PT Sedang Isi')
-            ->assertSee('data-pg-source="2025-0" role="checkbox" aria-checked="false"', false)->assertDontSee('PT Tahunan Saja');
+            ->assertOk()
+            ->assertDontSee('aria-checked="true"', false)
+            ->assertSee('Mulai dari sini:')->assertSee('Misalnya <b>Triwulan II 2026</b>', false)
+            ->assertDontSee('PT Selesai TW2')->assertDontSee('PT Sedang Isi');
+
+        // Ticking what the automatic run uses lists those companies; Tahunan stays out.
+        $kirim(['pilih' => 1, 'sumber' => SibstrReminder::defaultSources(2026, 3)])
+            ->assertSee('PT Selesai TW2')->assertSee('PT Sedang Isi')->assertDontSee('PT Tahunan Saja');
 
         // Ticking only Tahunan lists the Tahunan-only company.
         $kirim(['pilih' => 1, 'sumber' => ['2025-0']])->assertSee('PT Tahunan Saja')->assertDontSee('PT Selesai TW2');

@@ -64,7 +64,10 @@ class StatistikController extends Controller
 
     public function index(Request $request)
     {
+        // Respondent accounts only: staff entries (BPS, superadmin, Mitra)
+        // are tests or trial runs, not companies.
         $availableYears = SurveyResponse::where('survey_type', 'sibstr')
+            ->whereHas('user', fn ($q) => $q->respondents())
             ->where('triwulan', '>', 0)
             ->distinct()
             ->orderBy('tahun', 'desc')
@@ -78,6 +81,7 @@ class StatistikController extends Controller
         // so dedupe on updated_at instead of MAX(id).
         $rows = SurveyResponse::with('user:id,name,email')
             ->where('survey_type', 'sibstr')
+            ->whereHas('user', fn ($q) => $q->respondents())
             ->where('tahun', $tahun)
             ->where('triwulan', '>', 0)
             ->orderBy('updated_at', 'desc')

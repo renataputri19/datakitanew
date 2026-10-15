@@ -7,6 +7,7 @@ use App\Http\Controllers\BPS\Concerns\ExportsSurveyMonitoring;
 use App\Http\Controllers\Controller;
 use App\Models\KonstruksiSurveyResponse;
 use App\Support\KonstruksiBlokPath;
+use App\Support\PerPage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -93,7 +94,7 @@ class KonstruksiController extends Controller
     {
         $user    = Auth::user();
         $sortBy  = $request->input('sort_by', 'updated_at');
-        $perPage = $request->input('per_page', 25);
+        $perPage = PerPage::from($request->input('per_page'));
 
         $query = KonstruksiSurveyResponse::with('user');
         $this->applySearch($query, $request->input('search'));
@@ -189,6 +190,9 @@ class KonstruksiController extends Controller
         }
 
         $this->applyUpdatedAtRange($query, $request->input('date_from'), $request->input('date_to'));
+
+        // Respondent accounts only, like the statistik pages: staff entries are tests.
+        $query->whereHas('user', fn ($q) => $q->respondents());
 
         $records = $query->orderBy('kabupaten_kota')->orderBy('nama_perusahaan')->get();
 

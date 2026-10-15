@@ -9,6 +9,7 @@ use App\Models\SurveyReminderLog;
 use App\Models\SurveyReminderSetting;
 use App\Models\SurveyReminderTemplate;
 use App\Services\SibstrReminderSender;
+use App\Support\PerPage;
 use App\Support\SibstrFormat;
 use App\Support\SibstrReminder;
 use Illuminate\Http\Request;
@@ -49,17 +50,18 @@ class PengingatController extends Controller
         if ($tab === 'kirim' && $periods !== []) {
             [$tahun, $triwulan] = $this->selectedPeriod($request, $periods, $current);
             $options = SibstrReminder::sourceOptions($tahun, $triwulan);
-            // A fresh visit, or a change of quarter, starts from what the
-            // automatic run uses. The source chips send `pilih`, so a list
-            // the user unticked down to nothing stays empty.
-            $sources = array_values(array_intersect(
-                array_keys($options),
-                $request->has('pilih') ? (array) $request->query('sumber', []) : SibstrReminder::defaultSources($tahun, $triwulan),
-            ));
+            // A fresh visit, or a change of quarter, starts with nothing
+            // ticked: BPS chooses who to email instead of inheriting a list.
+            // The source cards send `pilih` with the current choice.
+            $sources = $request->has('pilih')
+                ? array_values(array_intersect(array_keys($options), (array) $request->query('sumber', [])))
+                : [];
 
-            // Load every unfinished company once: the chips count from it and
-            // the list is picked from it.
-            $candidates = SibstrReminder::candidates($tahun, $triwulan, $settings->excluded_kondisi ?? []);
+            // Load the records once: the cards count from them and the list
+            // is picked from them.
+            $history    = SibstrReminder::history();
+            $excluded   = $settings->excluded_kondisi ?? [];
+            $candidates = SibstrReminder::candidates($tahun, $triwulan, $excluded, $history);
             $recipients = SibstrReminder::select($candidates, $sources);
             $logs = SurveyReminderLog::where('survey_type', 'sibstr')
                 ->where('tahun', $tahun)->where('triwulan', $triwulan)
@@ -71,6 +73,7 @@ class PengingatController extends Controller
                 'sourceOptions' => $options,
                 'sources'       => $sources,
                 'sourceCounts'  => $candidates->flatMap(fn ($c) => $c['sources'])->countBy(),
+                'sourceTotals'  => SibstrReminder::sourceTotals($history, $tahun, $triwulan, $excluded),
                 'recipients'    => $recipients,
                 // Keyed by address, like the sender's once-a-day rule. A
                 // failed attempt never hides a later success the same day.
@@ -95,7 +98,7 @@ class PengingatController extends Controller
                 ->withStatusCounts()
                 ->with('createdBy:id,name')
                 ->latest()
-                ->paginate(20)
+                ->paginate(PerPage::DEFAULT)
                 ->withQueryString();
         }
 

@@ -33,8 +33,10 @@ class DashboardController extends Controller
         // Get counts for dashboard
         $newsCount = News::count();
         $videoCount = Video::count();
-        $sibstrCount = SurveyResponse::where('survey_type', 'sibstr')->count();
-        $sibstrCompletedCount = SurveyResponse::where('survey_type', 'sibstr')->where('is_completed', true)->count();
+        // Respondent accounts only, like the statistik pages.
+        $sibstr = fn () => SurveyResponse::where('survey_type', 'sibstr')->whereHas('user', fn ($q) => $q->respondents());
+        $sibstrCount = $sibstr()->count();
+        $sibstrCompletedCount = $sibstr()->where('is_completed', true)->count();
         
         // Get recent items
         $recentNews = News::orderBy('created_at', 'desc')->take(5)->get();

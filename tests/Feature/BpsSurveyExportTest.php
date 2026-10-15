@@ -98,7 +98,7 @@ class BpsSurveyExportTest extends TestCase
 
     public function test_sibstr_completed_filter_reads_the_right_column_per_period_type(): void
     {
-        $a = $this->bpsUser();
+        $a = User::factory()->create();
         $b = User::factory()->create();
         $c = User::factory()->create();
         $d = User::factory()->create();
@@ -120,7 +120,7 @@ class BpsSurveyExportTest extends TestCase
 
     public function test_sibstr_period_and_year_filters_narrow_the_export(): void
     {
-        $a = $this->bpsUser();
+        $a = User::factory()->create();
         $b = User::factory()->create();
 
         $annual2025 = $this->sibstr($a, 'PT Tahunan Dua Lima', 2025, 0, false);
@@ -153,7 +153,7 @@ class BpsSurveyExportTest extends TestCase
 
     public function test_sibstr_date_range_filters_on_last_update_in_wib(): void
     {
-        $old = $this->sibstr($this->bpsUser(), 'PT Lama', 2025, 0, false);
+        $old = $this->sibstr(User::factory()->create(), 'PT Lama', 2025, 0, false);
         $new = $this->sibstr(User::factory()->create(), 'PT Baru', 2025, 0, false);
 
         // 1 Jan 2026 00:30 WIB is still 31 Dec 2025 in UTC — the WIB day is what
@@ -179,7 +179,7 @@ class BpsSurveyExportTest extends TestCase
     public function test_ub_blok1_filter_requires_all_four_sub_blocks(): void
     {
         $full = UbSurveyResponse::create([
-            'user_id' => $this->bpsUser()->id, 'tahun' => 2026, 'survey_section' => 'blok1a',
+            'user_id' => User::factory()->create()->id, 'tahun' => 2026, 'survey_section' => 'blok1a',
             'nama_perusahaan' => 'PT Lengkap', 'kabupaten_kota' => 'Kota Batam',
             'blok1a_completed' => true, 'blok1b_completed' => true,
             'blok1c_completed' => true, 'blok1d_completed' => true,
@@ -211,7 +211,7 @@ class BpsSurveyExportTest extends TestCase
     public function test_listrik_grid_and_plant_filters_narrow_the_export(): void
     {
         $done = ListrikSurveyResponse::create([
-            'user_id' => $this->bpsUser()->id, 'tahun' => 2026, 'survey_section' => 'blok1',
+            'user_id' => User::factory()->create()->id, 'tahun' => 2026, 'survey_section' => 'blok1',
             'nama_perusahaan' => 'PT Listrik A', 'jenis_pembangkit' => 'PLTU',
             'blok1_completed' => true, 'blok2_completed' => true,
         ]);
@@ -238,9 +238,37 @@ class BpsSurveyExportTest extends TestCase
         );
     }
 
+    public function test_exports_leave_out_entries_from_staff_accounts(): void
+    {
+        $respondent = User::factory()->create();
+        $staff = [];
+        foreach ([User::ROLE_SUPERADMIN, User::ROLE_ADMIN, User::ROLE_MITRA] as $role) {
+            $account = User::factory()->create();
+            $account->setRole($role);
+            $account->save();
+            $staff[] = $account;
+        }
+
+        $real = $this->sibstr($respondent, 'PT Responden SIBSTR', 2026, 2, true);
+        foreach ($staff as $i => $account) {
+            $this->sibstr($account, "PT Uji Staf SIBSTR {$i}", 2026, 2, true);
+        }
+        $this->assertSame([$real->id], $this->exportedIds('bps.sibstr.export', [], SurveyResponse::class));
+
+        $base = ['tahun' => 2026, 'survey_section' => 'blok1'];
+        $realUb = UbSurveyResponse::create($base + ['user_id' => $respondent->id, 'nama_perusahaan' => 'PT Responden UB']);
+        $realListrik = ListrikSurveyResponse::create($base + ['user_id' => $respondent->id, 'nama_perusahaan' => 'PT Responden Listrik']);
+        foreach ($staff as $i => $account) {
+            UbSurveyResponse::create($base + ['user_id' => $account->id, 'nama_perusahaan' => "PT Uji Staf UB {$i}"]);
+            ListrikSurveyResponse::create($base + ['user_id' => $account->id, 'nama_perusahaan' => "PT Uji Staf Listrik {$i}"]);
+        }
+        $this->assertSame([$realUb->id], $this->exportedIds('bps.ub.export', [], UbSurveyResponse::class));
+        $this->assertSame([$realListrik->id], $this->exportedIds('bps.listrik.export', [], ListrikSurveyResponse::class));
+    }
+
     public function test_csv_format_is_honoured(): void
     {
-        $this->sibstr($this->bpsUser(), 'PT Format', 2025, 0, false);
+        $this->sibstr(User::factory()->create(), 'PT Format', 2025, 0, false);
 
         $response = $this->actingAs($this->bpsUser())
             ->get(route('bps.sibstr.export', ['format' => 'csv']));

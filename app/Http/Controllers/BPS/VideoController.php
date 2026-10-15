@@ -33,7 +33,8 @@ class VideoController extends Controller
             $query->where('title', 'like', "%{$searchTerm}%");
         }
 
-        $videos = $query->latest('date')->paginate(10);
+        // 12 fills the 2- and 3-column card grid without a ragged last row.
+        $videos = $query->latest('date')->paginate(12);
 
         // Append query parameters to pagination links
         $videos->appends($request->query());

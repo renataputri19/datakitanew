@@ -126,16 +126,13 @@ class SibstrReminder
     }
 
     /**
-     * One entry per company that has not finished ($tahun, $triwulan) and
-     * matches at least one source, before the source choice is applied: each
-     * entry lists every source it matches, so the page can count them.
-     * Entries with `email` = null have no usable Blok I email and are kept so
-     * BPS can follow up by phone.
+     * Every respondent's SIBSTR records, grouped by account, newest period
+     * first. Only respondent accounts: a record typed in by BPS or a Mitra
+     * account is not a company to remind (the statistik page counts those).
      *
-     * @param  list<string>  $excludedKondisi  latest Blok II R201 answers to skip
-     * @return Collection<int, array{user: User, nama_perusahaan: ?string, penghubung: ?string, email: ?string, telepon: ?string, status: string, in_progress: bool, sources: list<string>}>
+     * @return Collection<string, Collection<int, SurveyResponse>>
      */
-    public static function candidates(int $tahun, int $triwulan, array $excludedKondisi): Collection
+    public static function history(): Collection
     {
         return SurveyResponse::with('user')
             ->where('survey_type', 'sibstr')
@@ -145,7 +142,63 @@ class SibstrReminder
             ->get(['id', 'user_id', 'tahun', 'triwulan', 'nama_perusahaan', 'penghubung', 'email',
                    'telepon_fax', 'kondisi_perusahaan', 'is_completed', 'updated_at'])
             ->filter(fn (SurveyResponse $r) => $r->user && $r->user->role === User::ROLE_USER)
-            ->groupBy('user_id')
+            ->groupBy('user_id');
+    }
+
+    /**
+     * Per finished-survey source: how many companies finished it, and how
+     * many of those already finished ($tahun, $triwulan). The difference is
+     * the number on the source card, so BPS can see why it is smaller than
+     * the statistik page's "selesai".
+     *
+     * @return array<string, array{finished: int, done: int}>
+     */
+    public static function sourceTotals(Collection $history, int $tahun, int $triwulan, array $excludedKondisi): array
+    {
+        $totals = [];
+        foreach ($history as $rows) {
+            if (self::isExcluded($rows, $excludedKondisi)) {
+                continue;
+            }
+            $isTarget = fn ($r) => (int) $r->tahun === $tahun && (int) $r->triwulan === $triwulan;
+            $done = $rows->contains(fn ($r) => $isTarget($r) && $r->is_completed);
+            foreach (self::finishedSources($rows, $isTarget) as $source) {
+                $totals[$source]['finished'] = ($totals[$source]['finished'] ?? 0) + 1;
+                $totals[$source]['done']     = ($totals[$source]['done'] ?? 0) + ($done ? 1 : 0);
+            }
+        }
+
+        return $totals;
+    }
+
+    /** @return list<string> "tahun-triwulan" of every survey the company finished, other than the chased one */
+    private static function finishedSources(Collection $rows, callable $isTarget): array
+    {
+        return $rows->filter(fn ($r) => $r->is_completed && ! $isTarget($r))
+            ->map(fn ($r) => (int) $r->tahun . '-' . (int) $r->triwulan)
+            ->unique()->values()->all();
+    }
+
+    /** Whether the company's latest Blok II R201 answer is one BPS excludes. Rows are newest first. */
+    private static function isExcluded(Collection $rows, array $excludedKondisi): bool
+    {
+        return in_array($rows->first(fn ($r) => filled($r->kondisi_perusahaan))?->kondisi_perusahaan, $excludedKondisi, true);
+    }
+
+    /**
+     * One entry per company that has not finished ($tahun, $triwulan) and
+     * matches at least one source, before the source choice is applied: each
+     * entry lists every source it matches, so the page can count them.
+     * Entries with `email` = null have no usable Blok I email and are kept so
+     * BPS can follow up by phone.
+     *
+     * @param  list<string>  $excludedKondisi  latest Blok II R201 answers to skip
+     * @param  Collection|null  $history  from history(), when the caller already loaded it
+     * @return Collection<int, array{user: User, nama_perusahaan: ?string, penghubung: ?string, email: ?string, telepon: ?string, status: string, in_progress: bool, sources: list<string>}>
+     */
+    public static function candidates(int $tahun, int $triwulan, array $excludedKondisi, ?Collection $history = null): Collection
+    {
+        return ($history ?? self::history())
             ->map(function (Collection $rows) use ($tahun, $triwulan, $excludedKondisi) {
                 $isTarget = fn ($r) => (int) $r->tahun === $tahun && (int) $r->triwulan === $triwulan;
                 $current  = $rows->first($isTarget);
@@ -153,20 +206,11 @@ class SibstrReminder
                     return null;
                 }
 
-                $sources = $rows->filter(fn ($r) => $r->is_completed && ! $isTarget($r))
-                    ->map(fn ($r) => (int) $r->tahun . '-' . (int) $r->triwulan)
-                    ->unique()->values()->all();
+                $sources = self::finishedSources($rows, $isTarget);
                 if ($current) {
                     $sources[] = self::SOURCE_STARTED;
                 }
-                if ($sources === []) {
-                    return null;
-                }
-
-                // Rows are newest period first, so the first answer found is
-                // the company's latest.
-                $kondisi = $rows->first(fn ($r) => filled($r->kondisi_perusahaan))?->kondisi_perusahaan;
-                if (in_array($kondisi, $excludedKondisi, true)) {
+                if ($sources === [] || self::isExcluded($rows, $excludedKondisi)) {
                     return null;
                 }
 

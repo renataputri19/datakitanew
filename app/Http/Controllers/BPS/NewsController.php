@@ -5,6 +5,7 @@ namespace App\Http\Controllers\BPS;
 use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
 use App\Models\News;
+use App\Support\PerPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -40,7 +41,7 @@ class NewsController extends Controller
             $query->where('category', $request->category);
         }
 
-        $news = $query->latest('date')->paginate(10);
+        $news = $query->latest('date')->paginate(PerPage::DEFAULT);
 
         // Append query parameters to pagination links
         $news->appends($request->query());

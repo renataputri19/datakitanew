@@ -4,6 +4,7 @@ namespace App\Http\Controllers\BPS;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\PerPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -45,7 +46,7 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate(10)->withQueryString();
+        $users = $query->paginate(PerPage::DEFAULT)->withQueryString();
         return view('bps.users.index', compact('users'));
     }
 

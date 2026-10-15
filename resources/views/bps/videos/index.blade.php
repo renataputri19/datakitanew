@@ -115,7 +115,7 @@
 
             <!-- Pagination -->
             <div class="mt-6">
-                {{ $videos->links() }}
+                {{ $videos->links('bps.partials.pagination', ['label' => 'video']) }}
             </div>
         </div>
     </div>

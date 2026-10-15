@@ -185,7 +185,7 @@
                         </tbody>
                     </table>
                 </div>
-                @if($blasts->hasPages())<div class="pg-pagination">{{ $blasts->links() }}</div>@endif
+                <div class="pg-pagination">{{ $blasts->links('bps.partials.pagination', ['label' => 'pengiriman']) }}</div>
             </div>
         @endif
 

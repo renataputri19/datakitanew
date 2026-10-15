@@ -114,69 +114,9 @@
         </div>
         @endif
 
-        <!-- Custom Pagination -->
-        @if($users->lastPage() > 1)
-        @php
-            $currentPage = $users->currentPage();
-            $lastPage    = $users->lastPage();
-            $paginator   = $users->appends(request()->query());
-
-            $pages = collect(range(1, $lastPage))->filter(
-                fn($p) => $p === 1 || $p === $lastPage || abs($p - $currentPage) <= 1
-            )->values();
-        @endphp
-        <div class="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                Menampilkan <span class="font-medium text-gray-700 dark:text-gray-300">{{ $users->firstItem() }}</span>
-                &ndash;
-                <span class="font-medium text-gray-700 dark:text-gray-300">{{ $users->lastItem() }}</span>
-                dari
-                <span class="font-medium text-gray-700 dark:text-gray-300">{{ $users->total() }}</span> pengguna
-            </p>
-            <nav class="flex items-center gap-1" aria-label="Pagination">
-                {{-- Prev --}}
-                @if($users->onFirstPage())
-                <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed select-none text-sm">
-                    &#8249;
-                </span>
-                @else
-                <a href="{{ $paginator->previousPageUrl() }}"
-                   class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-400 hover:text-blue-600 transition-colors text-sm">
-                    &#8249;
-                </a>
-                @endif
-
-                {{-- Page numbers with ellipsis --}}
-                @foreach($pages as $i => $page)
-                    @if($i > 0 && $page - $pages[$i - 1] > 1)
-                    <span class="inline-flex items-center justify-center w-9 h-9 text-gray-400 dark:text-gray-500 text-sm select-none">…</span>
-                    @endif
-                    @if($page === $currentPage)
-                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-blue-600 bg-blue-600 text-white font-semibold text-sm shadow-sm select-none">
-                        {{ $page }}
-                    </span>
-                    @else
-                    <a href="{{ $paginator->url($page) }}"
-                       class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-400 hover:text-blue-600 transition-colors text-sm">
-                        {{ $page }}
-                    </a>
-                    @endif
-                @endforeach
-
-                {{-- Next --}}
-                @if($users->hasMorePages())
-                <a href="{{ $paginator->nextPageUrl() }}"
-                   class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-400 hover:text-blue-600 transition-colors text-sm">
-                    &#8250;
-                </a>
-                @else
-                <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed select-none text-sm">
-                    &#8250;
-                </span>
-                @endif
-            </nav>
+        <div class="mt-5">
+            {{ $users->links('bps.partials.pagination', ['label' => 'pengguna']) }}
         </div>
-        @endif
     </div>
 </div>
 

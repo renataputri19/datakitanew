@@ -7,6 +7,7 @@ use App\Http\Controllers\BPS\Concerns\ExportsSurveyMonitoring;
 use App\Http\Controllers\Controller;
 use App\Models\SurveyResponse;
 use App\Models\User;
+use App\Support\PerPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -146,7 +147,7 @@ class SibstrController extends Controller
         $status        = $request->input('status');
         $sortBy        = $request->input('sort_by', 'updated_at');
         $sortOrder     = $request->input('sort_order', 'desc');
-        $perPage       = $request->input('per_page', 25);
+        $perPage       = PerPage::from($request->input('per_page'));
         $year          = (int) $request->input('year', now()->year);
         $type          = $request->input('type', 'tahunan'); // 'tahunan' or 'triwulanan'
         $triwulanFilter = $request->input('triwulan');       // optional quarter filter (1-4)
@@ -340,6 +341,9 @@ class SibstrController extends Controller
         }
 
         $this->applyUpdatedAtRange($query, $dateFrom, $dateTo);
+
+        // Respondent accounts only, like the statistik pages: staff entries are tests.
+        $query->whereHas('user', fn ($q) => $q->respondents());
 
         // Same de-duplication as index(): one row per user × period.
         $latestIds = (clone $query)

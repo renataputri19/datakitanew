@@ -113,6 +113,9 @@ details[open] > summary .pg-chevron { transform:rotate(180deg); }
 .pg-result { display:flex; flex-wrap:wrap; align-items:baseline; gap:.3rem .6rem; padding:.7rem .9rem; border:1px solid var(--pg-border); border-radius:.6rem; background:var(--pg-subtle); font-size:.875rem; color:var(--pg-text-2); }
 .pg-result b { font-size:1.0625rem; font-variant-numeric:tabular-nums; color:var(--pg-text); }
 .pg-result-arrow { color:var(--pg-muted); }
+.pg-result.is-prompt { flex-wrap:nowrap; align-items:flex-start; gap:.65rem; border-color:var(--pg-primary); border-style:dashed; background:var(--pg-primary-soft); line-height:1.55; color:var(--pg-text); }
+.pg-result.is-prompt svg { width:1.15rem; height:1.15rem; margin-top:.15rem; color:var(--pg-primary-text); }
+.pg-result.is-prompt b { font-size:inherit; }
 
 /* In-place reload of the Kirim section */
 .pg-loading { display:none; align-items:center; gap:.45rem; margin-left:auto; font-size:.75rem; color:var(--pg-muted); }
