@@ -48,13 +48,13 @@ RUN composer install \
         --ignore-platform-reqs
 # --ignore-platform-reqs: the composer:2.7 image lacks ext-gd, ext-intl etc.
 # that maatwebsite/excel + phpoffice/phpspreadsheet require. The runtime
-# stage (php:8.2-fpm-alpine below) DOES install all required extensions,
+# stage (php:8.3-fpm-alpine below) DOES install all required extensions,
 # so we only need composer here to resolve and download packages.
 
 
 # ---------- Stage 3: Production runtime ----------
-# Pinned to the php2shell fix (CVE-2026-109618/109619); a new tag forces a fresh pull
-FROM php:8.2.35-fpm-alpine AS runtime
+# Pinned to the php2shell fix (CVE-2026-109618/109619); 8.3 because 8.2 ends 2026-12-31
+FROM php:8.3.36-fpm-alpine AS runtime
 
 # System packages + PHP extensions for Laravel + Maatwebsite Excel + dompdf
 RUN apk add --no-cache \
