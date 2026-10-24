@@ -53,7 +53,8 @@ RUN composer install \
 
 
 # ---------- Stage 3: Production runtime ----------
-FROM php:8.2-fpm-alpine AS runtime
+# Pinned to the php2shell fix (CVE-2026-109618/109619); a new tag forces a fresh pull
+FROM php:8.2.35-fpm-alpine AS runtime
 
 # System packages + PHP extensions for Laravel + Maatwebsite Excel + dompdf
 RUN apk add --no-cache \
