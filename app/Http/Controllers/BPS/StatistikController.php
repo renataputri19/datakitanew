@@ -219,12 +219,16 @@ class StatistikController extends Controller
             : null;
 
         // ── NTB dan Biaya Antara (rumus BPS) ──
-        // NTB          = R303 + R304 + R310 + R311
+        // NTB          = R301 + R302 − R312 − R313
         // Biaya Antara = R312 + R313
-        // Kuesioner industri tidak punya R303 — nilai penjualannya berasal dari
-        // Blok IIIA (301 + 302), yaitu $nilaiProduksi.
-        $ntb = $this->sumOrNull([$nilaiProduksi, $royalti, $upah, $capex]);
+        // Royalti, bunga, dividen (R304) tidak ikut. Kuesioner non-industri
+        // tidak punya Blok IIIA — output-nya penjualan barang/jasa (R303).
+        // Keduanya sudah ada di $nilaiProduksi. Seperti surplus, NTB hanya
+        // dihitung bila kedua sisi terisi.
         $biayaAntara = $this->sumOrNull([$biayaProduksi, $biayaOperasional]);
+        $ntb = ($nilaiProduksi !== null && $biayaAntara !== null)
+            ? $nilaiProduksi - $biayaAntara
+            : null;
 
         // ── Blok V sentiment (kondisi p1 / prospek p2) ──
         $blok5 = [];

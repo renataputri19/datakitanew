@@ -107,6 +107,14 @@
 .stx-kpis { display: grid; gap: 1rem; grid-template-columns: repeat(2, 1fr); margin-bottom: 1rem; }
 @media (min-width: 768px)  { .stx-kpis { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 1280px) { .stx-kpis { grid-template-columns: repeat(6, 1fr); } }
+/* SIBSTR carries a seventh tile (NTB). Seven never fills a 2-, 3- or 6-wide
+   row, so the first tile ("Perusahaan melapor") widens to close the gap until
+   the row has room for all seven side by side — about 200px a tile beside the
+   open sidebar, or "Rp 568,8 M" breaks across two lines. */
+.stx-kpis.stx-kpis-7 > :first-child { grid-column: span 2; }
+@media (min-width: 768px)  { .stx-kpis.stx-kpis-7 > :first-child { grid-column: span 3; } }
+@media (min-width: 1024px) { .stx-kpis.stx-kpis-7 { grid-template-columns: repeat(4, 1fr); } .stx-kpis.stx-kpis-7 > :first-child { grid-column: span 2; } }
+@media (min-width: 1800px) { .stx-kpis.stx-kpis-7 { grid-template-columns: repeat(7, 1fr); } .stx-kpis.stx-kpis-7 > :first-child { grid-column: auto; } }
 .stx-kpi { padding: 1rem 1.1rem; cursor: pointer; text-align: left; transition: border-color .12s, transform .06s, box-shadow .12s; position: relative; color: var(--stx-ink); font: inherit; overflow: hidden; }
 .stx-kpi::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, var(--stx-s1), transparent 70%); opacity: 0; transition: opacity .15s; }
 .stx-kpi:hover { border-color: var(--stx-s1); box-shadow: 0 6px 18px rgba(16, 24, 40, .09); }
@@ -129,6 +137,10 @@
 .stx-qoq.up, .stx-qoq-cell.up { color: var(--stx-good); }
 .stx-qoq.down, .stx-qoq-cell.down { color: var(--stx-bad); }
 .stx-qoq.flat, .stx-qoq.na, .stx-qoq-cell.flat, .stx-qoq-cell.na { color: var(--stx-muted); }
+/* the two quarter values a tile's q-to-q is computed from, one per line */
+.stx-qoq-base { display: grid; grid-template-columns: auto 1fr; gap: 0 0.5rem; margin-top: 0.15rem; font-size: 0.6875rem; line-height: 1.4; color: var(--stx-muted); font-variant-numeric: tabular-nums; }
+.stx-qoq-base .b-v { color: var(--stx-ink-2); font-weight: 600; }
+.stx-table tfoot td { padding: 0.6rem 0.75rem; border-top: 2px solid var(--stx-grid); font-weight: 700; color: var(--stx-ink); white-space: nowrap; }
 
 /* ═══════════════════ Popover (perusahaan / KBLI picker) ═══════════════════ */
 .stx-popwrap { position: relative; display: inline-flex; }

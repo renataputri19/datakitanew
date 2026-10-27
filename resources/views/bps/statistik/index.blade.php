@@ -18,7 +18,7 @@
             <div>
                 <span class="stx-hero-kicker"><span class="dot"></span> BPS Kota Batam</span>
                 <h1 class="stx-title">Statistik SIBSTR Triwulanan</h1>
-                <p class="stx-sub">Ringkasan hasil Survei Industri Besar dan Sedang Triwulanan — nilai produksi, pendapatan, pengeluaran, perkiraan surplus usaha, tenaga kerja, serta kondisi &amp; prospek usaha, dikelompokkan menurut KBLI.</p>
+                <p class="stx-sub">Ringkasan hasil Survei Industri Besar dan Sedang Triwulanan — nilai produksi, pendapatan, pengeluaran, perkiraan surplus usaha, nilai tambah bruto (NTB), tenaga kerja, serta kondisi &amp; prospek usaha, dikelompokkan menurut KBLI.</p>
                 <div class="stx-hero-meta">
                     <span class="m">📅 Tahun {{ $payload['tahun'] }}</span>
                     <span class="m">🗂 {{ count($payload['quarters']) }} triwulan berjalan</span>
@@ -44,7 +44,7 @@
     <div class="stx-card stx-filters" id="stx-filters"></div>
 
     {{-- ── KPI row ────────────────────────────────────────── --}}
-    <div class="stx-kpis" id="stx-kpis"></div>
+    <div class="stx-kpis stx-kpis-7" id="stx-kpis"></div>
 
     {{-- ── Charts ─────────────────────────────────────────── --}}
     <div class="stx-grid stx-grid-2">
