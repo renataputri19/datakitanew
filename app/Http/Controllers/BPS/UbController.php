@@ -152,6 +152,8 @@ class UbController extends Controller
 
         $filename = 'Data_Survei_UB_' . $this->exportStamp() . $this->exportExtension($writer);
 
+        $this->logExport($request, 'ub', $filename, $writer, $records->count());
+
         return Excel::download(new UbBlok1Export($records), $filename, $writer);
     }
 

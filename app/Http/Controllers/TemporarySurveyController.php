@@ -158,8 +158,12 @@ class TemporarySurveyController extends Controller
         $roleDefinitions = User::roleDefinitions();
         $companyCount = Company::count();
 
+        // Latest survey Excel exports, full trail at superadmin.export-logs.index
+        $recentExports = \App\Models\ExportLog::latest('created_at')->take(5)->get();
+        $exportCount30 = \App\Models\ExportLog::where('created_at', '>=', now()->subDays(30))->count();
+
         return view('survey.superadmin-dashboard', compact(
-            'stats', 'userStats', 'roleDefinitions', 'companyCount'
+            'stats', 'userStats', 'roleDefinitions', 'companyCount', 'recentExports', 'exportCount30'
         ));
     }
 

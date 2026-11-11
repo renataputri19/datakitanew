@@ -63,6 +63,18 @@ class UserController extends Controller
         ]);
 
         $user = User::findOrFail($id);
+
+        // Staff passwords (BPS, Super Admin) are Super Admin only, and BPS
+        // Provinsi may not reset anyone's — see User::canResetPasswordOf().
+        if (! $request->user()->canResetPasswordOf($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => $user->isStaff()
+                    ? 'Password akun BPS dan Super Admin hanya dapat direset oleh Super Admin.'
+                    : 'Akun Anda tidak memiliki izin untuk mereset password pengguna.',
+            ], 403);
+        }
+
         $user->update(['password' => Hash::make($request->new_password)]);
 
         return response()->json([

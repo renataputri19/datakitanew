@@ -5,7 +5,7 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/survey.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-validation.css') }}">
-<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}">
+<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}?v={{ filemtime(public_path('css/sibstr-form.css')) }}">
 @endpush
 
 @section('dashboard-content')

@@ -25,11 +25,12 @@
     </div>
 
     {{-- Role summary chips --}}
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
         @php
             $chipMap = [
                 'red'    => 'border-red-200 dark:border-red-900/50',
                 'blue'   => 'border-blue-200 dark:border-blue-900/50',
+                'sky'    => 'border-sky-200 dark:border-sky-900/50',
                 'purple' => 'border-purple-200 dark:border-purple-900/50',
                 'amber'  => 'border-amber-200 dark:border-amber-900/50',
                 'gray'   => 'border-gray-200 dark:border-gray-700',

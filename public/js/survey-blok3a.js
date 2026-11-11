@@ -30,7 +30,7 @@ class SurveyBlok3aManager {
             this.quarterConf = serverConf;
         } else {
             this.quarterConf = {
-                'dec_prev': { label: 'Des 2024', months: ['2024_des'] },
+                'prev_month': { label: 'Des 2024', months: ['2024_des'] },
                 'q1': { label: 'Triwulan I', months: ['2025_jan', '2025_feb', '2025_mar'] },
                 'q2': { label: 'Triwulan II', months: ['2025_apr', '2025_mei', '2025_jun'] },
                 'q3': { label: 'Triwulan III', months: ['2025_jul', '2025_agu', '2025_sep'] },
@@ -43,7 +43,9 @@ class SurveyBlok3aManager {
         this.lainnyaActiveQuarter = firstQKey;
         this.totalActiveQuarter = firstQKey;
 
-        // Triwulanan when quarterConf has ≤ 2 entries (dec_prev + one quarter)
+        // Triwulanan when quarterConf has ≤ 2 entries (prev_month + one quarter).
+        // prev_month = the month before the period: Des of last year for tahunan
+        // and TW I, otherwise the previous quarter's last month (TW II → Mar).
         this.isTriwulanan = Object.keys(this.quarterConf).length <= 2;
 
         // Build monthLabels map from quarterConf
@@ -488,7 +490,9 @@ class SurveyBlok3aManager {
         for (const [qKey, qConf] of Object.entries(this.quarterConf)) {
             const months = qConf.months; // ['2025_jan', etc]
 
-            html += `<div class="data-grid quarter-grid quarter-section" data-quarter="${qKey}">`;
+            // --months sizes the grid's columns (sibstr-form.css): the December
+            // bridge tab has one month, a quarter tab has three.
+            html += `<div class="data-grid quarter-grid quarter-section" data-quarter="${qKey}" style="--months:${months.length}">`;
 
             // Header Row (Label + Month Names)
             html += `<div class="grid-header">Uraian</div>`;
@@ -654,7 +658,7 @@ class SurveyBlok3aManager {
 
         let html = '';
         for (const [qKey, qConf] of Object.entries(this.quarterConf)) {
-            html += `<div class="data-grid quarter-grid quarter-section" data-quarter="${qKey}">`;
+            html += `<div class="data-grid quarter-grid quarter-section" data-quarter="${qKey}" style="--months:${qConf.months.length}">`;
 
             // Header
             html += `<div class="grid-header">Uraian</div>`;
@@ -871,7 +875,9 @@ class SurveyBlok3aManager {
     // Compute Harga/Satuan = Nilai / Banyaknya in the given card
     recalcHargaSatuanForCard(cardElem, specificMonth = null, skipAutoSave = false) {
         if (!cardElem) return;
-        const months = ['2024_des', '2025_jan', '2025_feb', '2025_mar', '2025_apr', '2025_mei', '2025_jun', '2025_jul', '2025_agu', '2025_sep', '2025_okt', '2025_nov', '2025_des'];
+        // All months this form shows (was a hard-coded 2024/2025 list, so the
+        // bulk recalc silently skipped every month of a 2026 form).
+        const months = Object.values(this.quarterConf).flatMap(q => q.months);
         const targetMonths = specificMonth ? [specificMonth] : months;
 
         targetMonths.forEach(m => {
@@ -1074,6 +1080,25 @@ class SurveyBlok3aManager {
 
         html += '</tbody></table></div>';
         this.previewContainer.innerHTML = html;
+        this.watchPreviewOverflow();
+    }
+
+    /**
+     * Show the "geser tabel" hint only while the summary table is actually
+     * wider than its box. Its width depends on the figures in it, so a CSS
+     * breakpoint cannot know; measure instead, and again on every resize.
+     */
+    watchPreviewOverflow() {
+        const section = document.getElementById('preview-section');
+        const box = this.previewContainer?.querySelector('.preview-table');
+        if (!section || !box) return;
+        const check = () => section.classList.toggle('is-scrollable', box.scrollWidth > box.clientWidth + 1);
+        check();
+        if (window.ResizeObserver) {
+            this.previewResizeObserver?.disconnect();
+            this.previewResizeObserver = new ResizeObserver(check);
+            this.previewResizeObserver.observe(box);
+        }
     }
 
     formatNumber(n) {

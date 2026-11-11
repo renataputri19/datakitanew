@@ -849,6 +849,27 @@ class SurveyResponse extends Model
     }
 
     /**
+     * The Blok IIIA "bulan sebelumnya" column: the month just before the
+     * reporting period, as ['YYYY_mmm' => 'Label YYYY'].
+     *
+     *   Tahunan / TW I → Des of the previous year
+     *   TW II → Mar, TW III → Jun, TW IV → Sep of the same year
+     *
+     * Optional to fill. Its key can coincide with a month of the previous
+     * quarter (TW II's "2026_mar" is also TW I's last month), so anything
+     * that sums months across quarters must skip it.
+     */
+    public static function blok3aPrevMonth(int $tahun, int $triwulan): array
+    {
+        return match ($triwulan) {
+            2       => ["{$tahun}_mar" => "Mar {$tahun}"],
+            3       => ["{$tahun}_jun" => "Jun {$tahun}"],
+            4       => ["{$tahun}_sep" => "Sep {$tahun}"],
+            default => [($tahun - 1) . '_des' => 'Des ' . ($tahun - 1)],
+        };
+    }
+
+    /**
      * Get the jenis kawasan options.
      */
     public static function getJenisKawasanOptions()
@@ -932,31 +953,20 @@ class SurveyResponse extends Model
 
     /**
      * Return the ordered month keys for Blok IIIA based on this response's tahun/triwulan.
-     * For triwulanan: Dec of previous year + 3 months of the current quarter.
+     * For triwulanan: the month before the quarter + 3 months of the current quarter.
      * For tahunan:    Dec of previous year + all 12 months of the current year.
      */
     private function getBlok3aMonthKeys(): array
     {
         $tahun    = (int) ($this->tahun    ?? date('Y'));
         $triwulan = (int) ($this->triwulan ?? 0);
-        $prevYear = $tahun - 1;
+        $keys     = array_keys(self::blok3aPrevMonth($tahun, $triwulan));
 
         if ($triwulan > 0) {
-            $twMonths = [
-                1 => ['jan', 'feb', 'mar'],
-                2 => ['apr', 'mei', 'jun'],
-                3 => ['jul', 'agu', 'sep'],
-                4 => ['okt', 'nov', 'des'],
-            ];
-            $keys = ["{$prevYear}_des"];
-            foreach (($twMonths[$triwulan] ?? []) as $m) {
-                $keys[] = "{$tahun}_{$m}";
-            }
-            return $keys;
+            return array_merge($keys, array_keys(self::triwulanMonthKeys($tahun, $triwulan)));
         }
 
         $allMonths = ['jan','feb','mar','apr','mei','jun','jul','agu','sep','okt','nov','des'];
-        $keys = ["{$prevYear}_des"];
         foreach ($allMonths as $m) {
             $keys[] = "{$tahun}_{$m}";
         }

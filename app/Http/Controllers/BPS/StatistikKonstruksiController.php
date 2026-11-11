@@ -23,7 +23,7 @@ class StatistikKonstruksiController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'is_bps']);
+        $this->middleware(['auth', 'bps_statistik']); // BPS Batam + BPS Provinsi
     }
 
     public function index(Request $request)

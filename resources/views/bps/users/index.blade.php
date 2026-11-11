@@ -62,7 +62,9 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap gap-1">
-                                @if($user->is_bps)
+                                @if($user->isBpsProvinsi())
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300">BPS Provinsi</span>
+                                @elseif($user->is_bps)
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">BPS</span>
                                 @endif
                                 @if($user->is_kominfo_user)
@@ -74,7 +76,7 @@
                                 @if($user->is_admin)
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300">Admin</span>
                                 @endif
-                                @if(!$user->is_bps && !$user->is_kominfo_user && !$user->is_superadmin && !$user->is_admin)
+                                @if(!$user->is_bps && !$user->is_bps_provinsi && !$user->is_kominfo_user && !$user->is_superadmin && !$user->is_admin)
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">Pengguna</span>
                                 @endif
                             </div>
@@ -83,6 +85,7 @@
                             {{ $user->created_at->setTimezone('Asia/Jakarta')->format('d M Y') }}
                         </td>
                         <td class="px-6 py-4 text-center">
+                            @if(auth()->user()->canResetPasswordOf($user))
                             <button type="button"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-md transition-colors duration-200"
                                     onclick="openResetModal('{{ $user->id }}', '{{ addslashes($user->name) }}', '{{ $user->email }}')">
@@ -91,6 +94,11 @@
                                 </svg>
                                 Reset Password
                             </button>
+                            @elseif($user->isStaff())
+                            <span class="text-xs text-gray-400 dark:text-gray-500" title="Password akun BPS dan Super Admin hanya dapat direset oleh Super Admin.">Via Super Admin</span>
+                            @else
+                            <span class="text-xs text-gray-400 dark:text-gray-500">&mdash;</span>
+                            @endif
                         </td>
                     </tr>
                     @empty

@@ -198,6 +198,8 @@ class KonstruksiController extends Controller
 
         $filename = 'Data_Survei_Konstruksi_' . $this->exportStamp() . $this->exportExtension($writer);
 
+        $this->logExport($request, 'konstruksi', $filename, $writer, $records->count());
+
         return Excel::download(new KonstruksiBlok1Export($records), $filename, $writer);
     }
 

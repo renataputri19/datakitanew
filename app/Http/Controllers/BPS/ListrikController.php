@@ -153,6 +153,8 @@ class ListrikController extends Controller
 
         $filename = 'Data_Survei_Listrik_' . $this->exportStamp() . $this->exportExtension($writer);
 
+        $this->logExport($request, 'listrik', $filename, $writer, $records->count());
+
         return Excel::download(new ListrikBlok1Export($records), $filename, $writer);
     }
 

@@ -74,26 +74,16 @@ class SurveyBlok5Manager {
                 this.form.querySelectorAll('input[type="radio"]')
             ).some(r => r.name === name && r.checked);
 
-            const td = radio.closest('td');
-            const radioGroup = td?.querySelector('.radio-group');
+            const radioGroup = radio.closest('.radio-group');
 
             if (!isChecked) {
-                // Highlight the group in the table
                 radioGroup?.classList.add('radio-group-has-error');
 
-                // Build human-readable label from table row
-                const tr = radio.closest('tr');
-                const rowLabel = tr?.querySelector('td.row-label');
-                const qNum = rowLabel?.querySelector('.question-number')?.textContent?.trim() ?? '';
-                let labelText = '';
-                rowLabel?.querySelectorAll('span').forEach(s => {
-                    if (!s.classList.contains('question-number')) {
-                        labelText = s.textContent.trim();
-                    }
-                });
-                const colType = td?.classList.contains('prospect-col') ? 'Prospek' : 'Kondisi';
-                const errorLabel = [qNum, labelText, `(${colType})`].filter(Boolean).join(' ');
-                errors.push(errorLabel);
+                // "501. Pesanan — Kondisi TW II-2026 vs TW I-2026", read from
+                // the card and the period block the radio sits in.
+                const item = radio.closest('.b5-item')?.dataset.b5Label ?? '';
+                const period = radio.closest('.b5-period')?.dataset.b5Period ?? '';
+                errors.push([item, period].filter(Boolean).join(' — '));
             } else {
                 radioGroup?.classList.remove('radio-group-has-error');
             }

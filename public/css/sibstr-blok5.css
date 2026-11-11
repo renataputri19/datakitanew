@@ -1,0 +1,349 @@
+/* ============================================================================
+   SIBSTR Blok V — Kondisi & Prospek Usaha
+   ----------------------------------------------------------------------------
+   One card per component (501–507). Each card holds one answer group per
+   period: two in triwulanan (Kondisi, Prospek), five in tahunan. The groups
+   sit side by side when there is room and stack when there is not, so the
+   page never scrolls sideways.
+
+   This replaced a 920px-wide table. On a phone the Prospek column sat off
+   screen behind a horizontal swipe nobody discovered, so respondents could
+   not find half of the required answers.
+
+   Layout follows the width of the LIST, not the viewport: the dashboard
+   sidebar takes a varying share of the screen. The container query only adds
+   the one-row desktop layout; without it the cards stay stacked, which works
+   at every width.
+
+   Loaded after survey.css / sibstr-form.css, scoped under .sibstr-page so it
+   wins over survey.css's `.radio-group { flex-direction: column }`.
+   ========================================================================== */
+
+/* ── Intro: which period is which, said once at the top ──────────────────── */
+.sibstr-page .b5-intro {
+    margin: 0 0 1rem;
+    font-size: .8125rem;
+    line-height: 1.5;
+    color: #4b5563;
+}
+
+.dark .sibstr-page .b5-intro {
+    color: #9ca3af;
+}
+
+.sibstr-page .b5-intro p {
+    margin: 0 0 .55rem;
+}
+
+.sibstr-page .b5-intro-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sibstr-page .b5-intro-list li {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .4rem .7rem .4rem .45rem;
+    border-radius: .625rem;
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    color: #374151;
+}
+
+.sibstr-page .b5-intro-list li.is-prospek {
+    border-color: #dbeafe;
+    background: #eff6ff;
+}
+
+.dark .sibstr-page .b5-intro-list li {
+    border-color: #374151;
+    background: rgba(17, 24, 39, .45);
+    color: #d1d5db;
+}
+
+.dark .sibstr-page .b5-intro-list li.is-prospek {
+    border-color: #1e3a8a;
+    background: rgba(30, 58, 138, .25);
+}
+
+/* ── The list of components ──────────────────────────────────────────────── */
+.sibstr-page .b5-list {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    container-type: inline-size;
+    container-name: b5;
+}
+
+.sibstr-page .b5-item {
+    display: grid;
+    gap: .85rem;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: .875rem;
+    background: #fff;
+    min-width: 0;
+}
+
+.dark .sibstr-page .b5-item {
+    border-color: #374151;
+    background: rgba(17, 24, 39, .35);
+}
+
+/* ── Question text ───────────────────────────────────────────────────────── */
+.sibstr-page .b5-q {
+    min-width: 0;
+}
+
+/* Plain inline text, not flex: a long label then wraps word by word after the
+   number instead of dropping to its own line, and the nbsp keeps the * on the
+   last word. */
+.sibstr-page .b5-q-title {
+    margin: 0;
+    font-size: .9375rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #111827;
+}
+
+.dark .sibstr-page .b5-q-title {
+    color: #f3f4f6;
+}
+
+.sibstr-page .b5-q-title .question-number {
+    min-width: 0;
+    margin-right: .2rem;
+}
+
+.sibstr-page .b5-req {
+    color: #ef4444;
+}
+
+.sibstr-page .b5-desc {
+    margin: .3rem 0 0;
+    font-size: .8rem;
+    line-height: 1.45;
+    color: #6b7280;
+}
+
+.dark .sibstr-page .b5-desc {
+    color: #9ca3af;
+}
+
+/* ── Periods: as many side by side as fit, never narrower than 15rem ─────── */
+.sibstr-page .b5-periods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: .6rem;
+    min-width: 0;
+}
+
+.sibstr-page .b5-period {
+    min-width: 0;
+    padding: .6rem;
+    border: 1px solid #eef2f7;
+    border-radius: .75rem;
+    background: #f8fafc;
+}
+
+.sibstr-page .b5-period.is-prospek {
+    border-color: #dbeafe;
+    background: #eff6ff;
+}
+
+.dark .sibstr-page .b5-period {
+    border-color: #374151;
+    background: rgba(31, 41, 55, .6);
+}
+
+.dark .sibstr-page .b5-period.is-prospek {
+    border-color: #1e3a8a;
+    background: rgba(30, 58, 138, .22);
+}
+
+.sibstr-page .b5-period-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .25rem .5rem;
+    margin-bottom: .5rem;
+}
+
+.sibstr-page .b5-tag {
+    display: inline-block;
+    padding: .15rem .5rem;
+    border-radius: 9999px;
+    background: #e2e8f0;
+    color: #334155;
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.sibstr-page .is-prospek .b5-tag {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.dark .sibstr-page .b5-tag {
+    background: #374151;
+    color: #e5e7eb;
+}
+
+.dark .sibstr-page .is-prospek .b5-tag {
+    background: #1e3a8a;
+    color: #bfdbfe;
+}
+
+.sibstr-page .b5-range {
+    font-size: .75rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.dark .sibstr-page .b5-range {
+    color: #9ca3af;
+}
+
+/* ── The answer: three equal buttons, not three tiny radio dots ──────────── */
+.sibstr-page .b5-seg {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .35rem;
+}
+
+.sibstr-page .b5-opt {
+    position: relative;
+    display: block;
+    margin: 0;
+    cursor: pointer;
+    min-width: 0;
+}
+
+/* The real radio stays in the DOM (name, value, required, autosave and the
+   keyboard all keep working) but is visually replaced by the button face. */
+.sibstr-page .b5-opt-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.sibstr-page .b5-opt-face {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .2rem;
+    min-height: 3.1rem;
+    padding: .4rem .25rem;
+    border: 1.5px solid #d1d5db;
+    border-radius: .625rem;
+    background: #fff;
+    color: #374151;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    overflow-wrap: anywhere;
+    user-select: none;
+    transition: background-color .12s, border-color .12s, color .12s, box-shadow .12s;
+}
+
+.sibstr-page .b5-opt-face svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    flex-shrink: 0;
+    color: #94a3b8;
+}
+
+.sibstr-page .b5-opt:hover .b5-opt-face {
+    border-color: #93c5fd;
+    background: #f5f9ff;
+}
+
+.sibstr-page .b5-opt-input:checked + .b5-opt-face {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, .35);
+}
+
+.sibstr-page .b5-opt-input:checked + .b5-opt-face svg {
+    color: #fff;
+}
+
+.sibstr-page .b5-opt-input:focus-visible + .b5-opt-face {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.dark .sibstr-page .b5-opt-face {
+    border-color: #4b5563;
+    background: #111827;
+    color: #e5e7eb;
+}
+
+.dark .sibstr-page .b5-opt-face svg {
+    color: #6b7280;
+}
+
+.dark .sibstr-page .b5-opt:hover .b5-opt-face {
+    border-color: #3b82f6;
+    background: #172033;
+}
+
+.dark .sibstr-page .b5-opt-input:checked + .b5-opt-face {
+    border-color: #3b82f6;
+    background: #2563eb;
+    color: #fff;
+}
+
+.dark .sibstr-page .b5-opt-input:checked + .b5-opt-face svg {
+    color: #fff;
+}
+
+.dark .sibstr-page .b5-opt-input:focus-visible + .b5-opt-face {
+    outline-color: #60a5fa;
+}
+
+/* Missing answer: survey-validation.css outlines the .radio-group in red.
+   Keep that, just with padding that suits the button row. */
+.sibstr-page .b5-seg.radio-group-has-error {
+    padding: .3rem;
+    border-radius: .75rem;
+}
+
+/* ── Wide list, triwulanan: question | Kondisi | Prospek on one row ──────── */
+@container b5 (min-width: 56rem) {
+    .sibstr-page .b5-list.is-triwulanan .b5-item {
+        grid-template-columns: minmax(12rem, 1fr) minmax(0, 2.3fr);
+        align-items: center;
+        gap: 1.25rem;
+    }
+}
+
+/* ── Phones: a little less padding so the buttons keep their width ───────── */
+@media (max-width: 640px) {
+    .sibstr-page .b5-item {
+        padding: .85rem .75rem;
+    }
+
+    .sibstr-page .b5-period {
+        padding: .5rem;
+    }
+
+    .sibstr-page .b5-intro-list li {
+        width: 100%;
+    }
+}

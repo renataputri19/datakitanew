@@ -27,7 +27,7 @@
     </div>
 
     {{-- Management Hub --}}
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <a href="{{ route('superadmin.users.index') }}" class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-700 transition-all">
             <div class="flex items-center justify-between">
                 <div class="w-11 h-11 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
@@ -60,6 +60,37 @@
             <h3 class="mt-4 text-base font-semibold text-gray-900 dark:text-white">Data Perusahaan</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ $companyCount }} perusahaan terdaftar</p>
         </a>
+
+        <a href="{{ route('superadmin.export-logs.index') }}" class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-rose-300 dark:hover:border-rose-700 transition-all">
+            <div class="flex items-center justify-between">
+                <div class="w-11 h-11 rounded-lg bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                </div>
+                <svg class="w-5 h-5 text-gray-300 dark:text-gray-600 group-hover:text-rose-500 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </div>
+            <h3 class="mt-4 text-base font-semibold text-gray-900 dark:text-white">Log Unduhan Excel</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ $exportCount30 }} unduhan dalam 30 hari terakhir</p>
+        </a>
+    </div>
+
+    {{-- Latest survey Excel exports --}}
+    <div class="mb-8">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Unduhan Excel Terbaru</h2>
+            <a href="{{ route('superadmin.export-logs.index') }}" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">Lihat log lengkap &rarr;</a>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+            @forelse($recentExports as $export)
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm">
+                    <span class="text-gray-500 dark:text-gray-400 whitespace-nowrap w-32">{{ $export->created_at->setTimezone('Asia/Jakarta')->format('d M Y H:i') }}</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ $export->user_name }}</span>
+                    <span class="text-gray-500 dark:text-gray-400">{{ $export->user_email }}</span>
+                    <span class="ml-auto text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ $export->surveyLabel() }} &middot; {{ number_format($export->row_count, 0, ',', '.') }} baris &middot; <span class="uppercase">{{ $export->format }}</span></span>
+                </div>
+            @empty
+                <p class="px-4 py-6 text-sm text-center text-gray-500 dark:text-gray-400">Belum ada unduhan Excel yang tercatat.</p>
+            @endforelse
+        </div>
     </div>
 
     {{-- Platform Overview: users per role --}}
@@ -68,11 +99,12 @@
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Distribusi Pengguna per Role</h2>
             <a href="{{ route('superadmin.users.index') }}" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">Lihat semua &rarr;</a>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
             @php
                 $roleBorder = [
                     'red'    => 'border-t-red-500',
                     'blue'   => 'border-t-blue-500',
+                    'sky'    => 'border-t-sky-500',
                     'purple' => 'border-t-purple-500',
                     'amber'  => 'border-t-amber-500',
                     'gray'   => 'border-t-gray-400',

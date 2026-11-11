@@ -409,11 +409,12 @@
                 $hTotals   = $hResp->blok3a_totals ?? [];
 
                 // Month columns for THIS response's period (mirrors how Blok 3A stores
-                // them: a leading "Des {prevYear}" carry-over column, then either all
-                // 12 months of the year (annual) or the quarter's 3 months.
-                $hPrevYear       = (int) $hResp->tahun - 1;
-                $histMonthKeys   = ["{$hPrevYear}_des"];
-                $histMonthLabels = ["Des {$hPrevYear}"];
+                // them: a leading "bulan sebelumnya" column (Des of last year for
+                // annual / TW I, else the previous quarter's last month), then either
+                // all 12 months of the year (annual) or the quarter's 3 months.
+                $hPrev           = \App\Models\SurveyResponse::blok3aPrevMonth((int) $hResp->tahun, (int) $hResp->triwulan);
+                $histMonthKeys   = array_keys($hPrev);
+                $histMonthLabels = array_values($hPrev);
                 $hMonths = ((int) $hResp->triwulan === 0)
                     ? array_keys($histMonthAbbr)
                     : ($histQuarterMonths[(int) $hResp->triwulan] ?? []);

@@ -472,11 +472,10 @@ Route::middleware(['auth'])->group(function () {
     });
 
 
-    // BPS Routes (Protected by BPS middleware)
-    Route::middleware(['is_bps'])->prefix('bps')->name('bps.')->group(function () {
-        // BPS Dashboard
-        Route::get('/', [BPSDashboardController::class, 'index'])->name('dashboard');
-
+    // BPS Statistik dashboards — BPS Batam AND BPS Provinsi (bps_statistik).
+    // This is the only part of /bps open to BPS Provinsi, who has no is_bps
+    // and is otherwise a regular user. Add nothing here that is not statistik.
+    Route::middleware(['bps_statistik'])->prefix('bps')->name('bps.')->group(function () {
         // SIBSTR Statistics Dashboard (quarterly data viz)
         Route::get('/statistik', [App\Http\Controllers\BPS\StatistikController::class, 'index'])->name('statistik.index');
 
@@ -488,6 +487,12 @@ Route::middleware(['auth'])->group(function () {
 
         // Konstruksi Statistics Dashboard (annual construction survey viz)
         Route::get('/statistik-konstruksi', [App\Http\Controllers\BPS\StatistikKonstruksiController::class, 'index'])->name('statistik.konstruksi');
+    });
+
+    // BPS Routes (Protected by BPS middleware — BPS Batam only)
+    Route::middleware(['is_bps'])->prefix('bps')->name('bps.')->group(function () {
+        // BPS Dashboard
+        Route::get('/', [BPSDashboardController::class, 'index'])->name('dashboard');
 
         // News Management
         Route::resource('news', BPSNewsController::class);
@@ -562,6 +567,9 @@ Route::middleware(['auth', 'is_superadmin'])->prefix('superadmin')->name('supera
     Route::get('/data-terhapus', [App\Http\Controllers\Superadmin\TrashController::class, 'index'])->name('trash.index');
     Route::post('/data-terhapus/{type}/restore-all', [App\Http\Controllers\Superadmin\TrashController::class, 'restoreAll'])->name('trash.restore-all');
     Route::post('/data-terhapus/{type}/{id}/restore', [App\Http\Controllers\Superadmin\TrashController::class, 'restore'])->name('trash.restore');
+
+    // Audit trail of survey Excel exports from the BPS Data Survei pages
+    Route::get('/log-unduhan', [App\Http\Controllers\Superadmin\ExportLogController::class, 'index'])->name('export-logs.index');
 
     // User Management (create users & assign a single, non-overlapping role)
     Route::get('/users', [SuperadminUserController::class, 'index'])->name('users.index');

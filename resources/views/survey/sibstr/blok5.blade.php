@@ -5,28 +5,8 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/survey.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-validation.css') }}">
-<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}">
-<style>
-    /* Minor responsive helpers specific to Blok 5 */
-    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .survey-table { width: 100%; border-collapse: collapse; min-width: 920px; }
-    .survey-table th, .survey-table td { border: 1px solid var(--gray-200); padding: 12px; text-align: center; vertical-align: middle; }
-    .survey-table th { position: sticky; top: 0; background: var(--card-bg, #fff); z-index: 2; }
-    .row-label { text-align: left; font-weight: 600; }
-    .row-label .component-desc { display: block; margin-top: 6px; font-weight: 400; color: var(--gray-600); font-size: var(--font-size-sm); line-height: 1.4; }
-    .radio-group { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
-    .radio-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 999px; cursor: pointer; user-select: none; }
-    .radio-pill input[type="radio"] { width: 18px; height: 18px; }
-    .table-caption { text-align: left; margin-bottom: 12px; color: var(--muted-text, #6b7280); white-space: nowrap; }
-    .sticky-col { position: sticky; left: 0; background: var(--card-bg, #fff); z-index: 1; }
-    .help-details { margin-top: 8px; }
-    .help-details summary { cursor: pointer; }
-    /* Distinguish Prospect columns */
-    .survey-table th.prospect { background: var(--info-blue-light); color: var(--gray-900); }
-    .survey-table td.prospect-col { background: #f7fbff; }
-    .col-subtype { font-size: var(--font-size-sm); color: var(--gray-600); }
-    @media (max-width: 768px) { .survey-table th, .survey-table td { padding: 10px; } }
-</style>
+<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}?v={{ filemtime(public_path('css/sibstr-form.css')) }}">
+<link rel="stylesheet" href="{{ asset('css/sibstr-blok5.css') }}?v={{ filemtime(public_path('css/sibstr-blok5.css')) }}">
 @endpush
 
 @section('dashboard-content')
@@ -56,113 +36,123 @@
             </div>
 
             @php
-                $currentTw = $triwulan ?? 0;
+                $currentTw    = (int) ($triwulan ?? 0);
                 $isTriwulanan = $currentTw > 0;
+                $tahunInt     = (int) $tahun;
+                $roman        = ['I', 'II', 'III', 'IV'];
+
+                // One entry per answer group in a card. 'key' is the stored
+                // column (blok5[501][p1]); never renumber it — saved answers
+                // and the BPS views read these keys.
                 if ($isTriwulanan) {
-                    $twLabels   = ['I','II','III','IV'];
-                    $prevTw     = $currentTw === 1 ? 4 : $currentTw - 1;
-                    $prevYear   = $currentTw === 1 ? ($tahun - 1) : $tahun;
-                    $nextTw     = $currentTw === 4 ? 1 : $currentTw + 1;
-                    $nextYear   = $currentTw === 4 ? ($tahun + 1) : $tahun;
-                    $twKondisiHeader = "Kondisi TW {$twLabels[$currentTw-1]}-{$tahun} vs TW {$twLabels[$prevTw-1]}-{$prevYear}";
-                    $twProspekHeader = "Prospek TW {$twLabels[$nextTw-1]}-{$nextYear} vs TW {$twLabels[$currentTw-1]}-{$tahun}";
+                    $prevTw   = $currentTw === 1 ? 4 : $currentTw - 1;
+                    $prevYear = $currentTw === 1 ? $tahunInt - 1 : $tahunInt;
+                    $nextTw   = $currentTw === 4 ? 1 : $currentTw + 1;
+                    $nextYear = $currentTw === 4 ? $tahunInt + 1 : $tahunInt;
+                    $twNow    = "TW {$roman[$currentTw - 1]}-{$tahunInt}";
+                    $twPrev   = "TW {$roman[$prevTw - 1]}-{$prevYear}";
+                    $twNext   = "TW {$roman[$nextTw - 1]}-{$nextYear}";
+                    $periodDefs = [
+                        ['key' => 'p1', 'prospek' => false, 'range' => "$twNow vs $twPrev"],
+                        ['key' => 'p2', 'prospek' => true,  'range' => "$twNext vs $twNow"],
+                    ];
+                } else {
+                    $y = $tahunInt;
+                    $periodDefs = [
+                        ['key' => 'p1', 'prospek' => false, 'range' => "TW I-$y vs TW IV-" . ($y - 1)],
+                        ['key' => 'p2', 'prospek' => false, 'range' => "TW II-$y vs TW I-$y"],
+                        ['key' => 'p3', 'prospek' => false, 'range' => "TW III-$y vs TW II-$y"],
+                        ['key' => 'p5', 'prospek' => false, 'range' => "TW IV-$y vs TW III-$y"],
+                        ['key' => 'p6', 'prospek' => true,  'range' => 'TW I-' . ($y + 1) . " vs TW IV-$y"],
+                    ];
                 }
+
+                $rows = [
+                    ['key' => '501', 'label' => 'Pesanan', 'type' => 'normal'],
+                    ['key' => '502', 'label' => 'Produksi', 'type' => 'normal'],
+                    ['key' => '503', 'label' => 'Kapasitas Produksi', 'type' => 'normal'],
+                    ['key' => '504', 'label' => 'Tenaga Kerja', 'type' => 'normal'],
+                    ['key' => '505', 'label' => 'Jam Kerja', 'type' => 'normal'],
+                    ['key' => '506', 'label' => 'Waktu Pengiriman Pemasok', 'type' => 'delivery'],
+                    ['key' => '507', 'label' => 'Persediaan Bahan Baku', 'type' => 'normal'],
+                ];
+                $labelsNormal   = [['value' => 'naik', 'text' => 'Naik'], ['value' => 'tetap', 'text' => 'Tetap'], ['value' => 'turun', 'text' => 'Turun']];
+                $labelsDelivery = [['value' => 'lebih_cepat', 'text' => 'Lebih cepat'], ['value' => 'tetap', 'text' => 'Tetap'], ['value' => 'lebih_lambat', 'text' => 'Lebih lambat']];
+                // Stroke icons (24×24) shown above each answer's text.
+                $optIcons = [
+                    'naik'         => '<polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/>',
+                    'turun'        => '<polyline points="3 7 9 13 13 9 21 17"/><polyline points="14 17 21 17 21 10"/>',
+                    'tetap'        => '<line x1="4" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/>',
+                    'lebih_cepat'  => '<polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/>',
+                    'lebih_lambat' => '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>',
+                ];
+                $data = $surveyResponse->blok5_data ?? [];
+                $descriptions = [
+                    '501' => 'Jumlah pesanan barang produksi yang diterima perusahaan baik domestik dan ekspor',
+                    '502' => 'Jumlah produksi barang yang dihasilkan oleh perusahaan',
+                    '503' => 'Besaran keluaran (output produksi) maksimum yang mampu dihasilkan oleh mesin produksi utama dalam rentang waktu tertentu',
+                    '504' => 'Rata-rata jumlah tenaga kerja',
+                    '505' => 'Rata-rata jam kerja per hari',
+                    '506' => 'Waktu pengiriman bahan baku dari pemasok',
+                    '507' => 'Jumlah persediaan bahan baku yang disimpan perusahaan',
+                ];
             @endphp
 
-            <p class="table-caption">{{ $isTriwulanan ? 'Isi kondisi triwulan ini dan prospek triwulan berikutnya.' : 'Gunakan geser horizontal pada tabel.' }}</p>
-            <div class="table-responsive">
-                <table class="survey-table">
-                    <thead>
-                        @if($isTriwulanan)
-                        <tr>
-                            <th class="sticky-col">Komponen</th>
-                            <th>{{ $twKondisiHeader }}</th>
-                            <th class="prospect">{{ $twProspekHeader }}</th>
-                        </tr>
-                        <tr>
-                            <th class="sticky-col"></th>
-                            <th class="col-subtype">Kondisi</th>
-                            <th class="col-subtype prospect">Prospek</th>
-                        </tr>
-                        @else
-                        <tr>
-                            <th class="sticky-col">Komponen</th>
-                            <th>Kondisi TW I-2025 vs TW IV-2024</th>
-                            <th>Kondisi TW II-2025 vs TW I-2025</th>
-                            <th>Kondisi TW III-2025 vs TW II-2025</th>
-                            <th>Kondisi TW IV-2025 vs TW III-2025</th>
-                            <th class="prospect">Prospek TW I-2026 vs TW IV-2025</th>
-                        </tr>
-                        <tr>
-                            <th class="sticky-col"></th>
-                            <th class="col-subtype">Triwulan</th>
-                            <th class="col-subtype">Triwulan</th>
-                            <th class="col-subtype">Triwulan</th>
-                            <th class="col-subtype">Triwulan</th>
-                            <th class="col-subtype prospect">Prospek</th>
-                        </tr>
-                        @endif
-                    </thead>
-                    <tbody>
-                        @php
-                            $rows = [
-                                ['key' => '501', 'label' => 'Pesanan', 'type' => 'normal'],
-                                ['key' => '502', 'label' => 'Produksi', 'type' => 'normal'],
-                                ['key' => '503', 'label' => 'Kapasitas Produksi', 'type' => 'normal'],
-                                ['key' => '504', 'label' => 'Tenaga Kerja', 'type' => 'normal'],
-                                ['key' => '505', 'label' => 'Jam Kerja', 'type' => 'normal'],
-                                ['key' => '506', 'label' => 'Waktu Pengiriman Pemasok', 'type' => 'delivery'],
-                                ['key' => '507', 'label' => 'Persediaan Bahan Baku', 'type' => 'normal'],
-                            ];
-                            // Triwulanan: only 2 columns (p1=kondisi, p2=prospek)
-                            // Tahunan: all 6 columns
-                            $periods = $isTriwulanan ? ['p1','p2'] : ['p1','p2','p3','p5','p6'];
-                            // Prospect column indices: tahunan=4; triwulanan=1
-                            $prospectIndices = $isTriwulanan ? [1] : [4];
-                            $labelsNormal = [ ['value'=>'naik','text'=>'Naik'], ['value'=>'tetap','text'=>'Tetap'], ['value'=>'turun','text'=>'Turun'] ];
-                            $labelsDelivery = [ ['value'=>'lebih_cepat','text'=>'Lebih cepat'], ['value'=>'tetap','text'=>'Tetap'], ['value'=>'lebih_lambat','text'=>'Lebih lambat'] ];
-                            $data = $surveyResponse->blok5_data ?? [];
-                            $descriptions = [
-                                '501' => 'Jumlah pesanan barang produksi yang diterima perusahaan baik domestik dan ekspor',
-                                '502' => 'Jumlah produksi barang yang dihasilkan oleh perusahaan',
-                                '503' => 'Besaran keluaran (output produksi) maksimum yang mampu dihasilkan oleh mesin produksi utama dalam rentang waktu tertentu',
-                                '504' => 'Rata-rata jumlah tenaga kerja',
-                                '505' => 'Rata-rata jam kerja per hari',
-                                '506' => 'Waktu pengiriman bahan baku dari pemasok',
-                                '507' => 'Jumlah persediaan bahan baku yang disimpan perusahaan',
-                            ];
-                        @endphp
+            <div class="b5-intro">
+                @if($isTriwulanan)
+                    <p>Setiap komponen punya <strong>dua</strong> pertanyaan. Jawab keduanya:</p>
+                    <ul class="b5-intro-list">
+                        <li><span class="b5-tag">Kondisi</span><span><strong>{{ $twNow }}</strong> dibanding {{ $twPrev }}</span></li>
+                        <li class="is-prospek"><span class="b5-tag">Prospek</span><span>perkiraan <strong>{{ $twNext }}</strong> dibanding {{ $twNow }}</span></li>
+                    </ul>
+                @else
+                    <p>Setiap komponen punya lima periode: kondisi tiap triwulan {{ $tahunInt }} dibanding triwulan sebelumnya, dan prospek TW I-{{ $tahunInt + 1 }}.</p>
+                @endif
+            </div>
 
-                        @foreach($rows as $row)
-                            <tr>
-                                <td class="row-label sticky-col">
-                                    <span class="question-number">{{ $row['key'] }}.</span>
-                                    <span>{{ $row['label'] }}</span>@if($isTriwulanan)<span style="color:#ef4444;"> *</span>@endif
-                                    @if(isset($descriptions[$row['key']]))
-                                        <small class="component-desc">{{ $descriptions[$row['key']] }}</small>
-                                    @endif
-                                </td>
-                                @foreach($periods as $index => $pKey)
-                                    @php $isProspect = in_array($index, $prospectIndices); @endphp
-                                    <td class="{{ $isProspect ? 'prospect-col' : '' }}">
-                                        <div class="radio-group">
-                                            @foreach(($row['type']==='delivery' ? $labelsDelivery : $labelsNormal) as $opt)
-                                                @php
-                                                    $name = "blok5[{$row['key']}][$pKey]";
-                                                    $checked = isset($data[$row['key']][$pKey]) && $data[$row['key']][$pKey] === $opt['value'];
-                                                @endphp
-                                                <label class="radio-pill">
-                                                    <input type="radio" name="{{ $name }}" value="{{ $opt['value'] }}" {{ $checked ? 'checked' : '' }}{{ $isTriwulanan ? ' required' : '' }}>
+            <div class="b5-list{{ $isTriwulanan ? ' is-triwulanan' : '' }}">
+                @foreach($rows as $row)
+                    @php $qId = 'b5-q-' . $row['key']; @endphp
+                    <div class="b5-item" data-b5-label="{{ $row['key'] }}. {{ $row['label'] }}">
+                        <div class="b5-q">
+                            <div class="b5-q-title" id="{{ $qId }}">
+                                <span class="question-number">{{ $row['key'] }}.</span>
+                                {{ $row['label'] }}@if($isTriwulanan)&nbsp;<span class="b5-req" aria-hidden="true">*</span>@endif
+                            </div>
+                            @if(isset($descriptions[$row['key']]))
+                                <p class="b5-desc">{{ $descriptions[$row['key']] }}</p>
+                            @endif
+                        </div>
+
+                        <div class="b5-periods">
+                            @foreach($periodDefs as $pd)
+                                @php
+                                    $name   = "blok5[{$row['key']}][{$pd['key']}]";
+                                    $headId = "b5-{$row['key']}-{$pd['key']}";
+                                    $kind   = $pd['prospek'] ? 'Prospek' : 'Kondisi';
+                                @endphp
+                                <div class="b5-period{{ $pd['prospek'] ? ' is-prospek' : '' }}" data-b5-period="{{ $kind }} {{ $pd['range'] }}">
+                                    <div class="b5-period-head" id="{{ $headId }}">
+                                        <span class="b5-tag">{{ $kind }}</span>
+                                        <span class="b5-range">{{ $pd['range'] }}</span>
+                                    </div>
+                                    <div class="radio-group b5-seg" role="radiogroup" aria-labelledby="{{ $qId }} {{ $headId }}"@if($isTriwulanan) aria-required="true"@endif>
+                                        @foreach(($row['type'] === 'delivery' ? $labelsDelivery : $labelsNormal) as $opt)
+                                            @php $checked = isset($data[$row['key']][$pd['key']]) && $data[$row['key']][$pd['key']] === $opt['value']; @endphp
+                                            <label class="b5-opt">
+                                                <input type="radio" class="b5-opt-input" name="{{ $name }}" value="{{ $opt['value'] }}" {{ $checked ? 'checked' : '' }}{{ $isTriwulanan ? ' required' : '' }}>
+                                                <span class="b5-opt-face">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $optIcons[$opt['value']] !!}</svg>
                                                     <span>{{ $opt['text'] }}</span>
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    </td>
-                                @endforeach
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                                                </span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
 
@@ -254,6 +244,6 @@ window.surveyData = { isTriwulanan: {{ ($triwulan ?? 0) > 0 ? 'true' : 'false' }
 @endif
 </script>
 <script src="{{ asset('js/survey.js') }}"></script>
-<script src="{{ asset('js/survey-blok5.js') }}"></script>
+<script src="{{ asset('js/survey-blok5.js') }}?v={{ filemtime(public_path('js/survey-blok5.js')) }}"></script>
 @endpush
 @endsection

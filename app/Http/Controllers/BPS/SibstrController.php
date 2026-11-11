@@ -361,6 +361,8 @@ class SibstrController extends Controller
         $filename = 'Data_SIBSTR_' . $this->periodSlug($year, $type, $triwulan)
             . '_' . $this->exportStamp() . $this->exportExtension($writer);
 
+        $this->logExport($request, 'sibstr', $filename, $writer, $records->count());
+
         return Excel::download(new SibstrBlok1Export($records), $filename, $writer);
     }
 

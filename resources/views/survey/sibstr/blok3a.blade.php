@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="{{ asset('css/survey.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-validation.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-blok3a.css') }}">
-<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}">
+<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}?v={{ filemtime(public_path('css/sibstr-form.css')) }}">
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 <style>
 .ekspor-row {
@@ -142,15 +142,17 @@
 
         @php
             $currentTw  = $triwulan ?? 0;
-            $curYear    = $tahun ?? 2025;
-            $prevYear   = $curYear - 1;
+            $curYear    = (int) ($tahun ?? 2025);
             $twMonthMap = [
                 1 => ['key' => 'q1', 'label' => 'Triwulan I',   'months' => ["{$curYear}_jan", "{$curYear}_feb", "{$curYear}_mar"]],
                 2 => ['key' => 'q2', 'label' => 'Triwulan II',  'months' => ["{$curYear}_apr", "{$curYear}_mei", "{$curYear}_jun"]],
                 3 => ['key' => 'q3', 'label' => 'Triwulan III', 'months' => ["{$curYear}_jul", "{$curYear}_agu", "{$curYear}_sep"]],
                 4 => ['key' => 'q4', 'label' => 'Triwulan IV',  'months' => ["{$curYear}_okt", "{$curYear}_nov", "{$curYear}_des"]],
             ];
-            $quarterConf = ['dec_prev' => ['label' => "Des {$prevYear}", 'months' => ["{$prevYear}_des"]]];
+            // Leading "bulan sebelumnya" tab: Des of last year for tahunan / TW I,
+            // otherwise the last month of the previous quarter (TW II → Mar).
+            $prevMonth   = \App\Models\SurveyResponse::blok3aPrevMonth($curYear, (int) $currentTw);
+            $quarterConf = ['prev_month' => ['label' => reset($prevMonth), 'months' => [array_key_first($prevMonth)]]];
             if ($currentTw > 0) {
                 $quarterConf[$twMonthMap[$currentTw]['key']] = $twMonthMap[$currentTw];
             } else {
@@ -184,6 +186,12 @@
             <h3 class="special-title text-green-700 dark:text-green-400">
                 <span class="text-xl">303.</span> Total Pendapatan
             </h3>
+            {{-- Same wording as calculateTotals() in survey-blok3a.js: tahunan has no 302 grid, so its 303 is 301 alone. --}}
+            @if($currentTw > 0)
+            <p class="text-sm text-gray-500 dark:text-gray-400 italic mt-1 mb-3">*) R303 = R301 + R302, yaitu jumlah nilai produksi seluruh produk (R301) ditambah pendapatan lainnya (R302) pada setiap bulan. Terisi otomatis, tidak perlu diisi.</p>
+            @else
+            <p class="text-sm text-gray-500 dark:text-gray-400 italic mt-1 mb-3">*) R303 merupakan jumlah nilai produksi seluruh produk (R301) pada setiap bulan. Terisi otomatis, tidak perlu diisi.</p>
+            @endif
             <div class="quarter-tabs" id="total-tabs" role="tablist" aria-label="Pilih Triwulan untuk Total">
                 @foreach($quarterConf as $qKey => $qConf)
                 <button type="button" class="quarter-tab {{ $loop->first ? 'active' : '' }}" data-quarter="{{ $qKey }}">{{ $qConf['label'] }}</button>
@@ -200,6 +208,11 @@
                 Ringkasan Data Produksi
                 <span style="font-size:0.75rem; font-weight:400; color:#6b7280; margin-left:0.5rem;">(Pratinjau - diperbarui secara otomatis)</span>
             </h3>
+            {{-- Shown only while the table overflows (survey-blok3a.js sets .is-scrollable on #preview-section). --}}
+            <p class="sibstr-scroll-hint">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                Geser tabel ke samping untuk melihat semua bulan
+            </p>
             <div id="blok3a-preview-table">
                 @php
                     $products = $surveyResponse->blok3a_products ?? [];
@@ -520,7 +533,7 @@ window.surveyData = {
 };
 </script>
 <script src="{{ asset('js/survey.js') }}"></script>
-<script src="{{ asset('js/survey-blok3a.js') }}"></script>
+<script src="{{ asset('js/survey-blok3a.js') }}?v={{ filemtime(public_path('js/survey-blok3a.js')) }}"></script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
     AOS.init({ duration: 800, easing: 'ease-in-out', once: true });

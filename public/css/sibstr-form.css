@@ -93,19 +93,82 @@
     color: #9ca3af;
 }
 
-/* ── Rows: give the answer column more room, drop the heavy rules ─────────── */
+/* ============================================================================
+   Width follows the FORM, not the viewport
+   ----------------------------------------------------------------------------
+   With the dashboard sidebar and the blok navigation both open, a 1024–1280px
+   laptop leaves the form ~470–720px. The old viewport media query (≤900px)
+   still called that "desktop" and kept question | answer side by side, so a
+   20rem label column left inputs ~70px wide and radio options one word per
+   line (Blok I, II, IIIB, VI), and Blok IIIA cut "350.000.000" to "350.0".
+
+   Every layout switch below is a container query on the form. The default is
+   the stacked layout, which works at any width, so a browser without
+   container queries still gets a usable page.
+
+   One breakpoint does most of the work: 44rem of form width — about a
+   1280px window with both sidebars open. The form holds no fixed-position
+   elements (drawers and the blok FAB are outside it), so making it a
+   container changes nothing else.
+   ========================================================================== */
+.sibstr-page .survey-form {
+    container: sform / inline-size;
+}
+
+/* ── Rows: question above answer, side by side once there is room ───────── */
 .sibstr-page .form-grid {
     gap: 1rem;
+}
+
+.sibstr-page .form-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: .5rem;
+    padding: .85rem 0;
+    border-bottom: 1px solid #f3f4f6;
 }
 
 /* Label column is capped rather than a plain fr ratio: on a laptop a 2fr/3fr
    split hands a long question 40% of the row and starves the answer. minmax(0,1fr)
    on the answer track lets it shrink instead of forcing the row to overflow. */
-.sibstr-page .form-row {
-    grid-template-columns: minmax(11rem, 20rem) minmax(0, 1fr);
-    gap: 1rem 1.25rem;
-    padding: .75rem 0;
-    border-bottom: 1px solid #f3f4f6;
+@container sform (min-width: 44rem) {
+    .sibstr-page .form-row {
+        grid-template-columns: minmax(11rem, 17rem) minmax(0, 1fr);
+        gap: .75rem 1.5rem;
+    }
+
+    .sibstr-page .form-row > .form-label {
+        padding-top: .5rem;
+    }
+}
+
+/* Messages and hints in a row. Stacked: everything spans the one column.
+   survey-validation.css pins `.form-row .field-error-message` to column 2 and
+   survey.js sets `grid-column: 2 / span 1` INLINE on radio-group errors; in a
+   one-column row that invents a phantom second column and squeezes the row,
+   hence !important. */
+.sibstr-page .form-row > .field-error-message,
+.sibstr-page .form-row > .error-message,
+.sibstr-page .form-row > .radio-group-error,
+.sibstr-page .form-row > .form-errors,
+.sibstr-page .form-row > div.field-error {
+    grid-column: 1 / -1 !important;
+}
+
+/* Termasuk / Tidak termasuk always gets the full row — under the label column
+   it was two ~90px columns of one-word lines. */
+.sibstr-page .form-row > .form-hint {
+    grid-column: 1 / -1;
+}
+
+@container sform (min-width: 44rem) {
+    /* Side by side: a message sits under the control it belongs to. */
+    .sibstr-page .form-row:not(:has(> .form-subgrid)) > .field-error-message,
+    .sibstr-page .form-row:not(:has(> .form-subgrid)) > .error-message,
+    .sibstr-page .form-row:not(:has(> .form-subgrid)) > .radio-group-error,
+    .sibstr-page .form-row:not(:has(> .form-subgrid)) > .form-errors,
+    .sibstr-page .form-row:not(:has(> .form-subgrid)) > div.field-error {
+        grid-column: 2 / -1 !important;
+    }
 }
 
 .dark .sibstr-page .form-row {
@@ -117,8 +180,8 @@
 }
 
 .sibstr-page .form-subrow {
-    grid-template-columns: minmax(10rem, 16rem) minmax(0, 1fr);
-    gap: .5rem 1rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .35rem 1rem;
     padding: .3rem 0;
 }
 
@@ -126,7 +189,7 @@
     font-size: .8125rem;
     font-weight: 600;
     color: #374151;
-    padding-top: .5rem;
+    padding-top: 0;
 }
 
 .dark .sibstr-page .form-label {
@@ -136,7 +199,7 @@
 .sibstr-page .form-sublabel {
     font-size: .78rem;
     color: #4b5563;
-    padding-top: .55rem;
+    padding-top: 0;
 }
 
 .dark .sibstr-page .form-sublabel {
@@ -321,14 +384,118 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* ── Radios: pill rows instead of stacked plain rows ──────────────────────── */
+/* ── Choices: whole-card options, the same language as the Blok V buttons ──
+   Radios and checkboxes share this markup (div.radio-option > input.radio-input
+   + label.radio-label). Each option becomes a bordered card; the label is
+   stretched over the card so the whole card is the hit area, and the checked
+   one turns blue. Options flow into as many columns as fit, never narrower
+   than 15rem, so a long answer ("b. Pabrik/Unit produksi, Cabang atau
+   Perwakilan") keeps whole words on a line. Blok V's own button row
+   (.b5-seg) is excluded — it already has its own layout. */
+.sibstr-page .radio-group:not(.b5-seg) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    gap: .5rem;
+}
+
+/* A follow-up field inside a group ("e. Lainnya, sebutkan: [ ]") or a message
+   takes a whole row instead of one card-sized cell. */
+.sibstr-page .radio-group:not(.b5-seg) > :not(.radio-option) {
+    grid-column: 1 / -1;
+}
+
 .sibstr-page .radio-option {
-    padding: .4rem .55rem;
-    border-radius: .5rem;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    min-width: 0;
+    padding: .7rem .85rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: .75rem;
+    background: #fff;
+    transition: border-color .12s, background-color .12s;
+}
+
+.sibstr-page .radio-option .radio-input {
+    flex-shrink: 0;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: .1rem 0 0;
+    accent-color: #2563eb;
+    cursor: pointer;
 }
 
 .sibstr-page .radio-label {
-    font-size: .82rem;
+    min-width: 0;
+    font-size: .84rem;
+    line-height: 1.4;
+    color: #374151;
+}
+
+.sibstr-page .radio-option > .radio-label::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+}
+
+.sibstr-page .radio-option:hover {
+    border-color: #93c5fd;
+    background: #f8fbff;
+}
+
+.sibstr-page .radio-option:has(.radio-input:checked) {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.sibstr-page .radio-option:has(.radio-input:checked) .radio-label {
+    color: #1e3a8a;
+    font-weight: 600;
+}
+
+.sibstr-page .radio-option:has(.radio-input:focus-visible) {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.dark .sibstr-page .radio-option {
+    border-color: #374151;
+    background: #111827;
+}
+
+.dark .sibstr-page .radio-label {
+    color: #d1d5db;
+}
+
+.dark .sibstr-page .radio-option:hover {
+    border-color: #3b82f6;
+    background: #172033;
+}
+
+.dark .sibstr-page .radio-option:has(.radio-input:checked) {
+    border-color: #3b82f6;
+    background: rgba(37, 99, 235, .18);
+}
+
+.dark .sibstr-page .radio-option:has(.radio-input:checked) .radio-label {
+    color: #bfdbfe;
+}
+
+/* Missing answer: keep survey-validation.css's red frame, sized for cards. */
+.sibstr-page .radio-group:not(.b5-seg).radio-group-has-error {
+    padding: .5rem;
+    border-radius: .875rem;
+}
+
+/* ── Termasuk / Tidak termasuk: two columns only when both fit ───────────── */
+.sibstr-page .hint-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: .6rem 1.25rem;
+}
+
+.sibstr-page .hint-col {
+    font-size: .8rem;
 }
 
 /* ── Actions: no gray band; the buttons carry the emphasis ────────────────── */
@@ -362,6 +529,44 @@
 
 .sibstr-page .btn:hover {
     transform: none;
+}
+
+/* Buttons keep their label on one line; the ROW wraps instead. They used to
+   squeeze into "Kembali ke / Bab 1" two-line pills on a laptop. */
+.sibstr-page .form-actions {
+    gap: .75rem 1rem;
+}
+
+.sibstr-page .form-actions > div {
+    flex-wrap: wrap;
+    gap: .6rem;
+}
+
+.sibstr-page .form-actions .btn {
+    white-space: nowrap;
+}
+
+/* Narrow form: one full-width button per line, the main action first. */
+@container sform (width < 36rem) {
+    .sibstr-page .form-actions,
+    .sibstr-page .form-actions > div {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .sibstr-page .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .sibstr-page .form-actions .btn-primary {
+        order: -1;
+    }
+
+    .sibstr-page .form-section {
+        padding: 1.15rem 1rem;
+    }
 }
 
 /* ── Wide tables never widen the page; they scroll inside their own box ───── */
@@ -709,20 +914,9 @@
     color: #fde68a;
 }
 
-/* ── Narrow screens ──────────────────────────────────────────────────────── */
-@media (max-width: 900px) {
-    .sibstr-page .form-row,
-    .sibstr-page .form-subrow {
-        grid-template-columns: 1fr;
-        gap: .35rem;
-    }
-
-    .sibstr-page .form-label,
-    .sibstr-page .form-sublabel {
-        padding-top: 0;
-    }
-}
-
+/* ── Narrow screens ──────────────────────────────────────────────────────────
+   Row stacking used to live here as a ≤900px media query; it is now the
+   default, with the side-by-side layout behind the 44rem container query. */
 @media (max-width: 640px) {
     .sibstr-page .form-section {
         padding: 1.15rem 1rem;
@@ -742,4 +936,140 @@
         align-items: stretch;
         padding-bottom: 5rem; /* clear the mobile blok-nav FAB */
     }
+}
+
+/* ============================================================================
+   Blok IIIA — products, monthly grids, summary table
+   ----------------------------------------------------------------------------
+   survey-blok3a.css (loaded before this file) stacks the monthly grid only
+   below a 768px VIEWPORT, so on a laptop with both sidebars open three month
+   inputs got ~97px each and "350.000.000" showed as "350.0". It also fixed
+   the grid at label + 3 months, so a one-month tab (the December bridge
+   month) put "Banyaknya" in the header row. survey-blok3a.js now sets
+   --months on each grid; the three layouts below follow the form width:
+
+     narrow   label, then each month on its own full-width line
+     medium   label across the top, the months side by side under it
+     wide     the table: label column + one column per month
+   ========================================================================== */
+.sibstr-page .quarter-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: .45rem .75rem;
+    align-items: end;
+}
+
+.sibstr-page .quarter-grid > .grid-header {
+    display: none;
+}
+
+.sibstr-page .quarter-grid > .grid-label {
+    grid-column: 1 / -1;
+}
+
+.sibstr-page .quarter-grid .mobile-month-label,
+.sibstr-page .quarter-grid .grid-input > label {
+    display: block;
+    margin: 0 0 .2rem;
+    font-size: .72rem;
+    color: #6b7280;
+}
+
+.sibstr-page .quarter-grid .form-control {
+    font-variant-numeric: tabular-nums;
+}
+
+@container sform (min-width: 30rem) {
+    .sibstr-page .quarter-grid {
+        grid-template-columns: repeat(var(--months, 3), minmax(0, 1fr));
+    }
+}
+
+@container sform (min-width: 44rem) {
+    .sibstr-page .quarter-grid {
+        grid-template-columns: 8.5rem repeat(var(--months, 3), minmax(0, 1fr));
+        align-items: center;
+    }
+
+    .sibstr-page .quarter-grid > .grid-header {
+        display: block;
+    }
+
+    .sibstr-page .quarter-grid > .grid-label {
+        grid-column: auto;
+    }
+
+    .sibstr-page .quarter-grid .mobile-month-label,
+    .sibstr-page .quarter-grid .grid-input > label {
+        display: none;
+    }
+}
+
+/* Product card header: the Hapus button used to be pushed past the card edge
+   on a phone. Title and buttons now share the line while they fit and the
+   buttons drop below, right-aligned, when they do not. */
+.sibstr-page .product-card .card-header {
+    flex-wrap: wrap;
+    gap: .5rem .75rem;
+}
+
+.sibstr-page .product-card .product-title {
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+
+.sibstr-page .product-card .card-header-actions {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+@container sform (width < 30rem) {
+    .sibstr-page .product-card .card-header {
+        padding: .85rem 1rem;
+    }
+
+    .sibstr-page .product-card .card-body {
+        padding: 1rem;
+    }
+
+    .sibstr-page .product-card .product-title {
+        font-size: 1rem;
+    }
+
+    .sibstr-page .data-grid {
+        padding: .75rem;
+    }
+}
+
+/* Ringkasan (read-only summary). The Blade and the JS both gave the table a
+   980px minimum, so it scrolled sideways even at 1440px where a triwulan's
+   four month columns fit easily. Let it be as wide as its content; when that
+   is still wider than the form, it scrolls inside its box with the product
+   column pinned, and a hint says so. The table's width depends on the
+   figures in it, so survey-blok3a.js measures and sets .is-scrollable. */
+.sibstr-page .preview-table-el {
+    min-width: 0 !important;
+}
+
+.sibstr-page .preview-table-el .sticky-col {
+    min-width: 9rem;
+    max-width: 15rem;
+    white-space: normal;
+}
+
+.sibstr-page .sibstr-scroll-hint {
+    display: none;
+    align-items: center;
+    gap: .4rem;
+    margin: 0 0 .5rem;
+    font-size: .75rem;
+    font-weight: 600;
+    color: #1d4ed8;
+}
+
+.dark .sibstr-page .sibstr-scroll-hint {
+    color: #93c5fd;
+}
+
+.sibstr-page .is-scrollable > .sibstr-scroll-hint {
+    display: flex;
 }

@@ -19,7 +19,6 @@
     $tahun3a = (int) ($surveyResponse->tahun ?? 2025);
     $tw3a    = (int) ($surveyResponse->triwulan ?? 0);
     $isTw3a  = $tw3a > 0;
-    $prev3a  = $tahun3a - 1;
 
     $mName = ['jan'=>'Jan','feb'=>'Feb','mar'=>'Mar','apr'=>'Apr','mei'=>'Mei','jun'=>'Jun',
               'jul'=>'Jul','agu'=>'Agu','sep'=>'Sep','okt'=>'Okt','nov'=>'Nov','des'=>'Des'];
@@ -27,9 +26,10 @@
     $twRoman  = [1=>'I', 2=>'II', 3=>'III', 4=>'IV'];
 
     // Each section is at most 4 columns wide so nothing has to be squeezed.
-    // The Des-previous-year baseline rides along with the first section.
+    // The "bulan sebelumnya" baseline rides along with the first section:
+    // Des of last year for tahunan / TW I, else the previous quarter's last month.
     $sections = [];
-    $baseline = ["{$prev3a}_des" => "Des {$prev3a}"];
+    $baseline = \App\Models\SurveyResponse::blok3aPrevMonth($tahun3a, $tw3a);
 
     if ($isTw3a) {
         $cols = $baseline;

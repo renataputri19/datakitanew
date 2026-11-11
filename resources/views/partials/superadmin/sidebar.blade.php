@@ -4,6 +4,7 @@
     $compActive    = request()->routeIs('superadmin.companies.*');
     $dashActive    = request()->routeIs('superadmin.dashboard');
     $trashActive   = request()->routeIs('superadmin.trash.*');
+    $exportsActive = request()->routeIs('superadmin.export-logs.*');
 
     // Badge for how many survey submissions are sitting in the recycle bin.
     $trashCount = \App\Models\SurveyResponse::onlyTrashed()->where('survey_type', 'sibstr')->count()
@@ -79,6 +80,15 @@
       @if($trashCount > 0)
       <span class="ml-auto inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 text-xs font-semibold">{{ $trashCount }}</span>
       @endif
+    </a>
+
+    <a href="{{ route('superadmin.export-logs.index') }}"
+       class="ud-sidebar-item {{ $exportsActive ? 'active' : '' }}"
+       aria-current="{{ $exportsActive ? 'page' : 'false' }}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+      </svg>
+      Log Unduhan Excel
     </a>
 
     <div class="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">

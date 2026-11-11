@@ -59,7 +59,7 @@ class StatistikController extends Controller
 
     public function __construct()
     {
-        $this->middleware(['auth', 'is_bps']);
+        $this->middleware(['auth', 'bps_statistik']); // BPS Batam + BPS Provinsi
     }
 
     public function index(Request $request)
@@ -94,6 +94,10 @@ class StatistikController extends Controller
             'availableYears' => $availableYears->isEmpty() ? [$tahun] : $availableYears->all(),
             'quarters'       => $rows->pluck('triwulan')->unique()->sort()->values()->all(),
             'openQuarters'   => SurveyResponse::availableTriwulan($tahun),
+            // Bridge month per quarter, e.g. {1: "2025_des", 2: "2026_mar", …}
+            'bridgeMonths'   => collect([1, 2, 3, 4])
+                ->mapWithKeys(fn ($q) => [$q => array_key_first(SurveyResponse::blok3aPrevMonth($tahun, $q))])
+                ->all(),
             'generatedAt'    => now()->locale('id')->translatedFormat('j F Y H.i'),
             'rows'           => $rows->map(fn ($r) => $this->buildRow($r))->all(),
         ];
@@ -112,9 +116,10 @@ class StatistikController extends Controller
         $tahun    = (int) $r->tahun;
         $triwulan = (int) $r->triwulan;
 
-        // Month keys of this quarter + the December bridge month the form carries.
+        // Month keys of this quarter + the bridge month the form carries
+        // (Des of last year for TW I, else the previous quarter's last month).
         $quarterMonths = array_keys(SurveyResponse::triwulanMonthKeys($tahun, $triwulan));
-        $bridgeKey     = ($tahun - 1) . '_des';
+        $bridgeKey     = array_key_first(SurveyResponse::blok3aPrevMonth($tahun, $triwulan));
 
         $kbli   = $r->kbli_utama ? preg_replace('/\D/', '', $r->kbli_utama) : null;
         $kbli2  = $kbli && strlen($kbli) >= 2 ? substr($kbli, 0, 2) : null;
@@ -183,7 +188,9 @@ class StatistikController extends Controller
 
         $num = fn (string $key) => $this->toNum($b3b[$key] ?? null);
 
-        $royalti = $num('q304');
+        // Royalti, bunga, dividen (q304) is deliberately not read: BPS asked
+        // for it to be left off the dashboard entirely — no slice, no column,
+        // and not hidden inside a total either.
         if ($industri) {
             $penjualan  = null; // industri: sales come from Blok IIIA
             $upah       = $num('q310');
@@ -196,9 +203,10 @@ class StatistikController extends Controller
         $biayaProduksi    = $num('q312_tw');
         $biayaOperasional = $num('q313_tw');
 
+        // Industri: 301 + 302 (Blok IIIA); non-industri: penjualan (303).
         $pendapatanTotal = $industri
-            ? $this->sumOrNull([$pendapatanProduk, $pendapatanLainnya, $royalti])
-            : $this->sumOrNull([$penjualan, $royalti]);
+            ? $this->sumOrNull([$pendapatanProduk, $pendapatanLainnya])
+            : $penjualan;
 
         $pengeluaranTotal = $this->sumOrNull([$upah, $biayaProduksi, $biayaOperasional]);
 
@@ -210,9 +218,8 @@ class StatistikController extends Controller
         // Nilai Produksi = output Blok IIIA (301 + 302); non-industri: penjualan (q303).
         // Biaya Produksi = biaya produksi + biaya operasional + pembelian aset (q311).
         // Nilai Tambah   = Nilai Produksi − Biaya Produksi.
-        $nilaiProduksi = $industri
-            ? $this->sumOrNull([$pendapatanProduk, $pendapatanLainnya])
-            : $penjualan;
+        // With 304 gone, nilai produksi and pendapatan total are the same sum.
+        $nilaiProduksi = $pendapatanTotal;
         $biayaTotal = $this->sumOrNull([$biayaProduksi, $biayaOperasional, $capex]);
         $nilaiTambah = ($nilaiProduksi !== null && $biayaTotal !== null)
             ? $nilaiProduksi - $biayaTotal
@@ -262,7 +269,6 @@ class StatistikController extends Controller
 
             'pendapatanProduk'  => $pendapatanProduk,
             'pendapatanLainnya' => $pendapatanLainnya,
-            'pendapatanRoyalti' => $royalti,
             'penjualan'         => $penjualan,
             'pendapatanTotal'   => $pendapatanTotal,
 
@@ -284,7 +290,11 @@ class StatistikController extends Controller
             'eksporPct'       => $num('q314_tw'),
             'imporPct'        => $num('q315_tw'),
 
+            // monthlyNilai includes the bridge month. From TW II on it shares a
+            // key with the previous quarter (TW II's 2026_mar is TW I's March),
+            // so a cross-quarter sum must skip bridgeMonth or count it twice.
             'monthlyNilai' => $monthlyNilai,
+            'bridgeMonth'  => $bridgeKey,
             'products'     => $productDetails,
             'blok5'        => $blok5,
             'catatan'      => is_array($r->blok6_data) ? ($r->blok6_data['catatan'] ?? null) : null,

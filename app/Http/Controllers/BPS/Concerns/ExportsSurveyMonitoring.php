@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\BPS\Concerns;
 
+use App\Models\ExportLog;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Excel as ExcelWriter;
 
@@ -42,5 +44,15 @@ trait ExportsSurveyMonitoring
     protected function exportStamp(): string
     {
         return now()->setTimezone('Asia/Jakarta')->format('Ymd_Hi');
+    }
+
+    /**
+     * Write the superadmin audit row for an export. Called before the file is
+     * built, and lets a failure propagate: an export that cannot be logged is
+     * not served, so the trail at /superadmin/log-unduhan has no gaps.
+     */
+    protected function logExport(Request $request, string $survey, string $filename, string $writer, int $rows): void
+    {
+        ExportLog::record($request, $survey, $filename, $writer === ExcelWriter::CSV ? 'csv' : 'xlsx', $rows);
     }
 }

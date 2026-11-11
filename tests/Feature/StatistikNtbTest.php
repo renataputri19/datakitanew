@@ -9,8 +9,8 @@ use Tests\TestCase;
 
 /**
  * NTB on /bps/statistik follows the BPS formula 301 + 302 − 312 − 313.
- * Royalti, bunga, dividen (304) stays out of it, and out of the per-company
- * "Pendapatan" (nilaiProduksi) that the Rincian table now shows.
+ * Royalti, bunga, dividen (304) stays out of it, and out of the dashboard
+ * altogether — per-company "Pendapatan", the total, and the surplus.
  */
 class StatistikNtbTest extends TestCase
 {
@@ -59,8 +59,8 @@ class StatistikNtbTest extends TestCase
                 'jenis_barang' => 'Komponen',
                 'satuan'       => 'unit',
                 'banyaknya'    => ['2026_apr' => 1, '2026_mei' => 1, '2026_jun' => 1],
-                // the December bridge month is not part of the quarter
-                'nilai'        => ['2025_des' => 999, '2026_apr' => 100, '2026_mei' => 200, '2026_jun' => 300],
+                // TW II's bridge month (Mar, = TW I's last month) is not part of the quarter
+                'nilai'        => ['2026_mar' => 999, '2026_apr' => 100, '2026_mei' => 200, '2026_jun' => 300],
             ]],
             'blok3a_lainnya'       => ['uraian' => 'Jasa', 'nilai' => ['2026_apr' => 50]],
             'blok3b_industri_data' => ['q304' => 1000, 'q310' => 77, 'q311' => 88, 'q312_tw' => 120, 'q313_tw' => 30],
@@ -79,11 +79,21 @@ class StatistikNtbTest extends TestCase
         $this->assertEquals(650, $rows['PT Industri']['nilaiProduksi']);
         $this->assertEquals(150, $rows['PT Industri']['biayaAntara']);
         $this->assertEquals(500, $rows['PT Industri']['ntb']);
-        // the total still carries royalti for the KPI tile and surplus
-        $this->assertEquals(1650, $rows['PT Industri']['pendapatanTotal']);
+        // 304 is off the dashboard entirely: not in the total (KPI tile,
+        // surplus) and not sent to the page at all
+        $this->assertEquals(650, $rows['PT Industri']['pendapatanTotal']);
+        $this->assertEquals(650 - (77 + 120 + 30), $rows['PT Industri']['surplus']);
+        $this->assertArrayNotHasKey('pendapatanRoyalti', $rows['PT Industri']);
+
+        // the bridge month rides along for the single-quarter trend chart, and
+        // is flagged so the "Semua triwulan" view can skip it (it is TW I's March)
+        $this->assertSame('2026_mar', $rows['PT Industri']['bridgeMonth']);
+        $this->assertEquals(999, $rows['PT Industri']['monthlyNilai']['2026_mar']);
+        $this->assertArrayNotHasKey('2025_des', $rows['PT Industri']['monthlyNilai']);
 
         // non-industri has no Blok IIIA: 303 − 312 − 313, 304 left out
         $this->assertEquals(400, $rows['PT Dagang']['nilaiProduksi']);
+        $this->assertEquals(400, $rows['PT Dagang']['pendapatanTotal']);
         $this->assertEquals(300, $rows['PT Dagang']['ntb']);
 
         // nothing reported on the cost side: NTB is unknown, not output − 0

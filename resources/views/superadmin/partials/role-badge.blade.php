@@ -6,6 +6,7 @@
     $badgeMap = [
         'red'    => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
         'blue'   => 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+        'sky'    => 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300',
         'purple' => 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
         'amber'  => 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
         'gray'   => 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',

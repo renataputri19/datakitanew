@@ -44,19 +44,11 @@ class UserController extends Controller
             });
         }
 
-        // Filter by canonical role via its backing flag column.
+        // Filter by canonical role, resolved the same way as the row badges.
         $roleFilter = $request->input('role');
         $definitions = User::roleDefinitions();
         if ($roleFilter && array_key_exists($roleFilter, $definitions)) {
-            $column = $definitions[$roleFilter]['column'];
-            if ($column !== null) {
-                $query->where($column, true);
-            } else {
-                // Basic "Pengguna": none of the role flags are set.
-                foreach (User::ROLE_FLAG_COLUMNS as $flag) {
-                    $query->where($flag, false);
-                }
-            }
+            $query->withRole($roleFilter);
         }
 
         $users = $query->paginate(12)->withQueryString();

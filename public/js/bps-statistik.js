@@ -766,6 +766,11 @@
         var p = monthKeyParts(key);
         return MONTH_LABEL[p.m] + ' ' + p.year;
     }
+    // Blok IIIA's leading "bulan sebelumnya" column for a quarter: Des of last
+    // year for TW I, else the previous quarter's last month (TW II → Mar).
+    function bridgeMonthOf(q) {
+        return (DATA.bridgeMonths && DATA.bridgeMonths[q]) || ((DATA.tahun - 1) + '_des');
+    }
     function activeMonthKeys() {
         var keys = [];
         if (state.tw === 'all') {
@@ -773,7 +778,7 @@
                 TW_MONTHS[q].forEach(function (m) { keys.push(DATA.tahun + '_' + m); });
             });
         } else {
-            keys.push((DATA.tahun - 1) + '_des');
+            keys.push(bridgeMonthOf(state.tw));
             TW_MONTHS[state.tw].forEach(function (m) { keys.push(DATA.tahun + '_' + m); });
         }
         keys.sort(monthKeySort);
@@ -1256,7 +1261,7 @@
                     var sorted = rows.slice().sort(function (a, b) { return (b.ntb || 0) - (a.ntb || 0); });
                     simpleTable(s, ['Perusahaan', 'TW', 'Pendapatan', 'Biaya antara', 'NTB'],
                         sorted.map(function (r) { return [r.perusahaan, TW_ROMAN[r.triwulan], fmtRpFull(r.nilaiProduksi), fmtRpFull(r.biayaAntara), fmtRpFull(r.ntb)]; }), 2);
-                    s.appendChild(el('p', 'stx-note', 'NTB = 301 + 302 − 312 − 313: nilai produksi dan pendapatan lainnya, dikurangi biaya produksi dan biaya operasional (biaya antara). Royalti, bunga, dan dividen (304) tidak ikut. Untuk perusahaan non-industri, pendapatannya adalah penjualan barang/jasa (303). Hanya laporan dengan kedua sisi terisi yang dihitung.'));
+                    s.appendChild(el('p', 'stx-note', 'NTB = 301 + 302 − 312 − 313: nilai produksi dan pendapatan lainnya, dikurangi biaya produksi dan biaya operasional (biaya antara). Untuk perusahaan non-industri, pendapatannya adalah penjualan barang/jasa (303). Hanya laporan dengan kedua sisi terisi yang dihitung.'));
                 });
             }
         });
@@ -1316,7 +1321,7 @@
     function renderMonthly() {
         var shell = cardShell('card-monthly',
             'Nilai produksi dan pendapatan bulanan',
-            'Blok IIIA (301 + 302) perusahaan industri, dalam rupiah' + (state.tw !== 'all' ? ' — termasuk bulan jembatan Des ' + (DATA.tahun - 1) : ''));
+            'Blok IIIA (301 + 302) perusahaan industri, dalam rupiah' + (state.tw !== 'all' ? ' — termasuk bulan jembatan ' + monthLong(bridgeMonthOf(state.tw)) : ''));
         var rows = filteredRows().filter(function (r) { return r.sektor === 'industri'; });
         var months = activeMonthKeys();
         var t = theme();
@@ -1336,6 +1341,10 @@
                 values: months.map(function (m) {
                     var any = false, sum = 0;
                     list.forEach(function (r) {
+                        // A row's bridge month belongs to the previous quarter
+                        // (TW II's Mar = TW I's Mar): only the single-quarter
+                        // view shows it, else March would be counted twice.
+                        if (state.tw === 'all' && m === r.bridgeMonth) return;
                         var v = r.monthlyNilai[m];
                         if (v !== null && v !== undefined) { any = true; sum += v; }
                     });
@@ -1587,8 +1596,7 @@
         var parts = [
             { label: 'Produksi (301)', color: t.s1, v: sumField(rows, 'pendapatanProduk') },
             { label: 'Pendapatan lainnya (302)', color: t.s2, v: sumField(rows, 'pendapatanLainnya') },
-            { label: 'Penjualan barang/jasa non-industri (303)', color: t.s3, v: sumField(rows, 'penjualan') },
-            { label: 'Royalti, bunga, dividen (304)', color: t.s4, v: sumField(rows, 'pendapatanRoyalti') }
+            { label: 'Penjualan barang/jasa non-industri (303)', color: t.s3, v: sumField(rows, 'penjualan') }
         ].filter(function (p) { return p.v !== null && p.v > 0; });
 
         var total = parts.reduce(function (a, p) { return a + p.v; }, 0);
@@ -1616,8 +1624,8 @@
             svg.appendChild(r);
             var pctText = nfPct.format(p.v / total * 100) + '%';
             if (w >= 52) {
-                // in-fill label: white or ink by luminance is overkill here — all four fills are mid-tone; white passes on s1/s2, ink on s3/s4
-                var useInk = (p.color === t.s3 || p.color === t.s4);
+                // in-fill label: white or ink by luminance is overkill here — all three fills are mid-tone; white passes on s1/s2, ink on s3
+                var useInk = (p.color === t.s3);
                 var lbl = svgEl('text', { x: xCur + w / 2, y: barY + barH / 2 + 4, 'text-anchor': 'middle', 'font-size': 11.5, 'font-weight': 700, fill: useInk ? '#3b2f16' : '#ffffff' });
                 lbl.textContent = pctText;
                 svg.appendChild(lbl);
@@ -2117,15 +2125,15 @@
 
     /* ═══════════════ TABLE — company detail rows ═══════════════ */
 
-    // "Pendapatan" here is nilaiProduksi, not pendapatanTotal: BPS asked for the
-    // per-company figure without royalti, bunga, dividen (304) — the same output
-    // NTB is built on, so Pendapatan − Biaya Antara = NTB on every row.
+    // "Pendapatan" is nilaiProduksi — the output NTB is built on, so
+    // Pendapatan − Biaya Antara = NTB on every row. Royalti, bunga, dividen (304)
+    // is not on this dashboard at all (BPS asked for it to be left off).
     var TABLE_COLS = [
         { key: 'perusahaan', label: 'Perusahaan', num: false },
         { key: 'kbliGroup', label: 'KBLI', num: false },
         { key: 'triwulan', label: 'TW', num: false },
         { key: 'selesai', label: 'Status', num: false },
-        { key: 'nilaiProduksi', label: 'Pendapatan', num: true, hint: 'Pendapatan tanpa royalti, bunga, dividen (304): industri 301 + 302, non-industri 303' },
+        { key: 'nilaiProduksi', label: 'Pendapatan', num: true, hint: 'Pendapatan: industri 301 + 302, non-industri 303' },
         { key: 'pengeluaranTotal', label: 'Pengeluaran', num: true },
         { key: 'surplus', label: 'Surplus', num: true },
         { key: 'ntb', label: 'NTB', num: true, hint: 'Nilai Tambah Bruto = 301 + 302 − 312 − 313 (non-industri: 303 − 312 − 313)' },
@@ -2144,10 +2152,9 @@
      */
     var SORT_OPTS = [
         { key: 'perusahaan',       label: 'Nama perusahaan',    num: false, sub: 'urut abjad' },
-        { key: 'nilaiProduksi',    label: 'Pendapatan',         num: true,  sub: 'nilai produksi 301 + 302, tanpa royalti' },
-        { key: 'pendapatanTotal',  label: 'Pendapatan total',   num: true,  sub: 'termasuk royalti, bunga, dividen (304)' },
+        { key: 'nilaiProduksi',    label: 'Pendapatan',         num: true,  sub: 'industri 301 + 302, non-industri 303' },
         { key: 'pengeluaranTotal', label: 'Pengeluaran total',  num: true,  sub: 'upah + biaya produksi + operasional' },
-        { key: 'surplus',          label: 'Perkiraan surplus',  num: true,  sub: 'pendapatan total − pengeluaran' },
+        { key: 'surplus',          label: 'Perkiraan surplus',  num: true,  sub: 'pendapatan − pengeluaran' },
         { key: 'biayaTotal',       label: 'Biaya produksi',     num: true,  sub: 'termasuk pembelian aset' },
         { key: 'nilaiTambah',      label: 'Nilai tambah',       num: true,  sub: 'nilai produksi − biaya produksi' },
         { key: 'ntb',              label: 'NTB',                num: true,  sub: '301 + 302 − 312 − 313' },
@@ -2347,7 +2354,7 @@
         var head = el('div', 'stx-chart-head');
         var titles = el('div');
         titles.appendChild(el('div', 'stx-chart-title', 'Rincian per perusahaan'));
-        titles.appendChild(el('div', 'stx-chart-sub', 'Pendapatan tanpa royalti, bunga, dividen (304). Pendapatan, pengeluaran, dan surplus membawa pertumbuhan q-to-q terhadap triwulan sebelumnya perusahaan itu — klik baris untuk detail lengkap isian'));
+        titles.appendChild(el('div', 'stx-chart-sub', 'Pendapatan, pengeluaran, dan surplus membawa pertumbuhan q-to-q terhadap triwulan sebelumnya perusahaan itu — klik baris untuk detail lengkap isian'));
         head.appendChild(titles);
         sortTools(head);
         card.appendChild(head);
@@ -2434,10 +2441,8 @@
                 // the figure the Rincian table shows as "Pendapatan"
                 pendRows.push({ label: 'Pendapatan (301 + 302)', value: fmtRpFull(r.nilaiProduksi), total: true });
             } else {
-                pendRows.push({ label: 'Penjualan barang/jasa (303)', value: fmtRpFull(r.penjualan) });
+                pendRows.push({ label: 'Penjualan barang/jasa (303)', value: fmtRpFull(r.penjualan), total: true });
             }
-            pendRows.push({ label: 'Royalti, bunga, dividen (304)', value: fmtRpFull(r.pendapatanRoyalti) });
-            pendRows.push({ label: 'Total pendapatan termasuk 304', value: fmtRpFull(r.pendapatanTotal), total: true });
             moneyRows(s2, pendRows);
 
             var s3 = sect(body, 'Pengeluaran triwulan ini');
@@ -2457,7 +2462,7 @@
                 { label: '313. Biaya operasional', value: fmtRpFull(r.biayaOperasional) },
                 { label: 'Biaya Antara (312 + 313)', value: fmtRpFull(r.biayaAntara), total: true }
             ]);
-            // NTB = output − Biaya Antara; royalti, bunga, dividen (304) tidak ikut
+            // NTB = output − Biaya Antara
             var ntbRows = r.sektor === 'industri'
                 ? [
                     { label: '301. Nilai produksi', value: fmtRpFull(r.pendapatanProduk) },
@@ -2479,7 +2484,7 @@
                 simpleTable(s3b,
                     ['Komponen', 'TW ' + TW_ROMAN[prevQ.triwulan], 'TW ' + TW_ROMAN[r.triwulan],
                         'q-to-q (TW ' + TW_ROMAN[r.triwulan] + ' vs TW ' + TW_ROMAN[prevQ.triwulan] + ')'],
-                    [['nilaiProduksi', 'Pendapatan (tanpa 304)'], ['pendapatanTotal', 'Total pendapatan termasuk 304'], ['pengeluaranTotal', 'Total pengeluaran'],
+                    [['nilaiProduksi', 'Pendapatan'], ['pengeluaranTotal', 'Total pengeluaran'],
                         ['surplus', 'Surplus usaha (perkiraan)'], ['ntb', 'NTB']]
                         .map(function (m) {
                             return [m[1], fmtRpFull(prevQ[m[0]]), fmtRpFull(r[m[0]]), fmtSigned(pctChange(r[m[0]], prevQ[m[0]]))];

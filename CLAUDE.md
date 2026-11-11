@@ -26,6 +26,20 @@ serves pre-built Vite assets; new utility classes won't exist otherwise.
 **Survey numbers are id-ID strings.** Inputs persist as `"12.312.312"`. Parse
 with `SibstrFormat::num()`, never `is_numeric()` or `(float)`.
 
+**BPS Provinsi is a regular user plus the Statistik dashboards.** Role
+`bps_provinsi` = `is_bps_provinsi` only — deliberately **never** `is_bps`, so
+every `is_bps` gate (the rest of /bps, MONALISA BPS + its notifications, Buku
+Tamu settings, /develop) treats it as a regular user. Only the four
+`bps.statistik.*` routes use `bps_statistik` (Batam or Provinsi);
+`BpsProvinsiAccessTest` fails if any other route admits Provinsi. Add BPS
+features behind `is_bps` and Provinsi is excluded by default. Staff (BPS
+Batam/Provinsi, Super Admin) passwords are Super Admin–only — see
+`User::canResetPasswordOf()`.
+
+**Survey Excel exports are audited.** A new export must call
+`$this->logExport(...)` (trait `ExportsSurveyMonitoring`) before
+`Excel::download`, or it never shows in `/superadmin/log-unduhan`.
+
 **Internal state is not mass-assignable.** On `DevApp`, columns like `status`,
 `last_error`, `routing_status`, `dokploy_*` are deliberately outside
 `$fillable`. Use `forceFill(...)->save()` — `update([...])` silently discards

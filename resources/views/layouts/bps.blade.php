@@ -46,6 +46,12 @@
     @stack('styles')
 </head>
 <body class="font-sans antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    @php
+        // BPS Batam gets the full menu. BPS Provinsi only ever reaches the
+        // Statistik pages (bps_statistik), so it sees those plus its own
+        // regular-user account links — never links it would be bounced from.
+        $bpsFull = (bool) auth()->user()->is_bps;
+    @endphp
     <div class="flex min-h-screen">
         <!-- Sidebar -->
         <div id="bps-sidebar" class="w-64 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-sm hidden md:block">
@@ -58,6 +64,7 @@
             <nav class="p-4">
                 <ul class="space-y-1">
                     <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.25rem 1rem 0.35rem;">Dasbor</li>
+                    @if($bpsFull)
                     <li>
                         <a href="{{ route('bps.dashboard') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.dashboard') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -66,6 +73,7 @@
                             Beranda
                         </a>
                     </li>
+                    @endif
                     <li>
                         <a href="{{ route('bps.statistik.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.statistik.index') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,6 +106,7 @@
                             Statistik Konstruksi
                         </a>
                     </li>
+                    @if($bpsFull)
                     <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:1.1rem 1rem 0.35rem;">Data Survei</li>
                     <li>
                         <a href="{{ route('bps.sibstr.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.sibstr.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
@@ -185,6 +194,25 @@
                             Profil
                         </a>
                     </li>
+                    @else
+                    <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:1.1rem 1rem 0.35rem;">Akun</li>
+                    <li>
+                        <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                            </svg>
+                            Dashboard Saya
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('user.profile.show') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Profil
+                        </a>
+                    </li>
+                    @endif
                     <li>
                         <form method="POST" action="{{ route('logout') }}" class="w-full" id="logout-form-bps-sidebar">
                             @csrf
@@ -237,10 +265,10 @@
 
                             <!-- User Dropdown Menu -->
                             <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 hidden z-10 border border-gray-200 dark:border-gray-700">
-                                <a href="{{ route('bps.user.profile.show') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <a href="{{ $bpsFull ? route('bps.user.profile.show') : route('user.profile.show') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     Profil Pengguna
                                 </a>
-                                <a href="{{ route('bps.user.profile.show') }}#password" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <a href="{{ $bpsFull ? route('bps.user.profile.show') . '#password' : route('user.password.edit') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     Ubah Kata Sandi
                                 </a>
                                 <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
@@ -261,6 +289,7 @@
                 <nav class="p-4">
                     <ul class="space-y-2">
                         <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.25rem 1rem 0.1rem;">Dasbor</li>
+                        @if($bpsFull)
                         <li>
                             <a href="{{ route('bps.dashboard') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.dashboard') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -269,6 +298,7 @@
                                 Beranda
                             </a>
                         </li>
+                        @endif
                         <li>
                             <a href="{{ route('bps.statistik.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.statistik.index') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -301,6 +331,7 @@
                                 Statistik Konstruksi
                             </a>
                         </li>
+                        @if($bpsFull)
                         <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.9rem 1rem 0.1rem;">Data Survei</li>
                         <li>
                             <a href="{{ route('bps.sibstr.index') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md {{ request()->routeIs('bps.sibstr.*') ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500' : '' }}">
@@ -388,6 +419,25 @@
                                 Profil Pengguna
                             </a>
                         </li>
+                        @else
+                        <li class="text-gray-400 uppercase tracking-wider" style="font-size:0.6875rem;font-weight:700;letter-spacing:0.07em;padding:0.9rem 1rem 0.1rem;">Akun</li>
+                        <li>
+                            <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                                </svg>
+                                Dashboard Saya
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('user.profile.show') }}" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Profil Pengguna
+                            </a>
+                        </li>
+                        @endif
                         <li>
                             <form method="POST" action="{{ route('logout') }}" class="w-full" id="logout-form-bps-mobile">
                                 @csrf

@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="{{ asset('css/survey.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-blok3a.css') }}">
 <link rel="stylesheet" href="{{ asset('css/survey-validation.css') }}">
-<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}">
+<link rel="stylesheet" href="{{ asset('css/sibstr-form.css') }}?v={{ filemtime(public_path('css/sibstr-form.css')) }}">
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 <style>
     /* ── Section header ───────────────────────────── */
@@ -169,11 +169,17 @@
     }
 
     @media (max-width: 640px) {
-        .dn-ln-grid { grid-template-columns: 1fr; }
         .preview-scroll-wrap { padding: 0 1.5rem; }
     }
 
-    /* ── Rincian rows: horizontal grid on desktop, vertical on mobile ── */
+    /* Both switches below follow the FORM's width (the `sform` container in
+       sibstr-form.css), not the viewport: with both sidebars open a 1024px
+       laptop leaves the form ~470px, where these rows were ~40px inputs. */
+    @container sform (width < 36rem) {
+        .dn-ln-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Rincian rows: horizontal grid when there is room, vertical otherwise ── */
     .rincian-row {
         display: grid;
         grid-template-columns: 2fr 1fr 1fr auto;
@@ -181,7 +187,7 @@
         align-items: end;
         margin-bottom: 0.5rem;
     }
-    @media (max-width: 600px) {
+    @container sform (width < 36rem) {
         .rincian-row {
             position: relative;
             display: flex;
